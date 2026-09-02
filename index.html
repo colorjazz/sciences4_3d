@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atelier des Mécanismes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -446,9 +448,66 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 .mech-opt.active{border-color:var(--accent);background:var(--accent-soft);}
 .mech-opt.active strong{color:var(--accent);}
 
-@media (max-width:920px){
+@media (max-width:980px) and (min-width:761px){
   .rail{flex-basis:220px;}
   .panel{flex-basis:280px;}
+}
+
+/* ---------- mobile: stacked single-column layout ---------- */
+.rail-toggle{
+  display:none;
+  border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);
+  width:30px;height:30px;border-radius:var(--radius-s);
+  align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;
+  margin-left:auto;
+}
+.rail-toggle svg{transition:transform .2s ease;}
+@media (max-width:760px){
+  body{height:auto;min-height:100vh;overflow:visible;}
+  header.titleblock{flex-wrap:wrap;}
+  .tb-mark{padding:10px 12px;border-right:none;}
+  .tb-gear{width:26px;height:26px;}
+  .tb-brand{font-size:12.5px;}
+  .tb-title{flex-basis:100%;order:1;border-right:none;border-top:1px solid var(--line);padding:8px 14px;}
+  .tb-title .tb-value{font-size:17px;}
+  .tb-cell:not(.tb-title){display:none;}
+
+  .workspace{flex-direction:column;overflow:visible;}
+
+  .rail{
+    flex:0 0 auto;width:100%;
+    border-right:none;border-bottom:1px solid var(--line);
+    max-height:none;
+  }
+  .rail-head-row{display:flex;align-items:center;gap:4px;cursor:pointer;}
+  .rail-head-row h2{margin:0;flex:1 1 auto;}
+  .rail-head .bank-progress{margin-top:8px;}
+  .rail-toggle{display:flex;}
+  .rail:not(.rail-open) .rail-toggle svg{transform:rotate(-90deg);}
+  .rail:not(.rail-open) .rail-search,
+  .rail:not(.rail-open) .rail-list{display:none;}
+  .rail-list{max-height:52vh;overflow-y:auto;}
+  .obj-item{padding:11px 14px;}
+
+  .stage{flex:0 0 auto;width:100%;height:58vh;min-height:320px;}
+  .stage-annot{max-width:62%;left:14px;top:14px;}
+  .stage-annot .name{font-size:16px;}
+  .stage-frame{inset:8px;}
+  .stage-hud{left:10px;right:10px;bottom:10px;padding:8px 10px;gap:10px;}
+  .hud-group input[type=range]{width:70px;}
+  .hud-reset button{padding:8px 10px;}
+
+  .panel{flex:0 0 auto;width:100%;border-left:none;border-top:1px solid var(--line);min-height:0;}
+  .panel-tab{padding:12px 10px;font-size:13px;}
+  .panel-body{overflow-y:visible;padding:14px;}
+
+  .rail-search input,
+  #wName,#wIn,#wOut,#wDesc,.reponse-inline input{font-size:16px;}
+
+  .mech-grid{grid-template-columns:1fr 1fr;}
+  .btn-row{flex-wrap:wrap;}
+
+  .hud-btn{width:34px;height:34px;}
 }
 </style>
 
@@ -485,9 +544,14 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 </header>
 
 <div class="workspace">
-  <aside class="rail">
+  <aside class="rail" id="railAside">
     <div class="rail-head">
-      <h2>Banque d'objets</h2>
+      <div class="rail-head-row" id="railToggleRow">
+        <h2>Banque d'objets</h2>
+        <button class="rail-toggle" id="railToggle" type="button" aria-label="Afficher ou masquer la banque d'objets">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
       <div class="bank-progress">
         <span>OBJ.</span>
         <div class="bar"><i id="bankBar" style="width:0%"></i></div>
@@ -2572,6 +2636,10 @@ function loadObject(spec){
   document.getElementById('tbMech').textContent=mechLabel;
   fillFiche(spec, stages);
   highlightRailItem(spec.id);
+  if(mobileQuery.matches){
+    railAside.classList.remove('rail-open');
+    document.querySelector('.stage').scrollIntoView({behavior:'smooth', block:'start'});
+  }
 }
 
 function render(){
@@ -2748,6 +2816,13 @@ function fillFiche(spec, stages){
   delWrap.hidden = !!spec.builtin;
   document.getElementById('deleteObjBtn').onclick=function(){ deleteBankObject(spec); };
 }
+
+/* Mobile: rail (object bank) collapses into a drawer under 760px */
+var railAside=document.getElementById('railAside');
+document.getElementById('railToggleRow').addEventListener('click', function(){
+  railAside.classList.toggle('rail-open');
+});
+var mobileQuery=window.matchMedia('(max-width:760px)');
 
 document.querySelectorAll('.panel-tab').forEach(function(tab){
   tab.addEventListener('click', function(){
