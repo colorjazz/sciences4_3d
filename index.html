@@ -1,0 +1,2487 @@
+<title>Atelier des Mécanismes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef3f7;
+  --bg-grid:rgba(20,49,79,.07);
+  --surface:#ffffff;
+  --surface-2:#e3ebf2;
+  --surface-3:#d3e0ea;
+  --ink:#14314f;
+  --ink-dim:#4d6580;
+  --ink-faint:#7c93a8;
+  --line:#bccddb;
+  --line-strong:#8fa8bd;
+  --accent:#ff6a2b;
+  --accent-ink:#ffffff;
+  --accent-soft:#ffe4d5;
+  --good:#1f7a52;
+  --warn:#a35a00;
+  --shadow:0 8px 24px rgba(20,49,79,.14);
+  --radius-s:3px;
+  --radius-m:6px;
+  --font-display:'Barlow Condensed',system-ui,sans-serif;
+  --font-body:'Barlow',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#122841;
+    --bg-grid:rgba(220,238,255,.07);
+    --surface:#193755;
+    --surface-2:#20486c;
+    --surface-3:#295a80;
+    --ink:#e9f2fb;
+    --ink-dim:#a9c3da;
+    --ink-faint:#7996b0;
+    --line:#345676;
+    --line-strong:#4d7398;
+    --accent:#ff7c42;
+    --accent-ink:#12233a;
+    --accent-soft:#4a2c18;
+    --good:#4fd08a;
+    --warn:#ffb454;
+    --shadow:0 8px 28px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#122841;
+  --bg-grid:rgba(220,238,255,.07);
+  --surface:#193755;
+  --surface-2:#20486c;
+  --surface-3:#295a80;
+  --ink:#e9f2fb;
+  --ink-dim:#a9c3da;
+  --ink-faint:#7996b0;
+  --line:#345676;
+  --line-strong:#4d7398;
+  --accent:#ff7c42;
+  --accent-ink:#12233a;
+  --accent-soft:#4a2c18;
+  --good:#4fd08a;
+  --warn:#ffb454;
+  --shadow:0 8px 28px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+[hidden]{display:none!important;}
+body{
+  background:
+    linear-gradient(var(--bg-grid) 1px,transparent 1px) 0 0/28px 28px,
+    linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px) 0 0/28px 28px,
+    var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:14px;
+  line-height:1.45;
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+::selection{background:var(--accent-soft);color:var(--ink);}
+button{font-family:inherit;}
+input,select,textarea{font-family:inherit;color:inherit;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:5px;}
+
+/* ---------- title block header ---------- */
+header.titleblock{
+  display:flex;
+  align-items:stretch;
+  border-bottom:2px solid var(--ink);
+  background:var(--surface);
+  flex:0 0 auto;
+}
+.tb-cell{
+  padding:8px 16px;
+  border-right:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:2px;
+}
+.tb-cell:last-child{border-right:none;}
+.tb-label{
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.tb-value{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:16px;
+  color:var(--ink);
+  white-space:nowrap;
+}
+.tb-title{flex:1 1 auto;min-width:0;}
+.tb-title .tb-value{
+  font-size:22px;
+  letter-spacing:.01em;
+}
+.tb-title .tb-sub{
+  font-size:11px;
+  color:var(--ink-dim);
+  font-family:var(--font-body);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.tb-mark{
+  display:flex;align-items:center;gap:10px;
+  padding:0 18px 0 16px;
+  border-right:1px solid var(--line);
+}
+.tb-gear{
+  width:30px;height:30px;flex:0 0 auto;
+}
+.tb-brand{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:.03em;
+  line-height:1.15;
+}
+.tb-brand span{display:block;font-family:var(--font-mono);font-weight:400;font-size:9px;letter-spacing:.08em;color:var(--ink-faint);text-transform:uppercase;}
+
+/* ---------- layout ---------- */
+.workspace{flex:1 1 auto;display:flex;min-height:0;}
+.rail{
+  flex:0 0 272px;
+  border-right:1px solid var(--line);
+  background:var(--surface);
+  display:flex;flex-direction:column;
+  min-height:0;
+}
+.rail-head{
+  padding:12px 14px 10px;
+  border-bottom:1px solid var(--line);
+  flex:0 0 auto;
+}
+.rail-head h2{
+  margin:0 0 6px;
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:.02em;
+}
+.bank-progress{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-dim);
+}
+.bank-progress .bar{
+  flex:1 1 auto;height:6px;border-radius:4px;background:var(--surface-3);overflow:hidden;
+}
+.bank-progress .bar > i{
+  display:block;height:100%;background:var(--accent);border-radius:4px;
+  transition:width .4s ease;
+}
+.rail-search{
+  margin-top:9px;
+  display:flex;
+}
+.rail-search input{
+  width:100%;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius-s);
+  padding:6px 9px;
+  font-size:12.5px;
+  color:var(--ink);
+}
+.rail-search input:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+.rail-list{flex:1 1 auto;overflow-y:auto;padding:6px 0 16px;}
+.rail-group-label{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  padding:12px 14px 5px;
+}
+.obj-item{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  width:100%;
+  text-align:left;
+  padding:7px 14px;
+  border:none;
+  border-left:3px solid transparent;
+  background:transparent;
+  cursor:pointer;
+  color:var(--ink);
+}
+.obj-item:hover{background:var(--surface-2);}
+.obj-item.active{
+  background:var(--surface-2);
+  border-left-color:var(--accent);
+}
+.obj-swatch{
+  width:9px;height:9px;border-radius:2px;flex:0 0 auto;
+}
+.obj-item-name{
+  font-size:12.5px;font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  flex:1 1 auto;
+}
+.obj-item-tag{
+  font-family:var(--font-mono);font-size:9px;color:var(--ink-faint);
+  border:1px solid var(--line);border-radius:3px;padding:1px 4px;flex:0 0 auto;
+}
+.rail-empty{padding:16px 14px;color:var(--ink-faint);font-size:12px;}
+
+/* ---------- stage ---------- */
+.stage{
+  flex:1 1 auto;
+  position:relative;
+  min-width:0;
+  background:var(--bg);
+}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;}
+.stage canvas:active{cursor:grabbing;}
+.stage-frame{
+  position:absolute;inset:14px;
+  border:1px solid var(--line-strong);
+  pointer-events:none;
+}
+.stage-frame i{
+  position:absolute;width:12px;height:12px;
+  border-color:var(--ink-faint);
+}
+.stage-frame i.tl{top:-1px;left:-1px;border-top:2px solid;border-left:2px solid;}
+.stage-frame i.tr{top:-1px;right:-1px;border-top:2px solid;border-right:2px solid;}
+.stage-frame i.bl{bottom:-1px;left:-1px;border-bottom:2px solid;border-left:2px solid;}
+.stage-frame i.br{bottom:-1px;right:-1px;border-bottom:2px solid;border-right:2px solid;}
+.stage-annot{
+  position:absolute;top:24px;left:26px;
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--ink-dim);
+  pointer-events:none;
+  max-width:44%;
+}
+.stage-annot .name{
+  font-family:var(--font-display);
+  font-size:20px;
+  font-weight:600;
+  color:var(--ink);
+  display:block;
+  margin-bottom:2px;
+}
+.stage-annot .movement{
+  display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;
+}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.02em;
+  padding:2px 8px;border-radius:20px;
+  border:1px solid var(--line-strong);
+  background:var(--surface);
+  color:var(--ink-dim);
+}
+.pill.arrow::before{content:"→";color:var(--accent);font-weight:700;}
+.pill.cat{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+.stage-empty{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:10px;color:var(--ink-faint);text-align:center;
+}
+.stage-empty svg{opacity:.5;}
+
+.stage-hud{
+  position:absolute;left:26px;right:26px;bottom:20px;
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-m);
+  padding:9px 16px;
+  box-shadow:var(--shadow);
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--ink-dim);
+  flex-wrap:wrap;
+}
+.hud-btn{
+  border:1px solid var(--line-strong);
+  background:var(--surface-2);
+  color:var(--ink);
+  width:30px;height:30px;border-radius:var(--radius-s);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex:0 0 auto;
+}
+.hud-btn:hover{background:var(--surface-3);}
+.hud-btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.hud-group{display:flex;align-items:center;gap:8px;}
+.hud-group label{white-space:nowrap;}
+.hud-group input[type=range]{
+  width:100px;accent-color:var(--accent);
+}
+.hud-readout{
+  font-variant-numeric:tabular-nums;
+  min-width:2.6em;text-align:right;color:var(--ink);
+}
+.hud-sep{width:1px;align-self:stretch;background:var(--line);}
+.hud-reset{margin-left:auto;}
+.hud-reset button{
+  border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink-dim);
+  padding:6px 11px;border-radius:var(--radius-s);cursor:pointer;font-family:var(--font-mono);font-size:11px;
+}
+.hud-reset button:hover{background:var(--surface-3);color:var(--ink);}
+
+/* ---------- side panel ---------- */
+.panel{
+  flex:0 0 328px;
+  border-left:1px solid var(--line);
+  background:var(--surface);
+  display:flex;flex-direction:column;min-height:0;
+}
+.panel-tabs{
+  display:flex;border-bottom:1px solid var(--line);flex:0 0 auto;
+}
+.panel-tab{
+  flex:1 1 0;
+  padding:11px 10px;
+  text-align:center;
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:14px;
+  letter-spacing:.02em;
+  background:transparent;
+  border:none;border-bottom:2px solid transparent;
+  color:var(--ink-faint);
+  cursor:pointer;
+}
+.panel-tab.active{color:var(--ink);border-bottom-color:var(--accent);}
+.panel-body{flex:1 1 auto;overflow-y:auto;padding:16px;}
+.panel-body h3{
+  margin:0 0 8px;font-family:var(--font-display);font-weight:600;font-size:16px;
+}
+.field{margin-bottom:14px;}
+.field label{
+  display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-faint);margin-bottom:5px;
+}
+.field .hint{font-size:11px;color:var(--ink-faint);margin-top:4px;}
+.desc-text{font-size:13px;color:var(--ink-dim);line-height:1.55;white-space:pre-line;}
+.spec-table{width:100%;border-collapse:collapse;margin-top:4px;}
+.spec-table td{
+  padding:6px 0;border-top:1px solid var(--line);
+  font-size:12.5px;vertical-align:top;
+}
+.spec-table td:first-child{color:var(--ink-faint);width:42%;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding-right:10px;}
+.badge-row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px;}
+select,input[type=text],textarea{
+  width:100%;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius-s);padding:7px 9px;font-size:13px;color:var(--ink);
+}
+select:focus,input[type=text]:focus,textarea:focus,input[type=range]:focus{outline:2px solid var(--accent);outline-offset:1px;}
+textarea{resize:vertical;min-height:56px;}
+.slider-row{display:flex;align-items:center;gap:10px;}
+.slider-row input[type=range]{flex:1 1 auto;accent-color:var(--accent);}
+.slider-row .val{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink);min-width:3.4em;text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);
+  padding:9px 14px;border-radius:var(--radius-s);cursor:pointer;
+  font-family:var(--font-display);font-weight:600;font-size:14px;letter-spacing:.02em;
+  width:100%;
+}
+.btn:hover{background:var(--surface-3);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.btn.primary:hover{filter:brightness(1.06);}
+.btn.danger{background:transparent;border-color:var(--line);color:var(--warn);}
+.btn.danger:hover{background:var(--accent-soft);}
+.btn[disabled]{opacity:.5;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;margin-top:16px;}
+.btn-row .btn{width:auto;flex:1 1 0;}
+.status-line{
+  margin-top:10px;font-size:11.5px;color:var(--ink-faint);font-family:var(--font-mono);
+  display:flex;align-items:center;gap:6px;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);flex:0 0 auto;}
+.status-dot.live{background:var(--good);}
+.status-dot.local{background:var(--warn);}
+hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
+.stage-row{
+  display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--line);
+}
+.stage-row:first-child{border-top:none;padding-top:2px;}
+.stage-mini-wrap{
+  flex:0 0 104px;width:104px;height:88px;
+  border:1px solid var(--line);border-radius:var(--radius-s);
+  background:var(--bg);overflow:hidden;position:relative;
+}
+.stage-mini-wrap canvas{width:100%;height:100%;display:block;}
+.stage-mini-num{
+  position:absolute;top:3px;left:5px;font-family:var(--font-mono);font-size:10px;
+  color:var(--ink-faint);pointer-events:none;
+}
+.stage-row-text{flex:1 1 auto;min-width:0;}
+.stage-row-title{
+  font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--ink);
+  margin-bottom:4px;
+}
+.stage-row-pills{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;}
+.stage-row-pills .pill{font-size:9px;padding:1px 6px;}
+.stage-row-desc{font-size:11.5px;color:var(--ink-dim);line-height:1.5;}
+.workshop-preview{
+  border:1px solid var(--line);border-radius:var(--radius-m);
+  background:var(--bg);height:150px;position:relative;overflow:hidden;margin-bottom:14px;
+}
+.workshop-preview canvas{width:100%;height:100%;display:block;}
+.mech-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.mech-opt{
+  border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface-2);
+  padding:8px 8px;cursor:pointer;text-align:left;
+}
+.mech-opt strong{display:block;font-size:12px;font-family:var(--font-display);font-weight:600;}
+.mech-opt span{display:block;font-size:10px;color:var(--ink-faint);margin-top:2px;}
+.mech-opt.active{border-color:var(--accent);background:var(--accent-soft);}
+.mech-opt.active strong{color:var(--accent);}
+
+@media (max-width:920px){
+  .rail{flex-basis:220px;}
+  .panel{flex-basis:280px;}
+}
+</style>
+
+<header class="titleblock">
+  <div class="tb-mark">
+    <svg class="tb-gear" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="20" stroke="var(--ink)" stroke-width="6"/>
+      <g stroke="var(--ink)" stroke-width="7" stroke-linecap="square">
+        <line x1="50" y1="6" x2="50" y2="22"/><line x1="50" y1="78" x2="50" y2="94"/>
+        <line x1="6" y1="50" x2="22" y2="50"/><line x1="78" y1="50" x2="94" y2="50"/>
+        <line x1="19" y1="19" x2="30" y2="30"/><line x1="70" y1="70" x2="81" y2="81"/>
+        <line x1="81" y1="19" x2="70" y2="30"/><line x1="30" y1="70" x2="19" y2="81"/>
+      </g>
+    </svg>
+    <div class="tb-brand">Atelier des<br>Mécanismes<span>Sciences 4 · analyse technique</span></div>
+  </div>
+  <div class="tb-cell tb-title">
+    <span class="tb-label">Objet sélectionné</span>
+    <span class="tb-value" id="tbName">—</span>
+    <span class="tb-sub" id="tbSub">Choisissez un objet dans la banque à gauche.</span>
+  </div>
+  <div class="tb-cell">
+    <span class="tb-label">Mécanisme</span>
+    <span class="tb-value" id="tbMech" style="font-size:13px;">—</span>
+  </div>
+  <div class="tb-cell">
+    <span class="tb-label">Banque</span>
+    <span class="tb-value" id="tbCount" style="font-family:var(--font-mono);font-size:14px;">0 / 30</span>
+  </div>
+  <div class="tb-cell">
+    <span class="tb-label">Échelle</span>
+    <span class="tb-value" style="font-family:var(--font-mono);font-size:13px;">1∶1 (approx.)</span>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="rail">
+    <div class="rail-head">
+      <h2>Banque d'objets</h2>
+      <div class="bank-progress">
+        <span>OBJ.</span>
+        <div class="bar"><i id="bankBar" style="width:0%"></i></div>
+        <span id="bankCountText">0/30</span>
+      </div>
+      <div class="rail-search">
+        <input type="text" id="searchInput" placeholder="Rechercher un objet…">
+      </div>
+    </div>
+    <div class="rail-list" id="railList"></div>
+  </aside>
+
+  <div class="stage">
+    <canvas id="c"></canvas>
+    <div class="stage-frame"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+    <div class="stage-annot" id="stageAnnot" hidden>
+      <span class="name" id="annotName"></span>
+      <span id="annotDesc"></span>
+      <div class="movement">
+        <span class="pill cat" id="annotCat"></span>
+        <span class="pill" id="annotIn"></span>
+        <span class="pill arrow" id="annotOut"></span>
+      </div>
+    </div>
+    <div class="stage-empty" id="stageEmpty">
+      <svg width="52" height="52" viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="22" stroke="currentColor" stroke-width="5"/>
+        <g stroke="currentColor" stroke-width="6" stroke-linecap="square">
+          <line x1="50" y1="4" x2="50" y2="20"/><line x1="50" y1="80" x2="50" y2="96"/>
+          <line x1="4" y1="50" x2="20" y2="50"/><line x1="80" y1="50" x2="96" y2="50"/>
+        </g>
+      </svg>
+      <div>Sélectionnez un objet technique pour l'afficher en 3D</div>
+    </div>
+    <div class="stage-hud" id="stageHud" hidden>
+      <button class="hud-btn on" id="playBtn" title="Lecture / pause">
+        <svg id="playIcon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg>
+      </button>
+      <div class="hud-group">
+        <label>Vitesse</label>
+        <input type="range" id="speedRange" min="0" max="200" value="70">
+        <span class="hud-readout" id="speedVal">0.7×</span>
+      </div>
+      <div class="hud-sep"></div>
+      <div class="hud-group">
+        <label>Éclaté</label>
+        <input type="range" id="explodeRange" min="0" max="100" value="0">
+        <span class="hud-readout" id="explodeVal">0%</span>
+      </div>
+      <div class="hud-sep"></div>
+      <button class="hud-btn" id="labelsBtn" title="Afficher les repères">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 6h16M4 12h10M4 18h13"/></svg>
+      </button>
+      <div class="hud-reset"><button id="resetViewBtn">Recentrer la vue</button></div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="fiche">Fiche technique</button>
+      <button class="panel-tab" data-tab="atelier">Atelier — générer</button>
+    </div>
+    <div class="panel-body" id="ficheTab">
+      <div id="ficheEmpty" style="color:var(--ink-faint);font-size:12.5px;">
+        Aucun objet sélectionné. La fiche technique décrit la fonction, le type de transmission ou de transformation du mouvement, et les composantes de l'objet choisi.
+      </div>
+      <div id="ficheContent" hidden>
+        <h3 id="ficheName">—</h3>
+        <div class="badge-row">
+          <span class="pill cat" id="ficheCat"></span>
+        </div>
+        <p class="desc-text" id="ficheDesc"></p>
+        <table class="spec-table">
+          <tr><td>Mouvement d'entrée</td><td id="ficheIn">—</td></tr>
+          <tr><td>Mouvement de sortie</td><td id="ficheOut">—</td></tr>
+          <tr><td>Mécanisme</td><td id="ficheMech">—</td></tr>
+          <tr><td>Origine</td><td id="ficheOrigin">—</td></tr>
+        </table>
+        <hr class="sep">
+        <h3 id="ficheStagesTitle" style="font-size:14px;">Chaîne cinématique</h3>
+        <div id="ficheStages"></div>
+        <div id="ficheDeleteWrap" hidden>
+          <hr class="sep">
+          <button class="btn danger" id="deleteObjBtn">Retirer de la banque</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel-body" id="atelierTab" hidden>
+      <h3>Créer un nouvel objet</h3>
+      <p class="desc-text" style="margin-bottom:12px;">
+        Choisissez un mécanisme, ajustez ses paramètres et ajoutez le résultat à votre banque. Aperçu en direct ci-dessous.
+      </p>
+      <div class="workshop-preview"><canvas id="wc"></canvas></div>
+      <div class="field">
+        <label>Type de mécanisme</label>
+        <div class="mech-grid" id="mechGrid"></div>
+      </div>
+      <div id="mechParams"></div>
+      <hr class="sep">
+      <div class="field">
+        <label for="wName">Nom de l'objet</label>
+        <input type="text" id="wName" placeholder="ex. Ouvre-bocal électrique">
+      </div>
+      <div class="field">
+        <label for="wCat">Catégorie</label>
+        <select id="wCat">
+          <option value="Transmission du mouvement">Transmission du mouvement</option>
+          <option value="Transformation du mouvement">Transformation du mouvement</option>
+          <option value="Système combiné">Système combiné</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="wIn">Mouvement d'entrée</label>
+        <input type="text" id="wIn" placeholder="ex. rotation continue">
+      </div>
+      <div class="field">
+        <label for="wOut">Mouvement de sortie</label>
+        <input type="text" id="wOut" placeholder="ex. rotation continue (axe perpendiculaire)">
+      </div>
+      <div class="field">
+        <label for="wDesc">Description pédagogique</label>
+        <textarea id="wDesc" placeholder="Fonction de l'objet et rôle du mécanisme…"></textarea>
+      </div>
+      <button class="btn primary" id="addBankBtn">Ajouter à ma banque</button>
+      <div class="status-line"><span class="status-dot" id="dbDot"></span><span id="dbStatus">Vérification de la banque partagée…</span></div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+var THEME_LINE_HEX = null;
+
+/* ============================================================
+   Small geometry / material helpers
+   ============================================================ */
+var matCache = {};
+function stdMat(hex, opts){
+  opts = opts || {};
+  var key = hex+'|'+(opts.metalness||0)+'|'+(opts.roughness||0)+'|'+(opts.emissive||'');
+  if(matCache[key]) return matCache[key];
+  var m = new THREE.MeshStandardMaterial({
+    color: hex,
+    metalness: opts.metalness!==undefined?opts.metalness:0.55,
+    roughness: opts.roughness!==undefined?opts.roughness:0.45,
+    emissive: opts.emissive!==undefined? opts.emissive : 0x000000,
+    emissiveIntensity: 0.4
+  });
+  matCache[key]=m;
+  return m;
+}
+
+function wheelBody(radius, thickness, color, opts){
+  opts=opts||{};
+  var g = new THREE.Group();
+  var body = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, thickness, opts.seg||36),
+    stdMat(color)
+  );
+  body.rotation.x = Math.PI/2;
+  g.add(body);
+  var hub = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius*0.22, radius*0.22, thickness*1.35, 20),
+    stdMat(color, {roughness:.3, metalness:.7})
+  );
+  hub.rotation.x = Math.PI/2;
+  g.add(hub);
+  return g;
+}
+
+function addTeeth(wheelGroup, opts){
+  var count = opts.count, innerR = opts.innerR, toothLen = opts.toothLen,
+      toothW = opts.toothW, toothH = opts.toothH, color = opts.color;
+  for(var i=0;i<count;i++){
+    var angle = (i/count)*Math.PI*2;
+    var pivot = new THREE.Group();
+    pivot.rotation.z = angle;
+    var tooth = new THREE.Mesh(new THREE.BoxGeometry(toothW, toothLen, toothH), stdMat(color));
+    tooth.position.y = innerR + toothLen/2;
+    pivot.add(tooth);
+    wheelGroup.add(pivot);
+  }
+}
+
+function gearGroup(p){
+  // p: radius, thickness, teeth, color
+  var g = new THREE.Group();
+  g.add(wheelBody(p.radius*0.72, p.thickness, p.color));
+  addTeeth(g, {count:p.teeth, innerR:p.radius*0.72, toothLen:p.radius*0.30,
+    toothW: (2*Math.PI*p.radius*0.72/p.teeth)*0.55, toothH:p.thickness, color:p.color});
+  return g;
+}
+
+function shaftMesh(radius, length, color, axis){
+  var geo = new THREE.CylinderGeometry(radius, radius, length, 16);
+  var m = new THREE.Mesh(geo, stdMat(color||0x8a99a8, {roughness:.35, metalness:.75}));
+  if(axis==='x') m.rotation.z = Math.PI/2;
+  if(axis==='z') m.rotation.x = Math.PI/2;
+  return m;
+}
+
+function baseplate(w,d,color){
+  var m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d), stdMat(color||0x9fb1c2, {roughness:.7, metalness:.15}));
+  m.position.y = -0.06;
+  return m;
+}
+
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+/* ============================================================
+   Mechanism module registry
+   each build(params) -> { group, animate(t), explode: [{obj, dir, dist}] }
+   ============================================================ */
+var COLORS = {
+  steel:0x9fb3c4, steelDark:0x6e8398, brass:0xd7a552, accent1:0xdb5a2e,
+  accent2:0x3f7fae, dark:0x2c3f52, red:0xb84a3a, wood:0xb98652, black:0x33404b
+};
+
+var Mechanisms = {};
+
+Mechanisms.gear = {
+  label:'Engrenages droits', hint:'Transmission — rotation → rotation',
+  schema:[
+    {key:'teeth1', label:'Dents (menant)', min:8, max:24, step:1, def:10},
+    {key:'teeth2', label:'Dents (mené)', min:8, max:32, step:1, def:18},
+    {key:'thickness', label:'Épaisseur', min:0.15, max:0.7, step:0.05, def:0.35}
+  ],
+  suggestIn:'rotation continue', suggestOut:'rotation continue (vitesse réduite)',
+  build:function(p){
+    var module = 0.115;
+    var r1 = p.teeth1*module, r2 = p.teeth2*module;
+    var dist = r1+r2;
+    var group = new THREE.Group();
+    var g1 = gearGroup({radius:r1, thickness:p.thickness, teeth:p.teeth1, color:COLORS.accent1});
+    var g2 = gearGroup({radius:r2, thickness:p.thickness, teeth:p.teeth2, color:COLORS.accent2});
+    g1.position.set(-dist/2,0.5,0);
+    g2.position.set(dist/2,0.5,0);
+    g1.userData.explodeDir = new THREE.Vector3(-1,0,0);
+    g2.userData.explodeDir = new THREE.Vector3(1,0,0);
+    group.add(g1,g2);
+    var plate = baseplate(dist+r1+r2*0.4, Math.max(r1,r2)*2.6, COLORS.steelDark);
+    group.add(plate);
+    group.userData.parts=[g1,g2];
+    return {
+      group:group,
+      animate:function(t){
+        g1.rotation.z = t;
+        g2.rotation.z = -t*(p.teeth1/p.teeth2);
+      }
+    };
+  }
+};
+
+Mechanisms.bevel = {
+  label:'Engrenages coniques', hint:'Transmission — rotation, changement d’axe (90°)',
+  schema:[
+    {key:'teeth1', label:'Dents (menant)', min:8, max:20, step:1, def:10},
+    {key:'teeth2', label:'Dents (mené)', min:8, max:20, step:1, def:10},
+    {key:'thickness', label:'Épaisseur', min:0.15, max:0.6, step:0.05, def:0.3}
+  ],
+  suggestIn:'rotation (manivelle)', suggestOut:'rotation (axe perpendiculaire)',
+  build:function(p){
+    var module = 0.1;
+    var r1=p.teeth1*module+0.55, r2=p.teeth2*module+0.55;
+    var h=0.55, gap=0.1;
+    var group = new THREE.Group();
+    var g1 = gearGroup({radius:r1, thickness:p.thickness, teeth:p.teeth1, color:COLORS.accent1});
+    g1.position.set(0,h,0);
+    var wrap2 = new THREE.Group();
+    var g2 = gearGroup({radius:r2, thickness:p.thickness, teeth:p.teeth2, color:COLORS.accent2});
+    wrap2.add(g2);
+    wrap2.rotation.y = Math.PI/2;
+    wrap2.position.set(r1+gap, h, -r2);
+    g1.userData.explodeDir=new THREE.Vector3(0,0,-1);
+    wrap2.userData.explodeDir=new THREE.Vector3(1,0,0);
+    group.add(g1,wrap2);
+    var sh1 = shaftMesh(0.09, 1.3, COLORS.steel, 'z'); sh1.position.set(0,h,-r1*0.15-0.75);
+    var sh2 = shaftMesh(0.09, 1.3, COLORS.steel, 'x'); sh2.position.set(r1+gap+0.75,h,-r2);
+    group.add(sh1,sh2);
+    group.add(baseplate(r1+r2+2.2, r1+r2+1.4, COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        g1.rotation.z = t;
+        g2.rotation.z = -t*(p.teeth1/p.teeth2);
+      }
+    };
+  }
+};
+
+Mechanisms.chain = {
+  label:'Chaîne et pignons', hint:'Transmission — rotation → rotation (axes parallèles distants)',
+  schema:[
+    {key:'teeth1', label:'Dents (pédalier)', min:20, max:44, step:1, def:38},
+    {key:'teeth2', label:'Dents (roue libre)', min:8, max:22, step:1, def:14},
+    {key:'distance', label:'Entraxe', min:2.2, max:4.5, step:0.1, def:3.2}
+  ],
+  suggestIn:'rotation (pédalage)', suggestOut:'rotation (roue, vitesse accrue)',
+  build:function(p){
+    var module=0.055;
+    var r1=p.teeth1*module+0.35, r2=p.teeth2*module+0.35;
+    var group=new THREE.Group();
+    var g1=gearGroup({radius:r1, thickness:0.22, teeth:p.teeth1, color:COLORS.accent1});
+    var g2=gearGroup({radius:r2, thickness:0.22, teeth:p.teeth2, color:COLORS.accent2});
+    g1.position.set(-p.distance/2,0.5,0);
+    g2.position.set(p.distance/2,0.5,0);
+    group.add(g1,g2);
+    var loop = new THREE.Mesh(
+      new THREE.TorusGeometry(p.distance/2, 0.045, 6, 60),
+      stdMat(COLORS.black,{roughness:.6})
+    );
+    loop.position.set(0,0.5,0);
+    loop.scale.set(1, (r1+r2)/p.distance*1.05, 1);
+    group.add(loop);
+    group.add(baseplate(p.distance+r1+r2*0.6, Math.max(r1,r2)*3, COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        g1.rotation.z=t;
+        g2.rotation.z=t*(p.teeth1/p.teeth2);
+        loop.rotation.z = -t*0.15;
+      }
+    };
+  }
+};
+
+Mechanisms.pulleyStep = {
+  label:'Poulies étagées + courroie', hint:'Transmission — rotation, changement de vitesse',
+  schema:[
+    {key:'r1', label:'Rayon poulie 1', min:0.3, max:1.1, step:0.05, def:0.5},
+    {key:'r2', label:'Rayon poulie 2', min:0.3, max:1.1, step:0.05, def:0.85},
+    {key:'distance', label:'Entraxe', min:2, max:4, step:0.1, def:2.8}
+  ],
+  suggestIn:'rotation (moteur)', suggestOut:'rotation (broche, vitesse ajustable)',
+  build:function(p){
+    var group=new THREE.Group();
+    var p1=wheelBody(p.r1,0.32,COLORS.accent1);
+    var p2=wheelBody(p.r2,0.32,COLORS.accent2);
+    p1.position.set(-p.distance/2,0.6,0);
+    p2.position.set(p.distance/2,0.6,0);
+    group.add(p1,p2);
+    var belt=new THREE.Mesh(new THREE.TorusGeometry(p.distance/2,0.05,6,60), stdMat(0x22262c,{roughness:.7}));
+    belt.position.set(0,0.6,0);
+    belt.scale.set(1,(p.r1+p.r2)/p.distance*1.08,1);
+    group.add(belt);
+    var sh1=shaftMesh(0.07,1.2,COLORS.steel,'z'); sh1.position.set(-p.distance/2,0.6,-0.5);
+    var sh2=shaftMesh(0.07,1.2,COLORS.steel,'z'); sh2.position.set(p.distance/2,0.6,-0.5);
+    group.add(sh1,sh2);
+    group.add(baseplate(p.distance+p.r1+p.r2, Math.max(p.r1,p.r2)*3+0.6, COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        p1.rotation.z=t;
+        p2.rotation.z=t*(p.r1/p.r2);
+      }
+    };
+  }
+};
+
+Mechanisms.worm = {
+  label:'Roue et vis sans fin', hint:'Transmission — grande réduction, changement d’axe',
+  schema:[
+    {key:'wormLength', label:'Longueur de la vis', min:1.2, max:2.4, step:0.1, def:1.7},
+    {key:'wheelTeeth', label:'Dents (roue)', min:16, max:40, step:1, def:24}
+  ],
+  suggestIn:'rotation rapide (moteur)', suggestOut:'rotation lente (axe perpendiculaire)',
+  build:function(p){
+    var group=new THREE.Group();
+    var wormR=0.22;
+    var wormGroup=new THREE.Group();
+    var core=new THREE.Mesh(new THREE.CylinderGeometry(wormR*0.7,wormR*0.7,p.wormLength,20), stdMat(COLORS.steel));
+    wormGroup.add(core);
+    var curve=new THREE.Curve();
+    var turns=p.wormLength*3.2;
+    curve.getPoint=function(t){
+      var ang=t*Math.PI*2*turns;
+      var y=t*p.wormLength - p.wormLength/2;
+      return new THREE.Vector3(Math.cos(ang)*wormR, y, Math.sin(ang)*wormR);
+    };
+    var thread=new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(60,Math.floor(turns*22)), 0.05, 6, false), stdMat(COLORS.brass,{metalness:.8,roughness:.3}));
+    wormGroup.add(thread);
+    wormGroup.rotation.z = Math.PI/2;
+    var h=0.7;
+    var wheelR = p.wheelTeeth*0.022+0.3;
+    var wormY = h+wheelR+wormR+0.03;
+    wormGroup.position.set(0,wormY,0);
+    group.add(wormGroup);
+    var wheel = gearGroup({radius:wheelR, thickness:0.24, teeth:p.wheelTeeth, color:COLORS.accent2});
+    wheel.position.set(0,h,0);
+    group.add(wheel);
+    var sh1=shaftMesh(0.07,p.wormLength+0.7,COLORS.steel,'x'); sh1.position.set(0,wormY,0);
+    var sh2=shaftMesh(0.07,1.1,COLORS.steel,'z'); sh2.position.set(0,h,0);
+    group.add(sh1,sh2);
+    group.add(baseplate(p.wormLength+1.4, wheelR*2+1, COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        wormGroup.rotation.x = t*3;
+        wheel.rotation.z = t*3/p.wheelTeeth;
+      }
+    };
+  }
+};
+
+Mechanisms.pulleyLoad = {
+  label:'Poulie et charge', hint:'Transformation — rotation → translation',
+  schema:[
+    {key:'radius', label:'Rayon de la poulie', min:0.25, max:0.7, step:0.05, def:0.42},
+    {key:'travel', label:'Course de la charge', min:0.6, max:2, step:0.1, def:1.3}
+  ],
+  suggestIn:'rotation (manivelle)', suggestOut:'translation verticale (charge)',
+  build:function(p){
+    var group=new THREE.Group();
+    var pulleyY=2.0;
+    var post=new THREE.Mesh(new THREE.BoxGeometry(0.14,pulleyY+0.2,0.14), stdMat(COLORS.steelDark,{roughness:.6}));
+    post.position.set(-0.55,pulleyY/2,0);
+    group.add(post);
+    var arm=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.12,0.14), stdMat(COLORS.steelDark,{roughness:.6}));
+    arm.position.set(-0.2,pulleyY+0.12,0);
+    group.add(arm);
+    var pulley=wheelBody(p.radius,0.2,COLORS.accent1);
+    pulley.position.set(0,pulleyY,0);
+    group.add(pulley);
+    var axle=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.34,10), stdMat(COLORS.dark));
+    axle.rotation.x=Math.PI/2; axle.position.set(0,pulleyY,0);
+    group.add(axle);
+    var load=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.4,0.5), stdMat(COLORS.wood,{roughness:.8,metalness:0}));
+    var rope=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1,8), stdMat(0x505a63));
+    group.add(load,rope);
+    group.add(baseplate(1.8,1.6,COLORS.steelDark));
+    var baseY=1.05;
+    var ropeTop=pulleyY-p.radius;
+    return {
+      group:group,
+      animate:function(t){
+        pulley.rotation.z = t;
+        var y = baseY + Math.sin(t*0.6)*p.travel*0.5;
+        load.position.set(0,y,0);
+        var ropeLen = Math.max(0.05, ropeTop - y);
+        rope.scale.y = ropeLen;
+        rope.position.set(0, y+ropeLen/2, 0);
+      }
+    };
+  }
+};
+
+Mechanisms.screw = {
+  label:'Vis et écrou', hint:'Transformation — rotation → translation',
+  schema:[
+    {key:'length', label:'Longueur de la vis', min:1.4, max:3, step:0.1, def:2.2},
+    {key:'travel', label:'Course de l’écrou', min:0.5, max:1.6, step:0.1, def:1.0}
+  ],
+  suggestIn:'rotation (manivelle)', suggestOut:'translation (élévation)',
+  build:function(p){
+    var group=new THREE.Group();
+    var screwR=0.1;
+    var screw=new THREE.Group();
+    var core=new THREE.Mesh(new THREE.CylinderGeometry(screwR*0.55,screwR*0.55,p.length,16), stdMat(COLORS.steel));
+    screw.add(core);
+    var curve=new THREE.Curve();
+    var turns=p.length*4;
+    curve.getPoint=function(t){
+      var ang=t*Math.PI*2*turns;
+      var y=t*p.length - p.length/2;
+      return new THREE.Vector3(Math.cos(ang)*screwR, y, Math.sin(ang)*screwR);
+    };
+    var thread=new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(80,Math.floor(turns*18)), 0.035, 6, false), stdMat(COLORS.brass,{metalness:.8,roughness:.3}));
+    screw.add(thread);
+    screw.rotation.x=0;
+    screw.position.set(0,0,0);
+    group.add(screw);
+    var nut=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.32,6), stdMat(COLORS.accent1,{roughness:.4,metalness:.6}));
+    var lift=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.08,0.8), stdMat(COLORS.steelDark));
+    group.add(nut,lift);
+    var crank=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.5,0.06), stdMat(COLORS.dark));
+    crank.position.set(0, p.length/2+0.15, 0);
+    var crankGroup=new THREE.Group(); crankGroup.add(crank); crankGroup.position.set(0,0,0);
+    group.add(crankGroup);
+    group.add(baseplate(1.4,1.4,COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        screw.rotation.y=t;
+        crankGroup.rotation.y=t;
+        var maxTravel = Math.min(p.travel, p.length-0.8);
+        var y = 0.18 + (Math.sin(t*0.45)*0.5+0.5)*maxTravel;
+        nut.position.set(0,y,0);
+        lift.position.set(0,y+0.2,0);
+      }
+    };
+  }
+};
+
+Mechanisms.rack = {
+  label:'Pignon et crémaillère', hint:'Transformation — rotation → translation',
+  schema:[
+    {key:'teeth', label:'Dents du pignon', min:8, max:18, step:1, def:12},
+    {key:'rackLength', label:'Longueur de la crémaillère', min:2, max:4, step:0.1, def:3.2}
+  ],
+  suggestIn:'rotation (moteur)', suggestOut:'translation horizontale (vantail)',
+  build:function(p){
+    var r = p.teeth*0.035+0.22;
+    var group=new THREE.Group();
+    var pinionY=0.55;
+    var pinion=gearGroup({radius:r, thickness:0.3, teeth:p.teeth, color:COLORS.accent1});
+    pinion.position.set(0,pinionY,0);
+    group.add(pinion);
+    var rack=new THREE.Group();
+    var bar=new THREE.Mesh(new THREE.BoxGeometry(p.rackLength,0.2,0.3), stdMat(COLORS.steel));
+    rack.add(bar);
+    var toothCount = Math.max(6,Math.round(p.rackLength/(2*Math.PI*r*0.72/p.teeth)));
+    var spacing=p.rackLength/toothCount;
+    for(var i=0;i<toothCount;i++){
+      var tt=new THREE.Mesh(new THREE.BoxGeometry(spacing*0.55,0.14,0.3), stdMat(COLORS.accent2));
+      tt.position.set(-p.rackLength/2+spacing*(i+0.5), 0.17,0);
+      rack.add(tt);
+    }
+    rack.position.set(0,pinionY-r*1.02-0.07,0);
+    group.add(rack);
+    group.add(baseplate(p.rackLength+0.6, 1.4, COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        pinion.rotation.z=t;
+        var amp=(p.rackLength*0.5-0.3);
+        rack.position.x = Math.sin(t*0.5)*amp;
+      }
+    };
+  }
+};
+
+Mechanisms.crankSlider = {
+  label:'Bielle-manivelle (translation)', hint:'Transformation — rotation → translation alternative',
+  schema:[
+    {key:'crankR', label:'Rayon de manivelle', min:0.25, max:0.6, step:0.05, def:0.4},
+    {key:'rodLen', label:'Longueur de bielle', min:0.9, max:1.8, step:0.1, def:1.3}
+  ],
+  suggestIn:'rotation continue (moteur)', suggestOut:'translation alternative (lame)',
+  build:function(p){
+    var group=new THREE.Group();
+    var crankGroup=new THREE.Group();
+    var crankArm=new THREE.Mesh(new THREE.BoxGeometry(p.crankR,0.14,0.1), stdMat(COLORS.steelDark));
+    crankArm.position.x=p.crankR/2;
+    crankGroup.add(crankArm);
+    var pin=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.24,10), stdMat(COLORS.dark));
+    pin.rotation.x=Math.PI/2; pin.position.x=p.crankR;
+    crankGroup.add(pin);
+    crankGroup.position.set(0,1.0,0);
+    group.add(crankGroup);
+    var rod=new THREE.Mesh(new THREE.BoxGeometry(p.rodLen,0.09,0.09), stdMat(COLORS.accent2));
+    group.add(rod);
+    var slider=new THREE.Mesh(new THREE.BoxGeometry(0.32,0.5,0.5), stdMat(COLORS.accent1));
+    group.add(slider);
+    var blade=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.1,0.16), stdMat(COLORS.steel,{metalness:.85,roughness:.2}));
+    group.add(blade);
+    var rail=new THREE.Mesh(new THREE.BoxGeometry(p.crankR*2+p.rodLen+0.6,0.06,0.06), stdMat(COLORS.steelDark,{roughness:.6}));
+    rail.position.set(p.crankR+p.rodLen*0.5,0.72,0);
+    group.add(rail);
+    var pivot=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.36,14), stdMat(COLORS.dark));
+    pivot.rotation.x=Math.PI/2; pivot.position.set(0,1.0,0);
+    group.add(pivot);
+    group.add(baseplate(p.crankR*2+p.rodLen+1.4, 1.6, COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        crankGroup.rotation.z=t;
+        var s = p.crankR*Math.cos(t) + Math.sqrt(Math.max(0.01,p.rodLen*p.rodLen - Math.pow(p.crankR*Math.sin(t),2)));
+        var x = p.crankR + s;
+        slider.position.set(x,1.0,0);
+        blade.position.set(x, 1.0+0.75,0);
+        var pinWorld = new THREE.Vector3(Math.cos(t)*p.crankR, 1.0+Math.sin(t)*p.crankR,0);
+        var mid = new THREE.Vector3((pinWorld.x+x)/2,(pinWorld.y+1.0)/2,0);
+        rod.position.copy(mid);
+        var dx=x-pinWorld.x, dy=1.0-pinWorld.y;
+        rod.rotation.z = Math.atan2(dy,dx);
+        rod.scale.x = Math.hypot(dx,dy)/p.rodLen;
+      }
+    };
+  }
+};
+
+Mechanisms.crankRocker = {
+  label:'Bielle-manivelle (oscillation)', hint:'Transformation — rotation → oscillation',
+  schema:[
+    {key:'crankR', label:'Rayon de manivelle', min:0.2, max:0.5, step:0.05, def:0.32},
+    {key:'rockerLen', label:'Longueur du bras oscillant', min:0.9, max:1.6, step:0.1, def:1.2}
+  ],
+  suggestIn:'rotation continue (moteur)', suggestOut:'oscillation (balayage)',
+  build:function(p){
+    var group=new THREE.Group();
+    var groundDist=1.5, rodLen=1.35;
+    var crankGroup=new THREE.Group();
+    var crankArm=new THREE.Mesh(new THREE.BoxGeometry(p.crankR,0.15,0.12), stdMat(COLORS.steelDark));
+    crankArm.position.x=p.crankR/2;
+    crankGroup.add(crankArm);
+    crankGroup.position.set(-groundDist/2,0.9,0);
+    group.add(crankGroup);
+    var rockerGroup=new THREE.Group();
+    var rockerArm=new THREE.Mesh(new THREE.BoxGeometry(p.rockerLen,0.13,0.12), stdMat(COLORS.accent1));
+    rockerArm.position.x=p.rockerLen/2;
+    rockerGroup.add(rockerArm);
+    var blade=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.14,0.2), stdMat(COLORS.dark,{metalness:.6,roughness:.35}));
+    blade.position.x=p.rockerLen*0.85;
+    rockerGroup.add(blade);
+    rockerGroup.position.set(groundDist/2,0.9,0);
+    group.add(rockerGroup);
+    var rod=new THREE.Mesh(new THREE.BoxGeometry(rodLen,0.12,0.12), stdMat(COLORS.dark,{metalness:.5,roughness:.4}));
+    group.add(rod);
+    var pv1=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.4,14), stdMat(COLORS.black));
+    pv1.rotation.x=Math.PI/2; pv1.position.set(-groundDist/2,0.9,0);
+    var pv2=pv1.clone(); pv2.position.set(groundDist/2,0.9,0);
+    group.add(pv1,pv2);
+    group.add(baseplate(groundDist+p.rockerLen*2+0.6,1.8,COLORS.steelDark));
+    var P0=new THREE.Vector2(groundDist/2,0), C0=new THREE.Vector2(-groundDist/2,0);
+    return {
+      group:group,
+      animate:function(t){
+        crankGroup.rotation.z=t;
+        var pin=new THREE.Vector2(C0.x+Math.cos(t)*p.crankR, C0.y+Math.sin(t)*p.crankR);
+        var d = pin.distanceTo(P0);
+        d = clamp(d, Math.abs(p.rockerLen-rodLen)+0.02, p.rockerLen+rodLen-0.02);
+        var a = (p.rockerLen*p.rockerLen - rodLen*rodLen + d*d)/(2*d);
+        var h = Math.sqrt(Math.max(0, p.rockerLen*p.rockerLen - a*a));
+        var dir = new THREE.Vector2(pin.x-P0.x, pin.y-P0.y).normalize();
+        var perp = new THREE.Vector2(-dir.y, dir.x);
+        var mid = new THREE.Vector2(P0.x+dir.x*a, P0.y+dir.y*a);
+        var ip = new THREE.Vector2(mid.x-perp.x*h, mid.y-perp.y*h);
+        var rockAngle = Math.atan2(ip.y-P0.y, ip.x-P0.x);
+        rockerGroup.rotation.z = rockAngle;
+        var rodMid = new THREE.Vector3((pin.x+ip.x)/2+0, 0.9+(pin.y+ip.y)/2,0);
+        rod.position.copy(rodMid);
+        rod.rotation.z = Math.atan2(ip.y-pin.y, ip.x-pin.x);
+      }
+    };
+  }
+};
+
+Mechanisms.cam = {
+  label:'Came et tige-poussoir', hint:'Transformation — rotation → translation intermittente',
+  schema:[
+    {key:'lobes', label:'Nombre de lobes', min:1, max:4, step:1, def:2},
+    {key:'lift', label:'Levée de la came', min:0.15, max:0.5, step:0.05, def:0.3}
+  ],
+  suggestIn:'rotation continue (moteur)', suggestOut:'translation intermittente (poussoir)',
+  build:function(p){
+    var base=0.45, lift=p.lift, lobes=p.lobes;
+    function radiusAt(theta){
+      return base + lift*Math.max(0, Math.cos(lobes*theta))*Math.max(0,Math.cos(lobes*theta));
+    }
+    var shape=new THREE.Shape();
+    var N=64;
+    for(var i=0;i<=N;i++){
+      var th=(i/N)*Math.PI*2;
+      var r=radiusAt(th);
+      var x=Math.cos(th)*r, y=Math.sin(th)*r;
+      if(i===0) shape.moveTo(x,y); else shape.lineTo(x,y);
+    }
+    var geo=new THREE.ExtrudeGeometry(shape, {depth:0.3, bevelEnabled:false});
+    geo.translate(0,0,-0.15);
+    var camMesh=new THREE.Mesh(geo, stdMat(COLORS.accent1));
+    var camGroup=new THREE.Group(); camGroup.add(camMesh);
+    camGroup.position.set(0,0.75,0);
+    var group=new THREE.Group();
+    group.add(camGroup);
+    var follower=new THREE.Mesh(new THREE.BoxGeometry(0.16,1.0,0.16), stdMat(COLORS.steel,{metalness:.8,roughness:.25}));
+    group.add(follower);
+    var pad=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.1,16), stdMat(COLORS.dark));
+    group.add(pad);
+    group.add(baseplate(1.8,1.8,COLORS.steelDark));
+    var shaft=shaftMesh(0.06,1.2,COLORS.steel,'z');
+    shaft.position.set(0,0.75,0);
+    group.add(shaft);
+    return {
+      group:group,
+      animate:function(t){
+        camGroup.rotation.z=t;
+        var r = radiusAt(Math.PI/2 - t);
+        var y = 0.75 + r + 0.5;
+        follower.position.set(0,y,0);
+        pad.position.set(0,0.75+r,0);
+      }
+    };
+  }
+};
+
+/* Composite: batteur électrique — reducer gears + cam-driven whisks */
+Mechanisms.mixerCombo = {
+  label:'Système combiné', hint:'Réducteur à engrenages + came (démonstration)',
+  schema:[
+    {key:'teeth2', label:'Dents (réducteur)', min:14, max:28, step:1, def:20}
+  ],
+  suggestIn:'rotation rapide (moteur)', suggestOut:'mouvement combiné (fouets)',
+  build:function(p){
+    var group=new THREE.Group();
+    var h=1.5;
+    var motor=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.6,20), stdMat(COLORS.dark,{metalness:.6,roughness:.4}));
+    motor.rotation.x=Math.PI/2; motor.position.set(0,h,-0.85);
+    group.add(motor);
+    var pinion=gearGroup({radius:0.24,thickness:0.2,teeth:9,color:COLORS.accent1});
+    var pinionZ=-0.53;
+    pinion.position.set(0,h,pinionZ);
+    group.add(pinion);
+    var bigR = p.teeth2*0.009+0.2;
+    var shaftZ = pinionZ+0.24+bigR-0.04;
+    var bigGear=gearGroup({radius:bigR,thickness:0.2,teeth:p.teeth2,color:COLORS.accent2});
+    bigGear.position.set(0,h,shaftZ);
+    group.add(bigGear);
+    var camZ = shaftZ+0.3;
+    var camShaft=shaftMesh(0.05,0.36,COLORS.steel,'z');
+    camShaft.position.set(0,h,shaftZ+0.14);
+    group.add(camShaft);
+    function radiusAt(theta){ return 0.2 + 0.11*Math.max(0,Math.cos(2*theta)); }
+    var shape=new THREE.Shape(); var N=48;
+    for(var i=0;i<=N;i++){var th=(i/N)*Math.PI*2, r=radiusAt(th); var x=Math.cos(th)*r,y=Math.sin(th)*r; if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y);}
+    var camGeo=new THREE.ExtrudeGeometry(shape,{depth:0.18,bevelEnabled:false}); camGeo.translate(0,0,-0.09);
+    var cam=new THREE.Mesh(camGeo, stdMat(COLORS.accent1));
+    var camGroup=new THREE.Group(); camGroup.add(cam);
+    camGroup.position.set(0,h,camZ);
+    group.add(camGroup);
+    var body=new THREE.Mesh(new THREE.BoxGeometry(0.62,1.3,0.5), stdMat(COLORS.steelDark,{roughness:.6}));
+    body.position.set(0,h-0.32,camZ-0.05);
+    group.add(body);
+    var head=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.32,16), stdMat(COLORS.accent1));
+    group.add(head);
+    var whisk1=new THREE.Mesh(new THREE.TorusGeometry(0.15,0.02,6,16), stdMat(COLORS.steel,{metalness:.85,roughness:.2}));
+    var whisk2=whisk1.clone();
+    group.add(whisk1,whisk2);
+    group.add(baseplate(2.1,1.7,COLORS.steelDark));
+    return {
+      group:group,
+      animate:function(t){
+        motor.rotation.z=t*4;
+        pinion.rotation.z=t*4;
+        var camAngle = -t*4*(9/p.teeth2);
+        bigGear.rotation.z=camAngle;
+        camGroup.rotation.z=camAngle;
+        var r=radiusAt(Math.PI/2 - camAngle);
+        var y = h-1.15 + r;
+        head.position.set(0,y,camZ);
+        whisk1.position.set(-0.09,y-0.32,camZ);
+        whisk2.position.set(0.09,y-0.32,camZ);
+        whisk1.rotation.y = t*3;
+        whisk2.rotation.y = -t*3;
+      }
+    };
+  }
+};
+
+var MECH_KEYS = ['gear','bevel','chain','pulleyStep','worm','pulleyLoad','screw','rack','crankSlider','crankRocker','cam'];
+
+/* ============================================================
+   Objets détaillés — machine complète, mécanismes réels couplés
+   ============================================================ */
+var DetailedObjects = {};
+
+DetailedObjects.perceuse = (function(){
+  var P = {
+    columnZ:-0.34, columnR:0.105, columnBottomY:0.30, columnTopY:4.30,
+    spindleZ:0.34, motorZ:-1.00,
+    headY:3.50, headH:0.62,
+    pulleyY:3.86, stepH:0.12,
+    motorSteps:[0.28,0.225,0.17],
+    spindleSteps:[0.17,0.225,0.28],
+    step:1,
+    beltW:0.085, beltT:0.032,
+    quillTopY:3.22, quillLen:0.85, quillR:0.115,
+    pinionR:0.155, feedTravel:0.32, feedY:2.86,
+    tableY0:1.00, screwX:0.42, screwPitch:0.30, screwLen:1.00, screwMidY:1.24,
+    jawSlide:0.055
+  };
+  P.rackZ = P.spindleZ - P.quillR - 0.02;
+  P.pinionZ = P.rackZ - 0.05 - P.pinionR;
+
+  var STEEL=0x9aa9b8, CAST=0x51606f, DARKCAST=0x3a4653, ACCENT=0xc9501c, DARK=0x232c36, BRASS=0xc59a3c;
+
+  function cyl(r1,r2,h,color,seg,opts){
+    return new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||24), stdMat(color,opts||{metalness:.6,roughness:.4}));
+  }
+  function box(w,h,d,color,opts){
+    return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), stdMat(color,opts||{metalness:.35,roughness:.6}));
+  }
+  function curveMesh(fn, segments, tubeR, color, opts){
+    var c=new THREE.Curve(); c.getPoint=fn;
+    return new THREE.Mesh(new THREE.TubeGeometry(c, segments, tubeR, 8, false), stdMat(color, opts||{metalness:.75,roughness:.3}));
+  }
+
+  /* --- 1. Poulies étagées et courroie ------------------------------ */
+  function beltLoop(r1,r2,d,width,thick){
+    // enveloppe tangente extérieure : grand arc sur la poulie 1, petit arc sur la poulie 2
+    function hull(a1,a2){
+      var beta=Math.acos(clamp((a1-a2)/d,-1,1));
+      var s=new THREE.Shape();
+      s.moveTo(Math.cos(beta)*a1, Math.sin(beta)*a1);
+      s.absarc(0,0,a1,beta,2*Math.PI-beta,false);
+      s.lineTo(d+Math.cos(-beta)*a2, Math.sin(-beta)*a2);
+      s.absarc(d,0,a2,-beta,beta,false);
+      s.closePath();
+      return s;
+    }
+    var shape=hull(r1,r2);
+    shape.holes.push(hull(r1-thick,r2-thick));
+    var geo=new THREE.ExtrudeGeometry(shape,{depth:width,bevelEnabled:false,curveSegments:40});
+    geo.rotateX(Math.PI/2);
+    geo.translate(0,width/2,0);
+    return new THREE.Mesh(geo, stdMat(0x1d232a,{metalness:.15,roughness:.85}));
+  }
+
+  function steppedPulley(steps){
+    var g=new THREE.Group();
+    steps.forEach(function(r,i){
+      var cone=cyl(r,r,P.stepH*0.88,STEEL,28,{metalness:.72,roughness:.32});
+      cone.position.y=(i+0.5)*P.stepH;
+      g.add(cone);
+      var flange=cyl(r*1.04,r*1.04,P.stepH*0.12,0x7c8a99,28,{metalness:.7,roughness:.4});
+      flange.position.y=(i+0.5)*P.stepH-P.stepH*0.44;
+      g.add(flange);
+    });
+    var hub=cyl(0.05,0.05,steps.length*P.stepH+0.1,DARK,14);
+    hub.position.y=steps.length*P.stepH/2;
+    g.add(hub);
+    return g;
+  }
+
+  function buildPulleys(){
+    var group=new THREE.Group();
+    var motorPulley=steppedPulley(P.motorSteps);
+    motorPulley.position.set(0,P.pulleyY,P.motorZ);
+    var spindlePulley=steppedPulley(P.spindleSteps);
+    spindlePulley.position.set(0,P.pulleyY,P.spindleZ);
+    group.add(motorPulley,spindlePulley);
+
+    var k=P.step;
+    var d=P.spindleZ-P.motorZ;
+    var belt=beltLoop(P.motorSteps[k],P.spindleSteps[k],d,P.beltW,P.beltT);
+    belt.rotation.y=-Math.PI/2;
+    belt.position.set(0, P.pulleyY+(k+0.5)*P.stepH-P.beltW/2, P.motorZ);
+    group.add(belt);
+
+    var spindleShaft=cyl(0.058,0.058,1,STEEL,16,{metalness:.8,roughness:.25});
+    spindleShaft.position.z=P.spindleZ;
+    group.add(spindleShaft);
+
+    return {
+      group:group,
+      update:function(s,iso){
+        motorPulley.rotation.y=s.motorAngle;
+        spindlePulley.rotation.y=s.spindleAngle;
+        var bottom=P.quillTopY-0.1-(iso?0:s.quillDrop);
+        var len=Math.max(0.08, P.pulleyY-bottom);
+        spindleShaft.scale.y=len;
+        spindleShaft.position.y=bottom+len/2;
+        spindleShaft.rotation.y=s.spindleAngle;
+      }
+    };
+  }
+
+  /* --- 2. Pignon et crémaillère (avance du fourreau) --------------- */
+  function buildFeed(){
+    var group=new THREE.Group();
+
+    var quill=new THREE.Group();
+    var sleeve=cyl(P.quillR,P.quillR,P.quillLen,STEEL,24,{metalness:.62,roughness:.32});
+    sleeve.position.y=-P.quillLen/2;
+    quill.add(sleeve);
+    var rackBar=box(0.15,P.quillLen,0.05,0x7c8b9b,{metalness:.6,roughness:.4});
+    rackBar.position.set(0,-P.quillLen/2,P.rackZ-P.spindleZ);
+    quill.add(rackBar);
+    var pitch=2*Math.PI*P.pinionR/14;
+    var nTeeth=Math.floor((P.quillLen-0.12)/pitch);
+    for(var i=0;i<nTeeth;i++){
+      var tooth=box(0.13,pitch*0.48,0.06,0x63728a,{metalness:.6,roughness:.4});
+      tooth.position.set(0,-0.09-i*pitch,P.rackZ-P.spindleZ-0.05);
+      quill.add(tooth);
+    }
+    quill.name='fourreau';
+    quill.position.set(0,P.quillTopY,P.spindleZ);
+    group.add(quill);
+
+    var hub=new THREE.Group();
+    var pinionWrap=new THREE.Group();
+    pinionWrap.rotation.y=Math.PI/2;
+    pinionWrap.add(gearGroup({radius:P.pinionR,thickness:0.085,teeth:14,color:ACCENT}));
+    hub.add(pinionWrap);
+    var shaft=cyl(0.045,0.045,0.98,STEEL,14,{metalness:.75,roughness:.3});
+    shaft.rotation.z=Math.PI/2; shaft.position.x=0.45;
+    hub.add(shaft);
+    var boss=cyl(0.11,0.11,0.14,DARKCAST,18);
+    boss.rotation.z=Math.PI/2; boss.position.x=0.68;
+    hub.add(boss);
+    for(var a=0;a<3;a++){
+      var ang=(a/3)*Math.PI*2;
+      var dy=Math.cos(ang), dz=Math.sin(ang);
+      var arm=cyl(0.027,0.027,0.44,STEEL,10,{metalness:.7,roughness:.35});
+      arm.rotation.x=ang;
+      arm.position.set(0.68, dy*0.22, dz*0.22);
+      hub.add(arm);
+      var knob=cyl(0.058,0.058,0.11,DARK,14,{metalness:.3,roughness:.7});
+      knob.rotation.x=ang;
+      knob.position.set(0.68, dy*0.48, dz*0.48);
+      hub.add(knob);
+    }
+    hub.position.set(0,P.feedY,P.pinionZ);
+    group.add(hub);
+
+    var bearing=cyl(0.115,0.115,0.24,CAST,20);
+    bearing.rotation.z=Math.PI/2;
+    bearing.position.set(0.2,P.feedY,P.pinionZ);
+    group.add(bearing);
+
+    return {
+      group:group,
+      quillGroup:quill,
+      update:function(s,iso){
+        quill.position.y=P.quillTopY-s.quillDrop;
+        hub.rotation.x=s.handleAngle;
+      }
+    };
+  }
+
+  /* --- 3. Ressort spiral de rappel --------------------------------- */
+  function buildSpring(){
+    var group=new THREE.Group();
+    var housing=cyl(0.25,0.25,0.1,DARKCAST,28,{metalness:.35,roughness:.65});
+    housing.rotation.z=Math.PI/2;
+    housing.position.x=-0.05;
+    group.add(housing);
+
+    var spiralWrap=new THREE.Group();
+    var turns=3.6, rIn=0.055, rOut=0.205;
+    var spiral=curveMesh(function(u){
+      var ang=u*Math.PI*2*turns;
+      var r=rIn+(rOut-rIn)*u;
+      return new THREE.Vector3(Math.cos(ang)*r, Math.sin(ang)*r, 0);
+    }, 260, 0.015, BRASS, {metalness:.85,roughness:.25});
+    spiralWrap.add(spiral);
+    var innerHook=box(0.055,0.02,0.02,BRASS,{metalness:.85,roughness:.25});
+    innerHook.position.set(rIn*0.6,0,0);
+    spiralWrap.add(innerHook);
+    var wrap=new THREE.Group();
+    wrap.rotation.y=Math.PI/2;
+    wrap.add(spiralWrap);
+    group.add(wrap);
+
+    // l'arbre du ressort rejoint physiquement l'arbre du pignon (x = 0)
+    var arbor=cyl(0.046,0.046,0.46,STEEL,14,{metalness:.8,roughness:.25});
+    arbor.rotation.z=Math.PI/2;
+    arbor.position.x=0.16;
+    group.add(arbor);
+    var outerAnchor=box(0.06,0.06,0.1,STEEL);
+    outerAnchor.position.set(-0.02,rOut,0);
+    group.add(outerAnchor);
+    var cover=cyl(0.255,0.255,0.025,ACCENT,28,{metalness:.4,roughness:.5});
+    cover.rotation.z=Math.PI/2;
+    cover.position.x=-0.12;
+    group.add(cover);
+
+    group.position.set(-0.34,P.feedY,P.pinionZ);
+    return {
+      group:group,
+      update:function(s){
+        spiralWrap.rotation.z=-s.handleAngle;
+        var tighten=1-0.15*s.feedPhase;
+        spiralWrap.scale.set(tighten,tighten,1);
+      }
+    };
+  }
+
+  /* --- 4. Vis et écrou (élévation de la table) --------------------- */
+  function buildTableLift(){
+    var group=new THREE.Group();
+
+    var screwGroup=new THREE.Group();
+    var core=cyl(0.036,0.036,P.screwLen,STEEL,16,{metalness:.78,roughness:.28});
+    screwGroup.add(core);
+    var turns=P.screwLen/P.screwPitch;
+    screwGroup.add(curveMesh(function(u){
+      var ang=u*Math.PI*2*turns;
+      return new THREE.Vector3(Math.cos(ang)*0.055, u*P.screwLen-P.screwLen/2, Math.sin(ang)*0.055);
+    }, 300, 0.018, BRASS, {metalness:.85,roughness:.28}));
+    var crankHub=cyl(0.07,0.07,0.1,DARKCAST,16);
+    crankHub.position.y=-P.screwLen/2-0.14;
+    var crankArm=box(0.045,0.05,0.26,DARKCAST);
+    crankArm.position.set(0,-P.screwLen/2-0.21,0.12);
+    var crankGrip=cyl(0.042,0.042,0.2,DARK,12,{metalness:.3,roughness:.7});
+    crankGrip.position.set(0,-P.screwLen/2-0.31,0.24);
+    screwGroup.add(crankHub,crankArm,crankGrip);
+    screwGroup.position.set(P.screwX,P.screwMidY,P.columnZ);
+    group.add(screwGroup);
+
+    // palier inférieur : la vis tourne sur place, tenue par une potence
+    // boulonnée à la colonne — sans ce palier, rien ne reprendrait la charge.
+    var bracketArm=box(P.screwX+0.16,0.12,0.16,CAST);
+    bracketArm.position.set(P.screwX/2,P.screwMidY-P.screwLen/2-0.04,P.columnZ);
+    var bracketCollar=cyl(P.columnR+0.07,P.columnR+0.07,0.2,CAST,20);
+    bracketCollar.position.set(0,P.screwMidY-P.screwLen/2-0.04,P.columnZ);
+    var thrustCup=cyl(0.1,0.1,0.14,DARKCAST,18);
+    thrustCup.position.set(P.screwX,P.screwMidY-P.screwLen/2-0.02,P.columnZ);
+    group.add(bracketArm,bracketCollar,thrustCup);
+
+    var table=new THREE.Group();
+    var collar=cyl(P.columnR+0.09,P.columnR+0.09,0.3,CAST,22);
+    collar.position.z=P.columnZ;
+    var lockLever=cyl(0.027,0.027,0.26,DARK,10,{metalness:.3,roughness:.7});
+    lockLever.rotation.z=Math.PI/2.4;
+    lockLever.position.set(-0.22,0.04,P.columnZ+0.04);
+    var nutBlock=box(0.19,0.22,0.19,CAST);
+    nutBlock.position.set(P.screwX,0,P.columnZ);
+    var nutBridge=box(0.36,0.13,0.14,CAST);
+    nutBridge.position.set(P.screwX/2,0,P.columnZ);
+    var arm=box(0.24,0.15,0.5,CAST);
+    arm.position.set(0,0.02,P.columnZ+0.36);
+    var plate=box(0.98,0.075,0.82,CAST,{metalness:.4,roughness:.55});
+    plate.position.set(0,0.1,0.18);
+    var hole=cyl(0.1,0.1,0.09,DARK,20,{metalness:.2,roughness:.9});
+    hole.position.set(0,0.11,0.18);
+    table.add(collar,lockLever,nutBlock,nutBridge,arm,plate,hole);
+    for(var s2=0;s2<2;s2++){
+      var slot=box(0.055,0.02,0.52,DARKCAST);
+      slot.position.set(-0.3+s2*0.6,0.14,0.18);
+      table.add(slot);
+    }
+    table.position.y=P.tableY0;
+    group.add(table);
+
+    return {
+      group:group,
+      tableGroup:table,
+      update:function(s){
+        screwGroup.rotation.y=s.tableTurns*Math.PI*2;
+        table.position.y=P.tableY0+s.tableTurns*P.screwPitch;
+      }
+    };
+  }
+
+  /* --- 5. Mandrin à trois mors ------------------------------------- */
+  function buildChuck(){
+    var group=new THREE.Group();
+
+    var shank=cyl(0.075,0.075,0.12,STEEL,20,{metalness:.8,roughness:.25});
+    shank.position.y=0.06;
+    group.add(shank);
+    var upper=cyl(0.12,0.16,0.16,STEEL,26,{metalness:.72,roughness:.28});
+    upper.position.y=-0.08;
+    group.add(upper);
+    var sleeveRing=new THREE.Group();
+    sleeveRing.add(cyl(0.175,0.175,0.16,0x8b99a8,26,{metalness:.8,roughness:.25}));
+    for(var i=0;i<30;i++){
+      var a=(i/30)*Math.PI*2;
+      var knurl=box(0.011,0.15,0.011,0x73818e,{metalness:.75,roughness:.35});
+      knurl.position.set(Math.cos(a)*0.176,0,Math.sin(a)*0.176);
+      knurl.rotation.y=-a;
+      sleeveRing.add(knurl);
+    }
+    sleeveRing.position.y=-0.25;
+    group.add(sleeveRing);
+    var nose=cyl(0.16,0.105,0.14,STEEL,26,{metalness:.72,roughness:.28});
+    nose.position.y=-0.4;
+    group.add(nose);
+
+    var slotAngle=0.3;
+    var jaws=[];
+    for(var j=0;j<3;j++){
+      var pivot=new THREE.Group();
+      pivot.rotation.y=(j/3)*Math.PI*2;
+      var jaw=box(0.048,0.24,0.062,0xc3ced9,{metalness:.85,roughness:.2});
+      jaw.rotation.z=-slotAngle;
+      pivot.add(jaw);
+      group.add(pivot);
+      jaws.push(jaw);
+    }
+
+    var bit=new THREE.Group();
+    var bitShank=cyl(0.042,0.042,0.2,STEEL,16,{metalness:.85,roughness:.22});
+    bitShank.position.y=-0.1;
+    bit.add(bitShank);
+    var body=cyl(0.042,0.042,0.34,0x8593a2,16,{metalness:.8,roughness:.3});
+    body.position.y=-0.37;
+    bit.add(body);
+    [0,Math.PI].forEach(function(ph){
+      bit.add(curveMesh(function(u){
+        var ang=u*Math.PI*2*2.6+ph;
+        return new THREE.Vector3(Math.cos(ang)*0.043,-0.2-u*0.32,Math.sin(ang)*0.043);
+      }, 140, 0.011, 0x4f5d6b, {metalness:.7,roughness:.35}));
+    });
+    var tip=cyl(0.042,0.003,0.07,STEEL,16,{metalness:.85,roughness:.2});
+    tip.position.y=-0.575;
+    bit.add(tip);
+    bit.position.y=-0.42;
+    group.add(bit);
+
+    group.name='mandrin';
+    group.position.set(0,P.quillTopY-P.quillLen,P.spindleZ);
+    return {
+      group:group,
+      update:function(s,iso){
+        group.position.y=P.quillTopY-P.quillLen-(iso?0:s.quillDrop);
+        group.rotation.y=iso?0:s.spindleAngle;
+        var open=(1-s.grip)*P.jawSlide;
+        jaws.forEach(function(jaw){
+          jaw.position.set(0.082+open*Math.sin(slotAngle), -0.33+open*Math.cos(slotAngle), 0);
+        });
+        sleeveRing.rotation.y=(1-s.grip)*2.2;
+      }
+    };
+  }
+
+  var MECHS = {
+    pulleys:{
+      label:'Poulies étagées et courroie',
+      movementIn:'rotation rapide (moteur)', movementOut:'rotation de la broche',
+      roleDesc:'Le moteur et la broche portent chacun un cône à trois étages montés en sens inverse. La courroie relie deux étages de même hauteur : la broche tourne à ω_moteur × r_moteur / r_broche. En déplaçant la courroie d’un étage à l’autre, on choisit la vitesse selon le matériau percé.',
+      build:buildPulleys
+    },
+    feed:{
+      label:'Pignon et crémaillère (avance)',
+      movementIn:'rotation des leviers', movementOut:'descente du fourreau',
+      roleDesc:'Les trois leviers font tourner un pignon de rayon 0,155 qui engrène la crémaillère taillée sur le fourreau. La descente vaut exactement r × θ. La broche cannelée coulisse dans la poulie : elle descend avec le fourreau tout en continuant de tourner.',
+      build:buildFeed
+    },
+    spring:{
+      label:'Ressort spiral de rappel',
+      movementIn:'rotation de l’arbre d’avance', movementOut:'couple de rappel (remontée)',
+      roleDesc:'Un ressort spiral logé dans son boîtier est accroché par son extrémité intérieure à l’arbre du pignon, par son extrémité extérieure au bâti. La descente l’enroule et y emmagasine de l’énergie ; dès qu’on relâche les leviers, il la restitue et remonte le fourreau.',
+      build:buildSpring
+    },
+    lift:{
+      label:'Vis et écrou (table)',
+      movementIn:'rotation de la manivelle', movementOut:'translation verticale de la table',
+      roleDesc:'La manivelle fait tourner une vis verticale ; l’écrou solidaire du support monte ou descend d’un pas (0,30) par tour complet. Le collier qui embrasse la colonne empêche la table de tourner avec la vis : sans ce guidage, il n’y aurait aucune transformation du mouvement.',
+      build:buildTableLift
+    },
+    chuck:{
+      label:'Mandrin à trois mors',
+      movementIn:'rotation de la bague', movementOut:'serrage radial des mors',
+      roleDesc:'La bague entraîne une spirale d’Archimède qui pousse les trois mors dans leurs glissières inclinées. Une seule spirale commande les trois : ils avancent de la même quantité, donc le foret se centre automatiquement sur l’axe de la broche.',
+      build:buildChuck
+    }
+  };
+  var ORDER=['pulleys','feed','spring','lift','chuck'];
+
+  function kinematics(t, iso){
+    var motorAngle=t*4.2;
+    var ratio=P.motorSteps[P.step]/P.spindleSteps[P.step];
+    var feedPhase=(1-Math.cos(t*0.5))/2;
+    var handleAngle=feedPhase*(P.feedTravel/P.pinionR);
+    return {
+      motorAngle:motorAngle,
+      spindleAngle:motorAngle*ratio,
+      ratio:ratio,
+      feedPhase:feedPhase,
+      handleAngle:handleAngle,
+      quillDrop:handleAngle*P.pinionR,
+      tableTurns:0.35*Math.sin(t*0.13),
+      grip: iso ? 0.55+0.45*Math.cos(t*0.7) : 1
+    };
+  }
+
+  function buildStructure(){
+    var g=new THREE.Group();
+
+    var base=box(1.55,0.18,1.2,DARKCAST,{metalness:.3,roughness:.7});
+    base.position.set(0,0.09,-0.05);
+    var baseTop=box(1.4,0.05,1.06,CAST,{metalness:.35,roughness:.6});
+    baseTop.position.set(0,0.2,-0.05);
+    g.add(base,baseTop);
+    for(var i=0;i<3;i++){
+      var slot=box(0.07,0.02,0.64,DARKCAST);
+      slot.position.set(-0.42+i*0.42,0.23,-0.05);
+      g.add(slot);
+    }
+    var footing=cyl(0.23,0.28,0.3,CAST,24);
+    footing.position.set(0,0.32,P.columnZ);
+    g.add(footing);
+    var column=cyl(P.columnR,P.columnR,P.columnTopY-P.columnBottomY,STEEL,26,{metalness:.7,roughness:.3});
+    column.position.set(0,(P.columnTopY+P.columnBottomY)/2,P.columnZ);
+    g.add(column);
+    var columnCap=cyl(0.12,0.12,0.07,DARKCAST,20);
+    columnCap.position.set(0,P.columnTopY,P.columnZ);
+    g.add(columnCap);
+
+    var head=box(0.62,P.headH,1.18,CAST,{metalness:.35,roughness:.6});
+    head.position.set(0,P.headY,-0.1);
+    g.add(head);
+    var headCollar=cyl(0.21,0.21,P.headH+0.06,CAST,22);
+    headCollar.position.set(0,P.headY,P.columnZ);
+    g.add(headCollar);
+    // nez de la tête + manchon de guidage du fourreau : la fonte descend
+    // sans interruption de la tête jusqu'au carter d'avance, sinon rien ne
+    // porterait le fourreau ni le mandrin.
+    var headNose=box(0.5,0.34,0.42,CAST);
+    headNose.position.set(0,P.headY-0.14,P.spindleZ);
+    g.add(headNose);
+    var quillSleeve=cyl(0.185,0.185,0.66,CAST,24);
+    quillSleeve.position.set(0,P.headY-0.32,P.spindleZ);
+    g.add(quillSleeve);
+    var quillSleeveLow=cyl(0.158,0.158,0.34,CAST,22);
+    quillSleeve.position.y=P.headY-0.32;
+    quillSleeveLow.position.set(0,P.headY-0.72,P.spindleZ);
+    g.add(quillSleeveLow);
+    var sleeveRib=box(0.1,0.5,0.2,CAST);
+    sleeveRib.position.set(0,P.headY-0.44,P.spindleZ-0.2);
+    g.add(sleeveRib);
+
+    // carter de l'arbre d'avance, solidaire du manchon
+    var feedWeb=box(0.26,0.32,0.44,CAST);
+    feedWeb.position.set(0,P.feedY,(P.spindleZ+P.pinionZ)/2);
+    g.add(feedWeb);
+    var bossL=cyl(0.115,0.115,0.24,CAST,18);
+    bossL.rotation.z=Math.PI/2;
+    bossL.position.set(-0.2,P.feedY,P.pinionZ);
+    g.add(bossL);
+
+    var depthRod=cyl(0.026,0.026,0.55,STEEL,10,{metalness:.75,roughness:.3});
+    depthRod.position.set(0.22,P.headY-0.42,P.spindleZ+0.15);
+    g.add(depthRod);
+    var depthNut=cyl(0.055,0.055,0.05,BRASS,14,{metalness:.85,roughness:.3});
+    depthNut.position.set(0.22,P.headY-0.62,P.spindleZ+0.15);
+    g.add(depthNut);
+
+    var motorPlate=box(0.5,0.1,0.5,DARKCAST);
+    motorPlate.position.set(0,P.pulleyY-0.02,P.motorZ);
+    g.add(motorPlate);
+    var motorArm=box(0.34,0.12,0.62,CAST);
+    motorArm.position.set(0,P.pulleyY-0.02,P.motorZ+0.42);
+    g.add(motorArm);
+    var motor=cyl(0.29,0.29,0.66,ACCENT,28,{metalness:.45,roughness:.45});
+    motor.position.set(0,P.pulleyY+0.42,P.motorZ);
+    g.add(motor);
+    for(var f=0;f<12;f++){
+      var af=(f/12)*Math.PI*2;
+      var fin=box(0.02,0.54,0.055,0xa8431a,{metalness:.4,roughness:.5});
+      fin.position.set(Math.cos(af)*0.3,P.pulleyY+0.42,P.motorZ+Math.sin(af)*0.3);
+      fin.rotation.y=-af;
+      g.add(fin);
+    }
+    var motorCap=cyl(0.24,0.2,0.1,DARKCAST,24);
+    motorCap.position.set(0,P.pulleyY+0.79,P.motorZ);
+    g.add(motorCap);
+    var junction=box(0.16,0.14,0.16,DARK);
+    junction.position.set(0.3,P.pulleyY+0.5,P.motorZ);
+    g.add(junction);
+
+    var coverLid=box(0.62,0.05,0.95,ACCENT,{metalness:.4,roughness:.5});
+    coverLid.position.set(0,P.pulleyY+0.78,P.motorZ-0.12);
+    coverLid.rotation.x=-1.22;
+    g.add(coverLid);
+    var hinge=cyl(0.03,0.03,0.62,DARKCAST,10);
+    hinge.rotation.z=Math.PI/2;
+    hinge.position.set(0,P.pulleyY+0.42,P.motorZ-0.4);
+    g.add(hinge);
+
+    var switchBox=box(0.2,0.24,0.1,DARK);
+    switchBox.position.set(0.33,P.headY,0.4);
+    var switchBtn=cyl(0.045,0.045,0.04,0x2f9e5f,14);
+    switchBtn.rotation.x=Math.PI/2;
+    switchBtn.position.set(0.33,P.headY+0.04,0.46);
+    g.add(switchBox,switchBtn);
+
+    return g;
+  }
+
+  function buildFull(){
+    var group=new THREE.Group();
+    group.add(buildStructure());
+    var instances={};
+    // Chaque mécanisme est placé dans une enveloppe qui ne porte que le
+    // décalage de la vue éclatée : sans elle, l'éclaté réécrirait à chaque
+    // image la position animée du mécanisme (le mandrin cesserait de descendre).
+    var wrappers={};
+    ORDER.forEach(function(key){
+      var inst=MECHS[key].build();
+      instances[key]=inst;
+      var wrap=new THREE.Group();
+      wrap.add(inst.group);
+      wrappers[key]=wrap;
+      group.add(wrap);
+    });
+    wrappers.pulleys.userData.explodeDir=new THREE.Vector3(0,1,0);
+    wrappers.feed.userData.explodeDir=new THREE.Vector3(0.9,0,0.5);
+    wrappers.spring.userData.explodeDir=new THREE.Vector3(-1,0,0);
+    wrappers.lift.userData.explodeDir=new THREE.Vector3(0.8,0,-0.6);
+    wrappers.chuck.userData.explodeDir=new THREE.Vector3(0,-0.9,0.4);
+
+    var workpiece=box(0.44,0.16,0.32,0xb98652,{metalness:0,roughness:.85});
+    group.add(workpiece);
+
+    return {
+      group:group,
+      update:function(s){
+        ORDER.forEach(function(key){ instances[key].update(s,false); });
+        workpiece.position.set(0,instances.lift.tableGroup.position.y+0.215,P.spindleZ);
+      }
+    };
+  }
+
+  function buildIsolated(key){
+    var inst=MECHS[key].build();
+    return {
+      group:inst.group,
+      animate:function(t){ inst.update(kinematics(t,true),true); }
+    };
+  }
+
+  return {
+    label:'Perceuse à colonne',
+    order:ORDER, mechs:MECHS,
+    kinematics:kinematics,
+    buildFull:buildFull,
+    buildIsolated:buildIsolated
+  };
+})();
+
+/* ============================================================
+   Object catalogue (built-in starter bank)
+   ============================================================ */
+function schemaDefaults(mechKey){
+  var d={};
+  Mechanisms[mechKey].schema.forEach(function(s){ d[s.key]=s.def; });
+  return d;
+}
+var CATALOGUE = [
+  {
+    id:'taille-crayon', name:'Taille-crayon manuel', mech:'gear',
+    category:'Transmission du mouvement',
+    movementIn:'rotation (manivelle)', movementOut:'rotation (lames, vitesse accrue)',
+    desc:'Une manivelle entraîne un premier engrenage qui engrène un second, plus petit : la vitesse de rotation augmente pour faire tourner les lames coniques autour du crayon.',
+    params:{teeth1:20, teeth2:9, thickness:0.35}, builtin:true
+  },
+  {
+    id:'perceuse-manivelle', name:'Perceuse à manivelle', mech:'bevel',
+    category:'Transmission du mouvement',
+    movementIn:'rotation (manivelle horizontale)', movementOut:'rotation (mèche verticale)',
+    desc:'Deux engrenages coniques changent l’axe de rotation de 90°, transmettant le mouvement de la manivelle horizontale vers la mèche verticale.',
+    params:{teeth1:12, teeth2:12, thickness:0.3}, builtin:true
+  },
+  {
+    id:'velo', name:'Système pédalier de vélo', mech:'chain',
+    category:'Transmission du mouvement',
+    movementIn:'rotation (pédalage)', movementOut:'rotation (roue arrière, vitesse accrue)',
+    desc:'Le plateau, entraîné par le pédalage, transmet son mouvement au pignon de roue libre par une chaîne. Le petit pignon tourne plus vite que le grand plateau.',
+    params:{teeth1:38, teeth2:14, distance:3.2}, builtin:true
+  },
+  {
+    id:'perceuse-colonne', name:'Perceuse à colonne', detailed:'perceuse',
+    category:'Système combiné',
+    movementIn:'rotation du moteur électrique', movementOut:'rotation + descente du foret',
+    desc:'Machine complète modélisée avec ses cinq mécanismes réels. Le moteur entraîne la broche par des poulies étagées ; les leviers d’avance descendent le fourreau par un pignon et une crémaillère ; un ressort spiral le fait remonter ; une vis règle la hauteur de la table ; un mandrin à trois mors serre le foret. Tous les mouvements sont calculés à partir des mêmes relations que sur la vraie machine (rapport des poulies, r × θ pour la crémaillère, un pas par tour pour la vis).',
+    builtin:true
+  },
+  {
+    id:'leve-vitre', name:'Lève-vitre électrique', mech:'worm',
+    category:'Transmission du mouvement',
+    movementIn:'rotation rapide (moteur)', movementOut:'rotation lente (axe perpendiculaire)',
+    desc:'La vis sans fin, entraînée par le moteur, engrène une roue dentée : le rapport de réduction est très élevé et l’axe de rotation change de direction.',
+    params:{wormLength:1.7, wheelTeeth:24}, builtin:true
+  },
+  {
+    id:'store-venitien', name:'Store vénitien à enrouleur', mech:'pulleyLoad',
+    category:'Transformation du mouvement',
+    movementIn:'rotation (manivelle)', movementOut:'translation verticale (store)',
+    desc:'En tournant la poulie, la corde s’enroule ou se déroule, ce qui transforme la rotation en une translation verticale du store.',
+    params:{radius:0.42, travel:1.3}, builtin:true
+  },
+  {
+    id:'cric-voiture', name:'Cric de voiture à vis', mech:'screw',
+    category:'Transformation du mouvement',
+    movementIn:'rotation (manivelle)', movementOut:'translation verticale (élévation)',
+    desc:'La rotation de la vis dans l’écrou fixe transforme le mouvement de rotation de la manivelle en une translation verticale qui soulève la charge.',
+    params:{length:2.2, travel:1.0}, builtin:true
+  },
+  {
+    id:'essuie-glace', name:'Essuie-glace d’auto', mech:'crankRocker',
+    category:'Transformation du mouvement',
+    movementIn:'rotation continue (moteur)', movementOut:'oscillation (balayage du pare-brise)',
+    desc:'Le système bielle-manivelle-oscillant transforme la rotation continue du moteur en un mouvement d’oscillation qui fait balayer l’essuie-glace.',
+    params:{crankR:0.32, rockerLen:1.2}, builtin:true
+  },
+  {
+    id:'scie-sauteuse', name:'Scie sauteuse électrique', mech:'crankSlider',
+    category:'Transformation du mouvement',
+    movementIn:'rotation continue (moteur)', movementOut:'translation alternative (lame)',
+    desc:'Le système bielle-manivelle-coulisseau transforme la rotation continue du moteur en un mouvement de va-et-vient rectiligne de la lame.',
+    params:{crankR:0.4, rodLen:1.3}, builtin:true
+  },
+  {
+    id:'portail', name:'Portail motorisé à crémaillère', mech:'rack',
+    category:'Transformation du mouvement',
+    movementIn:'rotation (moteur)', movementOut:'translation horizontale (vantail)',
+    desc:'Le pignon, entraîné par le moteur, roule sur la crémaillère fixée au portail : la rotation se transforme en translation horizontale du vantail.',
+    params:{teeth:12, rackLength:3.2}, builtin:true
+  },
+  {
+    id:'batteur', name:'Batteur électrique', mech:'mixerCombo',
+    category:'Système combiné',
+    movementIn:'rotation rapide (moteur)', movementOut:'rotation + translation (fouets)',
+    desc:'Le moteur entraîne un réducteur à engrenages qui ralentit la rotation, puis une came transforme cette rotation en un mouvement combiné des fouets. (Objet schématique — à refaire au format machine détaillée.)',
+    params:{teeth2:20}, builtin:true
+  }
+];
+
+/* ============================================================
+   Three.js scene (main stage)
+   ============================================================ */
+var canvas=document.getElementById('c');
+var renderer=new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(38,1,0.05,100);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x3a4a5a, 0.9));
+var key=new THREE.DirectionalLight(0xffffff,0.9); key.position.set(4,6,5); scene.add(key);
+var fill=new THREE.DirectionalLight(0xbcd4ea,0.35); fill.position.set(-5,3,-4); scene.add(fill);
+
+var orbit={theta:0.7,phi:1.05,radius:6,target:new THREE.Vector3(0,0.8,0)};
+function applyOrbit(){
+  var p=orbit;
+  camera.position.set(
+    p.target.x + p.radius*Math.sin(p.phi)*Math.sin(p.theta),
+    p.target.y + p.radius*Math.cos(p.phi),
+    p.target.z + p.radius*Math.sin(p.phi)*Math.cos(p.theta)
+  );
+  camera.lookAt(p.target);
+}
+applyOrbit();
+
+var dragging=false, lastX=0,lastY=0;
+canvas.addEventListener('pointerdown', function(e){ dragging=true; lastX=e.clientX; lastY=e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointerup', function(e){ dragging=false; });
+canvas.addEventListener('pointercancel', function(){ dragging=false; });
+canvas.addEventListener('pointermove', function(e){
+  if(!dragging) return;
+  var dx=e.clientX-lastX, dy=e.clientY-lastY;
+  lastX=e.clientX; lastY=e.clientY;
+  orbit.theta -= dx*0.0072;
+  orbit.phi = clamp(orbit.phi - dy*0.0072, 0.15, Math.PI-0.15);
+  applyOrbit();
+});
+canvas.addEventListener('wheel', function(e){
+  e.preventDefault();
+  orbit.radius = clamp(orbit.radius * (1+ e.deltaY*0.0011), 1.6, 20);
+  applyOrbit();
+}, {passive:false});
+
+function resizeRenderer(){
+  var w=canvas.clientWidth, h=canvas.clientHeight;
+  if(w<10||h<10) return;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resizeRenderer);
+
+var currentInstance=null, currentSpec=null;
+var playing=true, speed=0.7, explodeAmt=0, showLabels=false;
+var clock=new THREE.Clock();
+
+function frameCamera(group){
+  var box=new THREE.Box3().setFromObject(group);
+  var size=new THREE.Vector3(); box.getSize(size);
+  var center=new THREE.Vector3(); box.getCenter(center);
+  orbit.target.copy(center);
+  orbit.theta=0.55; orbit.phi=1.12;
+  var vFovHalf=(camera.fov*Math.PI/180)/2;
+  var aspect=camera.aspect||1.6;
+  var hFovHalf=Math.atan(Math.tan(vFovHalf)*aspect);
+  var depthSpan=size.x*Math.abs(Math.sin(orbit.theta))+size.z*Math.abs(Math.cos(orbit.theta));
+  var widthSpan=Math.max(size.x*Math.abs(Math.cos(orbit.theta))+size.z*Math.abs(Math.sin(orbit.theta)), 1);
+  var heightSpan=Math.max(size.y,0.9);
+  var radiusForHeight=(heightSpan/2)/Math.tan(vFovHalf);
+  var radiusForWidth=(widthSpan/2)/Math.tan(hFovHalf);
+  orbit.radius = Math.max(radiusForHeight,radiusForWidth,1.6)*1.28 + depthSpan*0.15;
+  applyOrbit();
+}
+
+function getStages(spec){
+  if(spec.detailed){
+    var D=DetailedObjects[spec.detailed];
+    return D.order.map(function(key){
+      var m=D.mechs[key];
+      return {
+        detailedKey:key, detailedObj:spec.detailed,
+        label:m.label, roleDesc:m.roleDesc,
+        movementIn:m.movementIn, movementOut:m.movementOut
+      };
+    });
+  }
+  if(spec.stages && spec.stages.length) return spec.stages;
+  return [{
+    mechType:spec.mech, params:spec.params, label:Mechanisms[spec.mech].label,
+    roleDesc:spec.desc, movementIn:spec.movementIn, movementOut:spec.movementOut,
+    driveRatio:1, phase:0
+  }];
+}
+
+function buildAssembly(stages){
+  var assembly=new THREE.Group();
+  var built=[];
+  var gap=0.85;
+  var cursorX=0;
+  stages.forEach(function(st){
+    var inst=Mechanisms[st.mechType].build(st.params);
+    inst.group.updateMatrixWorld(true);
+    var box=new THREE.Box3().setFromObject(inst.group);
+    var w=box.max.x-box.min.x;
+    inst.group.position.x += cursorX-box.min.x;
+    inst.group.position.y += -box.min.y;
+    inst.group.position.z += -(box.min.z+box.max.z)/2;
+    inst._x0=cursorX; inst._x1=cursorX+w;
+    cursorX = cursorX+w+gap;
+    assembly.add(inst.group);
+    built.push(inst);
+  });
+  if(stages.length>1){
+    var centerShift=(cursorX-gap)/2;
+    built.forEach(function(inst){
+      inst.group.position.x -= centerShift;
+      inst._x0-=centerShift; inst._x1-=centerShift;
+    });
+    for(var i=0;i<built.length-1;i++){
+      var x0=built[i]._x1, x1=built[i+1]._x0;
+      var len=Math.max(0.05,x1-x0);
+      var rod=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,len,10), stdMat(COLORS.steel,{metalness:.7,roughness:.3}));
+      rod.rotation.z=Math.PI/2;
+      rod.position.set((x0+x1)/2, 0.42, 0);
+      assembly.add(rod);
+    }
+  }
+  return {
+    group:assembly,
+    animate:function(t){
+      built.forEach(function(inst,i){
+        var st=stages[i];
+        inst.animate(t*(st.driveRatio||1) + (st.phase||0));
+      });
+    }
+  };
+}
+
+function loadObject(spec){
+  if(currentInstance){ scene.remove(currentInstance.group); }
+  currentSpec=spec;
+  var stages=getStages(spec);
+  var built;
+  if(spec.detailed){
+    var D=DetailedObjects[spec.detailed];
+    var full=D.buildFull();
+    built={ group:full.group, animate:function(t){ full.update(D.kinematics(t,false)); } };
+  } else {
+    built=buildAssembly(stages);
+  }
+  currentInstance=built;
+  scene.add(built.group);
+  frameCamera(built.group);
+  document.getElementById('stageEmpty').hidden=true;
+  document.getElementById('stageHud').hidden=false;
+  var annot=document.getElementById('stageAnnot'); annot.hidden=false;
+  document.getElementById('annotName').textContent=spec.name;
+  document.getElementById('annotDesc').textContent='';
+  document.getElementById('annotCat').textContent=spec.category;
+  document.getElementById('annotIn').textContent=spec.movementIn;
+  document.getElementById('annotOut').textContent=spec.movementOut;
+  document.getElementById('tbName').textContent=spec.name;
+  var mechLabel = stages.length>1 ? (stages.length+' mécanismes') : Mechanisms[stages[0].mechType].label;
+  document.getElementById('tbSub').textContent=spec.category+' — '+mechLabel;
+  document.getElementById('tbMech').textContent=mechLabel;
+  fillFiche(spec, stages);
+  highlightRailItem(spec.id);
+}
+
+function render(){
+  requestAnimationFrame(render);
+  resizeRenderer();
+  var dt=clock.getDelta();
+  if(currentInstance){
+    if(playing){ animAngle += dt*speed*2; }
+    currentInstance.animate(animAngle);
+    applyExplode(currentInstance.group, explodeAmt);
+  }
+  renderer.render(scene,camera);
+}
+var animAngle=0;
+
+function applyExplode(group, amt){
+  group.children.forEach(function(child){
+    if(child.userData && child.userData.explodeDir){
+      if(!child.userData.basePos) child.userData.basePos=child.position.clone();
+      var dir=child.userData.explodeDir;
+      child.position.set(
+        child.userData.basePos.x+dir.x*amt*0.9,
+        child.userData.basePos.y+dir.y*amt*0.9,
+        child.userData.basePos.z+dir.z*amt*0.9
+      );
+    }
+  });
+}
+
+/* ============================================================
+   UI: rail list, tabs, fiche, HUD
+   ============================================================ */
+var bank = []; // {..spec, builtin:bool, docId?:string}
+var dbNS=null, useLocal=false;
+var LOCAL_KEY='sciences4-mecanismes-bank';
+
+function allObjects(){ return CATALOGUE.concat(bank); }
+
+function groupLabel(cat){ return cat; }
+
+function renderRail(filterText){
+  var list=document.getElementById('railList');
+  list.innerHTML='';
+  var groups={};
+  allObjects().forEach(function(o){
+    if(filterText && o.name.toLowerCase().indexOf(filterText.toLowerCase())===-1) return;
+    (groups[o.category]=groups[o.category]||[]).push(o);
+  });
+  var order=['Transmission du mouvement','Transformation du mouvement','Système combiné'];
+  order.forEach(function(cat){
+    if(!groups[cat]) return;
+    var lab=document.createElement('div');
+    lab.className='rail-group-label';
+    lab.textContent=cat;
+    list.appendChild(lab);
+    groups[cat].forEach(function(o){
+      var btn=document.createElement('button');
+      btn.className='obj-item';
+      btn.dataset.id=o.id;
+      var sw=document.createElement('span'); sw.className='obj-swatch';
+      sw.style.background = o.builtin? 'var(--accent)':'var(--good)';
+      var nm=document.createElement('span'); nm.className='obj-item-name'; nm.textContent=o.name;
+      btn.appendChild(sw); btn.appendChild(nm);
+      if(!o.builtin){ var tag=document.createElement('span'); tag.className='obj-item-tag'; tag.textContent='vous'; btn.appendChild(tag); }
+      btn.addEventListener('click', function(){ loadObject(o); });
+      list.appendChild(btn);
+    });
+  });
+  if(!Object.keys(groups).length){
+    var empty=document.createElement('div'); empty.className='rail-empty'; empty.textContent='Aucun objet ne correspond à la recherche.';
+    list.appendChild(empty);
+  }
+  updateCounters();
+}
+function highlightRailItem(id){
+  document.querySelectorAll('.obj-item').forEach(function(el){ el.classList.toggle('active', el.dataset.id===id); });
+}
+function updateCounters(){
+  var total=allObjects().length;
+  var pct=clamp(total/30*100,0,100);
+  document.getElementById('bankBar').style.width=pct+'%';
+  document.getElementById('bankCountText').textContent=total+'/30';
+  document.getElementById('tbCount').textContent=total+' / 30';
+}
+
+document.getElementById('searchInput').addEventListener('input', function(e){ renderRail(e.target.value); });
+
+var activeMiniViewers=[];
+function clearMiniViewers(){
+  activeMiniViewers.forEach(function(v){ v.dispose(); });
+  activeMiniViewers=[];
+}
+function createMiniViewer(canvas, stage){
+  var renderer=new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  var scene=new THREE.Scene();
+  var camera=new THREE.PerspectiveCamera(40,1,0.05,50);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x3a4a5a,1.0));
+  var key=new THREE.DirectionalLight(0xffffff,0.95); key.position.set(3,5,4); scene.add(key);
+  var inst = stage.detailedKey
+    ? DetailedObjects[stage.detailedObj].buildIsolated(stage.detailedKey)
+    : Mechanisms[stage.mechType].build(stage.params);
+  scene.add(inst.group);
+  inst.group.updateMatrixWorld(true);
+  var box=new THREE.Box3().setFromObject(inst.group);
+  var size=new THREE.Vector3(); box.getSize(size);
+  var center=new THREE.Vector3(); box.getCenter(center);
+  var maxDim=Math.max(size.x,size.y,size.z,1);
+  var theta=0.7, phi=1.02;
+  var dist=maxDim*1.5;
+  function place(){
+    camera.position.set(
+      center.x+dist*Math.sin(phi)*Math.sin(theta),
+      center.y+dist*Math.cos(phi),
+      center.z+dist*Math.sin(phi)*Math.cos(theta)
+    );
+    camera.lookAt(center);
+  }
+  var angle=0, raf=null, disposed=false;
+  var clk=new THREE.Clock();
+  function resize(){
+    var w=canvas.clientWidth, h=canvas.clientHeight;
+    if(w<4||h<4) return;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+  }
+  function loop(){
+    if(disposed) return;
+    raf=requestAnimationFrame(loop);
+    resize();
+    angle += clk.getDelta()*1.1;
+    inst.animate(angle);
+    place();
+    renderer.render(scene,camera);
+  }
+  resize(); place(); loop();
+  return { dispose:function(){ disposed=true; if(raf) cancelAnimationFrame(raf); renderer.dispose(); } };
+}
+
+function fillFiche(spec, stages){
+  clearMiniViewers();
+  stages = stages || getStages(spec);
+  document.getElementById('ficheEmpty').hidden=true;
+  var c=document.getElementById('ficheContent'); c.hidden=false;
+  document.getElementById('ficheName').textContent=spec.name;
+  document.getElementById('ficheCat').textContent=spec.category;
+  document.getElementById('ficheDesc').textContent=spec.desc||'';
+  document.getElementById('ficheIn').textContent=spec.movementIn;
+  document.getElementById('ficheOut').textContent=spec.movementOut;
+  document.getElementById('ficheMech').textContent = stages.length>1 ? (stages.length+' mécanismes couplés') : Mechanisms[stages[0].mechType].label;
+  document.getElementById('ficheOrigin').textContent = spec.builtin ? 'Objet de départ (cours ST4)' : 'Créé dans l’Atelier';
+  document.getElementById('ficheStagesTitle').textContent = stages.length>1 ? ('Chaîne cinématique ('+stages.length+' mécanismes)') : 'Mécanisme';
+  var listEl=document.getElementById('ficheStages');
+  listEl.innerHTML='';
+  stages.forEach(function(st,i){
+    var row=document.createElement('div'); row.className='stage-row';
+    var wrap=document.createElement('div'); wrap.className='stage-mini-wrap';
+    var num=document.createElement('span'); num.className='stage-mini-num'; num.textContent=(i+1);
+    var canvas=document.createElement('canvas');
+    wrap.appendChild(canvas); wrap.appendChild(num);
+    var text=document.createElement('div'); text.className='stage-row-text';
+    var title=document.createElement('div'); title.className='stage-row-title'; title.textContent=st.label;
+    var pills=document.createElement('div'); pills.className='stage-row-pills';
+    var p1=document.createElement('span'); p1.className='pill'; p1.textContent=st.movementIn;
+    var p2=document.createElement('span'); p2.className='pill arrow'; p2.textContent=st.movementOut;
+    pills.appendChild(p1); pills.appendChild(p2);
+    var desc=document.createElement('div'); desc.className='stage-row-desc'; desc.textContent=st.roleDesc||'';
+    text.appendChild(title); text.appendChild(pills); text.appendChild(desc);
+    row.appendChild(wrap); row.appendChild(text);
+    listEl.appendChild(row);
+    activeMiniViewers.push(createMiniViewer(canvas, st));
+  });
+  var delWrap=document.getElementById('ficheDeleteWrap');
+  delWrap.hidden = !!spec.builtin;
+  document.getElementById('deleteObjBtn').onclick=function(){ deleteBankObject(spec); };
+}
+
+document.querySelectorAll('.panel-tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.panel-tab').forEach(function(t){t.classList.remove('active');});
+    tab.classList.add('active');
+    var name=tab.dataset.tab;
+    document.getElementById('ficheTab').hidden = name!=='fiche';
+    document.getElementById('atelierTab').hidden = name!=='atelier';
+    if(name==='atelier') resizeWorkshop();
+  });
+});
+
+/* HUD */
+document.getElementById('playBtn').addEventListener('click', function(){
+  playing=!playing;
+  this.classList.toggle('on',playing);
+  document.getElementById('playIcon').innerHTML = playing?
+    '<path d="M6 4l14 8-14 8z"/>' :
+    '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+});
+document.getElementById('speedRange').addEventListener('input', function(e){
+  speed = e.target.value/100;
+  document.getElementById('speedVal').textContent=speed.toFixed(1)+'×';
+});
+document.getElementById('explodeRange').addEventListener('input', function(e){
+  explodeAmt=e.target.value/100;
+  document.getElementById('explodeVal').textContent=Math.round(explodeAmt*100)+'%';
+});
+document.getElementById('labelsBtn').addEventListener('click', function(){
+  showLabels=!showLabels;
+  this.classList.toggle('on',showLabels);
+});
+document.getElementById('resetViewBtn').addEventListener('click', function(){
+  if(currentInstance) frameCamera(currentInstance.group);
+});
+
+/* ============================================================
+   Atelier (generator) — workshop preview scene
+   ============================================================ */
+var wcanvas=document.getElementById('wc');
+var wrenderer=new THREE.WebGLRenderer({canvas:wcanvas, antialias:true, alpha:true});
+wrenderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+var wscene=new THREE.Scene();
+var wcamera=new THREE.PerspectiveCamera(38,1,0.05,50);
+wscene.add(new THREE.HemisphereLight(0xffffff,0x3a4a5a,1.0));
+var wkey=new THREE.DirectionalLight(0xffffff,0.9); wkey.position.set(3,5,4); wscene.add(wkey);
+
+var wOrbit={theta:0.7,phi:1.05,radius:4,target:new THREE.Vector3(0,0.7,0)};
+function applyWOrbit(){
+  var p=wOrbit;
+  wcamera.position.set(
+    p.target.x+p.radius*Math.sin(p.phi)*Math.sin(p.theta),
+    p.target.y+p.radius*Math.cos(p.phi),
+    p.target.z+p.radius*Math.sin(p.phi)*Math.cos(p.theta)
+  );
+  wcamera.lookAt(p.target);
+}
+applyWOrbit();
+var wdrag=false,wlx=0,wly=0;
+wcanvas.addEventListener('pointerdown',function(e){wdrag=true;wlx=e.clientX;wly=e.clientY;wcanvas.setPointerCapture(e.pointerId);});
+wcanvas.addEventListener('pointerup',function(){wdrag=false;});
+wcanvas.addEventListener('pointermove',function(e){
+  if(!wdrag)return;
+  var dx=e.clientX-wlx,dy=e.clientY-wly; wlx=e.clientX;wly=e.clientY;
+  wOrbit.theta-=dx*0.008; wOrbit.phi=clamp(wOrbit.phi-dy*0.008,0.15,Math.PI-0.15);
+  applyWOrbit();
+});
+wcanvas.addEventListener('wheel',function(e){ e.preventDefault(); wOrbit.radius=clamp(wOrbit.radius*(1+e.deltaY*0.0011),1,12); applyWOrbit(); },{passive:false});
+
+function resizeWorkshop(){
+  var w=wcanvas.clientWidth,h=wcanvas.clientHeight;
+  if(w<10||h<10)return;
+  wrenderer.setSize(w,h,false);
+  wcamera.aspect=w/h; wcamera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resizeWorkshop);
+
+var wInstance=null, wMechKey='gear', wParams={}, wAngle=0;
+var wClock=new THREE.Clock();
+function frameWCamera(group){
+  var box=new THREE.Box3().setFromObject(group);
+  var size=new THREE.Vector3(); box.getSize(size);
+  var center=new THREE.Vector3(); box.getCenter(center);
+  var maxDim=Math.max(size.x,size.y,size.z,1.2);
+  wOrbit.target.copy(center); wOrbit.radius=maxDim*1.7; wOrbit.theta=0.65; wOrbit.phi=1.05;
+  applyWOrbit();
+}
+function rebuildWorkshop(){
+  if(wInstance) wscene.remove(wInstance.group);
+  var mech=Mechanisms[wMechKey];
+  wInstance=mech.build(wParams);
+  wscene.add(wInstance.group);
+  frameWCamera(wInstance.group);
+}
+function wrender(){
+  requestAnimationFrame(wrender);
+  resizeWorkshop();
+  var dt=wClock.getDelta();
+  wAngle += dt*1.1;
+  if(wInstance) wInstance.animate(wAngle);
+  wrenderer.render(wscene,wcamera);
+}
+
+function buildMechGrid(){
+  var grid=document.getElementById('mechGrid');
+  grid.innerHTML='';
+  MECH_KEYS.forEach(function(k){
+    var m=Mechanisms[k];
+    var el=document.createElement('button');
+    el.className='mech-opt'+(k===wMechKey?' active':'');
+    el.type='button';
+    el.innerHTML='<strong>'+m.label+'</strong><span>'+m.hint+'</span>';
+    el.addEventListener('click', function(){
+      wMechKey=k;
+      wParams=schemaDefaults(k);
+      document.getElementById('wIn').value=m.suggestIn;
+      document.getElementById('wOut').value=m.suggestOut;
+      buildMechGrid();
+      buildParamFields();
+      rebuildWorkshop();
+    });
+    grid.appendChild(el);
+  });
+}
+function buildParamFields(){
+  var wrap=document.getElementById('mechParams');
+  wrap.innerHTML='';
+  Mechanisms[wMechKey].schema.forEach(function(s){
+    var field=document.createElement('div'); field.className='field';
+    var label=document.createElement('label'); label.textContent=s.label;
+    var row=document.createElement('div'); row.className='slider-row';
+    var input=document.createElement('input');
+    input.type='range'; input.min=s.min; input.max=s.max; input.step=s.step;
+    input.value = wParams[s.key]!==undefined? wParams[s.key] : s.def;
+    var val=document.createElement('span'); val.className='val'; val.textContent=input.value;
+    input.addEventListener('input', function(){
+      wParams[s.key]=parseFloat(input.value);
+      val.textContent=input.value;
+      rebuildWorkshop();
+    });
+    row.appendChild(input); row.appendChild(val);
+    field.appendChild(label); field.appendChild(row);
+    wrap.appendChild(field);
+  });
+}
+
+document.getElementById('addBankBtn').addEventListener('click', function(){
+  var name=document.getElementById('wName').value.trim();
+  if(!name){ document.getElementById('wName').focus(); return; }
+  var spec={
+    id:'u-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    name:name,
+    mech:wMechKey,
+    category:document.getElementById('wCat').value,
+    movementIn:document.getElementById('wIn').value.trim()||Mechanisms[wMechKey].suggestIn,
+    movementOut:document.getElementById('wOut').value.trim()||Mechanisms[wMechKey].suggestOut,
+    desc:document.getElementById('wDesc').value.trim(),
+    params: Object.assign({}, wParams),
+    builtin:false,
+    createdAt: Date.now()
+  };
+  addToBank(spec);
+  document.getElementById('wName').value='';
+  document.getElementById('wDesc').value='';
+});
+
+/* ============================================================
+   Persistence: db capability, with localStorage fallback
+   ============================================================ */
+function setDbStatus(text, cls){
+  document.getElementById('dbStatus').textContent=text;
+  document.getElementById('dbDot').className='status-dot'+(cls?' '+cls:'');
+}
+function loadLocalBank(){
+  try{
+    var raw=localStorage.getItem(LOCAL_KEY);
+    return raw? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveLocalBank(){
+  try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(bank)); }catch(e){}
+}
+function addToBank(spec){
+  bank.push(spec);
+  renderRail(document.getElementById('searchInput').value);
+  loadObject(spec);
+  if(dbNS){
+    dbNS.collection('bank').doc(spec.id).set(spec).catch(function(){});
+  } else {
+    saveLocalBank();
+  }
+}
+function deleteBankObject(spec){
+  bank = bank.filter(function(o){ return o.id!==spec.id; });
+  renderRail(document.getElementById('searchInput').value);
+  clearMiniViewers();
+  document.getElementById('ficheEmpty').hidden=false;
+  document.getElementById('ficheContent').hidden=true;
+  if(dbNS){
+    dbNS.doc('bank/'+spec.id).delete().catch(function(){});
+  } else {
+    saveLocalBank();
+  }
+}
+function initPersistence(){
+  if(window.claude && window.claude.use){
+    window.claude.use('db').then(function(ns){
+      if(!ns){
+        useLocal=true; bank=loadLocalBank();
+        setDbStatus('Banque enregistrée sur cet appareil.', 'local');
+        renderRail('');
+        return;
+      }
+      dbNS=ns;
+      setDbStatus('Banque partagée — synchronisée.', 'live');
+      ns.collection('bank').onSnapshot(function(snap){
+        var docs=snap.docs.map(function(d){ return d.data(); });
+        bank = docs;
+        renderRail(document.getElementById('searchInput').value);
+      }, function(){
+        setDbStatus('Connexion à la banque partagée interrompue.', 'local');
+      });
+    }).catch(function(){
+      useLocal=true; bank=loadLocalBank();
+      setDbStatus('Banque enregistrée sur cet appareil.', 'local');
+      renderRail('');
+    });
+  } else {
+    useLocal=true; bank=loadLocalBank();
+    setDbStatus('Banque enregistrée sur cet appareil.', 'local');
+    renderRail('');
+  }
+}
+
+/* ============================================================
+   Boot
+   ============================================================ */
+renderRail('');
+buildMechGrid();
+document.getElementById('wCat').value='Transmission du mouvement';
+document.getElementById('wIn').value=Mechanisms[wMechKey].suggestIn;
+document.getElementById('wOut').value=Mechanisms[wMechKey].suggestOut;
+wParams=schemaDefaults(wMechKey);
+buildParamFields();
+resizeRenderer();
+render();
+setTimeout(function(){ resizeWorkshop(); rebuildWorkshop(); wrender(); }, 60);
+initPersistence();
+loadObject(CATALOGUE[0]);
+
+})();
+</script>
