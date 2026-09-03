@@ -6,9 +6,9 @@
 
 ## Tâche actuelle
 
-Terminer la vérification finale du vélo (fait) puis choisir et
-commencer le prochain objet de la liste TODO.md, section "Prochains
-objets à créer".
+Choisir et commencer le prochain objet de la liste TODO.md, section
+"Prochains objets à créer" (candidat suivant suggéré : sécheuse à
+linge — courroie + tambour, moteur + poulies étagées).
 
 ## État actuel
 
@@ -18,9 +18,29 @@ objets à créer".
   selle connectée, frein à disque fonctionnel et visible.
 - Perceuse à colonne (`DetailedObjects.perceuse`) : terminée dans une
   session précédente (5 mécanismes couplés).
+- Ouvre-boîte électrique (`DetailedObjects.ouvreBoite`) : **terminé et
+  vérifié**. 2 mécanismes couplés (réducteur poulies/courroie, levier
+  de serrage). Vérifié par mesure de bounding-box 3D que la molette
+  d'entraînement et la molette coupante touchent tangentiellement la
+  boîte. Vue éclatée testée sans erreur.
 - 9 objets catalogue "mécanisme simple" existants et fonctionnels
   (voir TODO.md).
-- Total banque actuelle : 11/30 objets.
+- Total banque actuelle : 12/30 objets.
+
+## Note technique importante pour les prochains objets détaillés
+
+Les engrenages génériques (`gearGroup()`) tournent nativement autour
+de l'axe **Z** (leur face est dans le plan XY). Pour un mécanisme où
+une roue doit tourner autour d'un axe **vertical (Y)** — typique pour
+tout ce qui "serre" ou "entraîne" un objet cylindrique debout (boîte,
+tambour, etc.) — il faut l'envelopper dans un groupe, appliquer une
+rotation STATIQUE `.rotation.x = Math.PI/2` sur l'engrenage lui-même
+(une seule fois, à la construction), puis animer la rotation
+DYNAMIQUE via `.rotation.y` sur le groupe englobant. Voir
+`verticalGear()` dans `DetailedObjects.ouvreBoite` pour l'implémentation
+de référence. Une roue simple (`cyl()`, pas un gearGroup) a déjà son
+axe par défaut en Y — pas besoin de cette gymnastique pour un simple
+disque/poulie/roue lisse.
 
 ## Fichiers concernés
 
@@ -70,7 +90,7 @@ objets à créer".
   du scratchpad, si le scratchpad semble absent ou périmé au début
   d'une nouvelle session.
 
-## Prochaine action exacte
+## Prochaine action exacte (mise à jour)
 
 1. `git clone` ou lire `colorjazz/sciences4_3d` (branche `main`) pour
    récupérer `index.html` à jour comme point de départ.

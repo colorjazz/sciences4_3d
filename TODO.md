@@ -12,6 +12,10 @@ vue éclatée fonctionnelle, fiche pédagogique) plutôt que la quantité.
 - [x] Perceuse à colonne (`perceuse`) — 5 mécanismes couplés (poulies
       étagées, avance par crémaillère, ressort de rappel, vis de
       table, mandrin à trois mors).
+- [x] Ouvre-boîte électrique (`ouvreBoite`) — 2 mécanismes couplés
+      (réducteur à poulies/courroie, levier de serrage). Vérifié par
+      mesure de bounding-box 3D (pas juste visuel) que la molette
+      d'entraînement et la molette coupante touchent bien la boîte.
 
 ## Objets catalogue existants (mécanisme générique simple — à évaluer)
 
@@ -42,7 +46,6 @@ de priorité suggéré :
 
 - [ ] Robinet mélangeur (vis + came ou simple rotation→translation)
 - [ ] Sécheuse à linge (courroie + tambour, moteur + poulies étagées)
-- [ ] Ouvre-boîte électrique (engrenages + came de coupe)
 - [ ] Ciseaux de jardin à cliquet (cliquet-rochet)
 - [ ] Serrure à pêne (came + ressort)
 - [ ] Grille-pain (levier + ressort + électroaimant simplifié)

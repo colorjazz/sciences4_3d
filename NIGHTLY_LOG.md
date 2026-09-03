@@ -5,6 +5,40 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-03 (suite) — Nouvel objet : ouvre-boîte électrique
+
+- Construit `DetailedObjects.ouvreBoite` avec 2 mécanismes couplés :
+  un réducteur à poulies/courroie (moteur rapide → arbre lent) et un
+  levier de serrage (pivot qui abaisse la molette coupante sur le
+  rebord de la boîte).
+- Bug rencontré en cours de route : les engrenages génériques
+  (`gearGroup`) tournent nativement autour de Z, mais ce mécanisme a
+  besoin de roues à axe vertical (Y) pour serrer une boîte debout.
+  Première tentative : anime directement `.rotation.z` sur la roue
+  positionnée sans reorientation → la roue tournait dans le mauvais
+  plan (face à la caméra comme une horloge, pas comme une molette qui
+  serre le côté de la boîte). Deuxième bug lié : le bras du levier
+  utilisait `box(w,h,d)` avec la longueur au mauvais paramètre (d/Z
+  au lieu de w/X), donnant un bras qui partait dans la mauvaise
+  direction visuellement.
+- Correctifs : fonction `verticalGear()` qui enveloppe l'engrenage,
+  lui applique une rotation statique X=90° (une fois, à la
+  construction) pour que sa face devienne horizontale, puis anime la
+  rotation dynamique de l'enveloppe autour de Y. Bras du levier
+  reconstruit avec la longueur dans le bon axe (X), et sa longueur +
+  l'angle "fermé" calculés par trigonométrie (`atan2`) pour que la
+  molette coupante atteigne exactement le point de contact visé sur
+  le rebord de la boîte plutôt que par ajustement visuel approximatif.
+- Vérifié PAR MESURE (bounding-box 3D de chaque maillage, pas
+  seulement par capture d'écran) que la molette d'entraînement et la
+  molette coupante touchent bien tangentiellement la boîte aux
+  positions attendues. Vue éclatée testée, aucune erreur JS.
+- Commit poussé : `f87fdd8` sur `colorjazz/sciences4_3d` (branche
+  `main`). Banque : 12/30 objets.
+- Enrichi CURRENT_TASK.md d'une note technique sur la réorientation
+  des engrenages (axe Z natif → axe Y voulu), pour que les prochaines
+  sessions n'aient pas à redécouvrir ce piège.
+
 ## 2026-09-03 — Session : correction finale du vélo + fusion d'une itération parallèle
 
 - L'utilisateur a fourni le code d'une itération parallèle du vélo
