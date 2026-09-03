@@ -1896,7 +1896,7 @@ DetailedObjects.velo = (function(){
      nettement au-dessus de la fourche pour ne pas traverser la roue avant. */
   var headP0=new THREE.Vector3(P.headBotX,P.headBotY,0);
   var headAxis=new THREE.Vector3(P.headTopX-P.headBotX,P.headTopY-P.headBotY,0).normalize();
-  var steererTopW=new THREE.Vector3(P.headTopX,P.headTopY,0).add(headAxis.clone().multiplyScalar(0.14));
+  var steererTopW=new THREE.Vector3(P.headTopX,P.headTopY,0).add(headAxis.clone().multiplyScalar(0.40));
   var stemTopL=steererTopW.clone().sub(headP0);
   var stemEndL=stemTopL.clone().add(new THREE.Vector3(-0.06,0.22,0));
   var leverL=stemEndL.clone().add(new THREE.Vector3(0.02,0,0.36));
@@ -1999,25 +1999,41 @@ DetailedObjects.velo = (function(){
 
     var chainMesh=new THREE.Mesh(new THREE.BufferGeometry(), stdMat(0x14161a,{metalness:.35,roughness:.6}));
     group.add(chainMesh);
-    var dx=P.rearX-P.bbX, dy=P.axleY-P.bbY;
-    var d=Math.sqrt(dx*dx+dy*dy);
-    var chainAngle=Math.atan2(dy,dx);
+
+    function beltPts(A,rA,B,rB){
+      var dx=B.x-A.x, dy=B.y-A.y;
+      var len=Math.sqrt(dx*dx+dy*dy)||1;
+      dx/=len; dy/=len;
+      return [
+        new THREE.Vector3(A.x-dy*rA, A.y+dx*rA, A.z),
+        new THREE.Vector3(B.x-dy*rB, B.y+dx*rB, B.z)
+      ];
+    }
 
     return {
       group:group,
       update:function(s){
         crankGroup.rotation.z=DIR*s.pedalAngle;
         cassetteGroup.rotation.z=DIR*s.cassetteAngle;
-        var r2=s.cassetteR;
-        var shape=hull(P.chainringR,r2,d);
-        shape.holes.push(hull(P.chainringR-P.chainThick,r2-P.chainThick,d));
-        var geo=new THREE.ExtrudeGeometry(shape,{depth:P.chainW,bevelEnabled:false,curveSegments:36});
-        geo.translate(0,0,-P.chainW/2);
+        var zNow=lerp(P.cassetteZTable[s.stepIdx],P.cassetteZTable[s.nextIdx],s.shiftEase);
+
+        /* la chaîne suit le plateau, le pignon engagé ET les deux galets
+           du dérailleur : elle ne saute pas directement d'un pignon à
+           l'autre sans passer par le dérailleur. */
+        var C1=new THREE.Vector3(P.bbX,P.bbY,P.chainringZ), r1=P.chainringR;
+        var C2=new THREE.Vector3(P.rearX,P.axleY,zNow), r2=s.cassetteR;
+        var C3=new THREE.Vector3(P.derMountX+0.01,P.derMountY-0.08,zNow+0.045), r3=0.045;
+        var C4=new THREE.Vector3(P.derMountX+0.01,P.derMountY-0.21,zNow+0.045), r4=0.04;
+
+        var pts=[];
+        [ [C1,r1,C2,r2], [C2,r2,C3,r3], [C3,r3,C4,r4], [C4,r4,C1,r1] ].forEach(function(seg){
+          var p=beltPts(seg[0],seg[1],seg[2],seg[3]);
+          pts.push(p[0],p[1]);
+        });
+        var curve=new THREE.CatmullRomCurve3(pts,true,'catmullrom',0.4);
+        var geo=new THREE.TubeGeometry(curve,140,0.017,6,true);
         chainMesh.geometry.dispose();
         chainMesh.geometry=geo;
-        chainMesh.rotation.z=chainAngle;
-        var zNow=lerp(P.cassetteZTable[s.stepIdx],P.cassetteZTable[s.nextIdx],s.shiftEase);
-        chainMesh.position.set(P.bbX,P.bbY,(P.chainringZ+zNow)/2);
       }
     };
   }
