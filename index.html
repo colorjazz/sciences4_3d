@@ -1896,7 +1896,7 @@ DetailedObjects.velo = (function(){
      nettement au-dessus de la fourche pour ne pas traverser la roue avant. */
   var headP0=new THREE.Vector3(P.headBotX,P.headBotY,0);
   var headAxis=new THREE.Vector3(P.headTopX-P.headBotX,P.headTopY-P.headBotY,0).normalize();
-  var steererTopW=new THREE.Vector3(P.headTopX,P.headTopY,0).add(headAxis.clone().multiplyScalar(0.40));
+  var steererTopW=new THREE.Vector3(P.headTopX,P.headTopY,0).add(headAxis.clone().multiplyScalar(0.06));
   var stemTopL=steererTopW.clone().sub(headP0);
   var stemEndL=stemTopL.clone().add(new THREE.Vector3(-0.06,0.22,0));
   var leverL=stemEndL.clone().add(new THREE.Vector3(0.02,0,0.36));
@@ -1997,7 +1997,7 @@ DetailedObjects.velo = (function(){
     });
     group.add(cassetteGroup);
 
-    var chainMesh=new THREE.Mesh(new THREE.BufferGeometry(), stdMat(0x14161a,{metalness:.35,roughness:.6}));
+    var chainMesh=new THREE.Mesh(new THREE.BufferGeometry(), stdMat(0x555b62,{metalness:.75,roughness:.35}));
     group.add(chainMesh);
 
     function beltPts(A,rA,B,rB){
@@ -2031,7 +2031,7 @@ DetailedObjects.velo = (function(){
           pts.push(p[0],p[1]);
         });
         var curve=new THREE.CatmullRomCurve3(pts,true,'catmullrom',0.4);
-        var geo=new THREE.TubeGeometry(curve,140,0.017,6,true);
+        var geo=new THREE.TubeGeometry(curve,140,0.023,6,true);
         chainMesh.geometry.dispose();
         chainMesh.geometry=geo;
       }
