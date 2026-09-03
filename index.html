@@ -2866,6 +2866,242 @@ DetailedObjects.secheuse = (function(){
   };
 })();
 
+DetailedObjects.perceuseSansFil = (function(){
+  var P = {
+    motorR:0.10, motorLen:0.30,
+    gearboxR:0.135, gearboxLen:0.09,
+    sunR:0.03, sunTeeth:10, planetR:0.03, planetTeeth:10, ringTeethVirt:30,
+    chuckLen:0.16, bitLen:0.28, bitR:0.013,
+    handleLen:0.40, handleR:0.055, handleTilt:0.30,
+    batW:0.24, batH:0.16, batD:0.30
+  };
+  P.motorZ0 = 0; P.motorZ1 = P.motorLen;
+  P.gearboxZ0 = P.motorZ1; P.gearboxZ1 = P.gearboxZ0 + P.gearboxLen;
+  P.gearZ = (P.gearboxZ0+P.gearboxZ1)/2;
+  P.chuckZ0 = P.gearboxZ1; P.chuckZ1 = P.chuckZ0 + P.chuckLen;
+  P.bitZ1 = P.chuckZ1 + P.bitLen;
+  P.planetOrbitR = P.sunR + P.planetR;
+  P.handleTopZ = P.motorZ0 + P.motorLen*0.45;
+  P.handleTopY = -0.11;
+  P.handleBotY = P.handleTopY - P.handleLen*Math.cos(P.handleTilt);
+  P.handleBotZ = P.handleTopZ - P.handleLen*Math.sin(P.handleTilt);
+
+  var YELLOW=0xfbbf24, RUBBER=0x1a1a1a, PLASTIC=0x232323, METAL=0x8d97a1,
+      RED=0xd9432f, STEEL=0x9aa9b8, DARK=0x1e242b, CHROME=0xced6db;
+
+  function cyl(r1,r2,h,color,seg,opts){
+    return new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||24), stdMat(color,opts||{metalness:.4,roughness:.45}));
+  }
+  function box(w,h,d,color,opts){
+    return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), stdMat(color,opts||{metalness:.3,roughness:.6}));
+  }
+  /* corps principal orienté selon Z (comme le foret) : un cylindre
+     three.js a son axe natif en Y, on l'incline une fois pour de bon. */
+  function zCyl(r1,r2,h,color,seg,opts){
+    var m=cyl(r1,r2,h,color,seg,opts);
+    m.rotation.x=Math.PI/2;
+    return m;
+  }
+
+  /* --- 1. Réducteur planétaire (moteur -> porte-satellites) --------- */
+  function buildReducer(){
+    var group=new THREE.Group();
+    var motor=zCyl(P.motorR,P.motorR,P.motorLen,PLASTIC,24,{metalness:.35,roughness:.5});
+    motor.position.z=(P.motorZ0+P.motorZ1)/2;
+    group.add(motor);
+    for(var f=0;f<10;f++){
+      var af=(f/10)*Math.PI*2;
+      var fin=box(0.012,P.motorLen*0.7,0.03,0x151a1f,{metalness:.3,roughness:.6});
+      fin.position.set(Math.cos(af)*P.motorR,Math.sin(af)*P.motorR,(P.motorZ0+P.motorZ1)/2);
+      fin.rotation.z=af;
+      group.add(fin);
+    }
+
+    var sunGroup=new THREE.Group();
+    var sun=gearGroup({radius:P.sunR,thickness:0.03,teeth:P.sunTeeth,color:STEEL});
+    sunGroup.add(sun);
+    sunGroup.position.z=P.gearZ;
+    group.add(sunGroup);
+
+    var carrier=new THREE.Group();
+    carrier.position.z=P.gearZ;
+    var planets=[];
+    for(var i=0;i<3;i++){
+      var a=(i/3)*Math.PI*2;
+      var pWrap=new THREE.Group();
+      pWrap.position.set(Math.cos(a)*P.planetOrbitR,Math.sin(a)*P.planetOrbitR,0);
+      var planet=gearGroup({radius:P.planetR,thickness:0.03,teeth:P.planetTeeth,color:CHROME});
+      pWrap.add(planet);
+      carrier.add(pWrap);
+      planets.push(planet);
+    }
+    var carrierPlate=cyl(P.planetOrbitR+P.planetR*0.7,P.planetOrbitR+P.planetR*0.7,0.012,DARK,20,{metalness:.5,roughness:.4});
+    carrierPlate.rotation.x=Math.PI/2;
+    carrierPlate.position.z=0.022;
+    carrier.add(carrierPlate);
+    group.add(carrier);
+
+    var ring=zCyl(P.gearboxR,P.gearboxR,P.gearboxLen,PLASTIC,28,{metalness:.35,roughness:.45});
+    ring.position.z=P.gearZ;
+    group.add(ring);
+
+    return {
+      group:group,
+      update:function(s){
+        motor.rotation.z=s.motorAngle;
+        sunGroup.rotation.z=s.motorAngle;
+        carrier.rotation.z=s.carrierAngle;
+        planets.forEach(function(pl){ pl.rotation.z=s.planetLocalAngle; });
+      }
+    };
+  }
+
+  /* --- 2. Mandrin auto-serrant (bague, spirale, mors) ----------------- */
+  function buildChuck(){
+    var group=new THREE.Group();
+    var shank=zCyl(0.075,0.075,0.045,PLASTIC,24,{metalness:.35,roughness:.45});
+    shank.position.z=P.chuckZ0+0.022;
+    group.add(shank);
+
+    var sleeveRing=new THREE.Group();
+    sleeveRing.add(zCyl(0.075,0.075,0.10,METAL,26,{metalness:.7,roughness:.3}));
+    for(var i=0;i<26;i++){
+      var a=(i/26)*Math.PI*2;
+      var knurl=box(0.011,0.011,0.10,0x77828c,{metalness:.65,roughness:.4});
+      knurl.position.set(Math.cos(a)*0.076,Math.sin(a)*0.076,0);
+      knurl.rotation.z=a;
+      sleeveRing.add(knurl);
+    }
+    sleeveRing.position.z=P.chuckZ0+0.10;
+    group.add(sleeveRing);
+
+    var nose=zCyl(0.05,0.075,0.06,METAL,24,{metalness:.7,roughness:.28});
+    nose.position.z=P.chuckZ1-0.03;
+    group.add(nose);
+
+    var jaws=[];
+    var slotAngle=0.32;
+    for(var j=0;j<3;j++){
+      var pivot=new THREE.Group();
+      pivot.rotation.z=(j/3)*Math.PI*2;
+      var jaw=box(0.045,0.03,0.12,CHROME,{metalness:.8,roughness:.22});
+      jaw.rotation.y=slotAngle;
+      pivot.add(jaw);
+      group.add(pivot);
+      jaws.push(jaw);
+    }
+
+    var bit=new THREE.Group();
+    var bitShank=zCyl(0.011,0.011,0.05,STEEL,14,{metalness:.8,roughness:.25});
+    bitShank.position.z=0.025;
+    bit.add(bitShank);
+    [0,Math.PI].forEach(function(ph){
+      var c=new THREE.Curve();
+      c.getPoint=function(u){ var ang=u*Math.PI*2*2.4+ph; return new THREE.Vector3(Math.cos(ang)*0.013,Math.sin(ang)*0.013,0.05+u*(P.bitLen-0.05)); };
+      bit.add(new THREE.Mesh(new THREE.TubeGeometry(c,120,0.009,6,false), stdMat(0x4f5d6b,{metalness:.65,roughness:.35})));
+    });
+    var tip=zCyl(0.011,0.002,0.05,STEEL,14,{metalness:.8,roughness:.22});
+    tip.position.z=P.bitLen-0.025;
+    bit.add(tip);
+    bit.position.z=P.chuckZ1;
+    group.add(bit);
+
+    return {
+      group:group,
+      update:function(s){
+        sleeveRing.rotation.z=(1-s.grip)*2.0;
+        var open=(1-s.grip)*0.045;
+        var jawR=0.028+open;
+        jaws.forEach(function(jaw){
+          jaw.position.set(jawR*Math.cos(slotAngle),0,P.chuckZ1-P.chuckZ0-0.03+jawR*Math.sin(slotAngle));
+        });
+      }
+    };
+  }
+
+  var MECHS = {
+    reducer:{
+      label:'Réducteur planétaire', movementIn:'rotation rapide (moteur)', movementOut:'rotation lente à couple élevé (porte-satellites)',
+      roleDesc:'Le moteur entraîne le planétaire central (le soleil), qui engrène trois satellites. Ces satellites roulent à l’intérieur d’une couronne fixe : ils sont donc forcés de tourner autour du soleil, entraînant le porte-satellites qui sert d’arbre de sortie, beaucoup plus lent mais avec un couple bien plus élevé.',
+      build:buildReducer
+    },
+    chuck:{
+      label:'Mandrin auto-serrant', movementIn:'rotation de la bague', movementOut:'serrage radial des mors',
+      roleDesc:'Tourner la bague crantée entraîne une spirale interne qui pousse les trois mors également vers l’axe, centrant et serrant le foret sans outil.',
+      build:buildChuck
+    }
+  };
+  var ORDER=['reducer','chuck'];
+
+  function kinematics(t, iso){
+    var motorAngle=t*13;
+    var ratio=P.sunTeeth/(P.sunTeeth+P.ringTeethVirt);
+    var carrierAngle=motorAngle*ratio;
+    var planetLocalAngle=-(motorAngle-carrierAngle)*(P.sunTeeth/P.planetTeeth);
+    var trigger=clamp(Math.sin(t*0.4)*1.3,0,1);
+    var grip = iso? 1 : 0.55+0.45*Math.cos(t*0.55);
+    return { motorAngle:motorAngle, carrierAngle:carrierAngle, planetLocalAngle:planetLocalAngle, trigger:trigger, grip:clamp(grip,0,1) };
+  }
+
+  function buildStructure(){
+    var g=new THREE.Group();
+    var handle=cyl(P.handleR,P.handleR*1.15,P.handleLen,RUBBER,20,{metalness:.1,roughness:.85});
+    handle.position.set(0,(P.handleTopY+P.handleBotY)/2,(P.handleTopZ+P.handleBotZ)/2);
+    handle.rotation.x=P.handleTilt;
+    g.add(handle);
+
+    var trigger=box(0.03,0.06,0.05,RED,{metalness:.2,roughness:.6});
+    trigger.position.set(0,P.handleTopY-0.06,P.handleTopZ+0.05);
+    g.add(trigger);
+
+    var battery=box(P.batW,P.batH,P.batD,PLASTIC,{metalness:.25,roughness:.55});
+    battery.position.set(0,P.handleBotY-P.batH/2-0.01,P.handleBotZ);
+    g.add(battery);
+    var batStripe=box(P.batW*0.9,P.batH*0.28,P.batD*0.9,YELLOW,{metalness:.2,roughness:.5});
+    batStripe.position.set(0,P.handleBotY-0.02,P.handleBotZ);
+    g.add(batStripe);
+
+    var topShell=zCyl(P.motorR*1.06,P.motorR*1.06,P.motorLen+P.gearboxLen+0.03,YELLOW,26,{metalness:.25,roughness:.4});
+    topShell.position.z=(P.motorZ0+P.gearboxZ1)/2;
+    g.add(topShell);
+
+    return {group:g, trigger:trigger};
+  }
+
+  return {
+    label:'Perceuse-visseuse sans fil', order:ORDER, mechs:MECHS, kinematics:kinematics,
+    buildFull:function(){
+      var group=new THREE.Group();
+      var structure=buildStructure();
+      group.add(structure.group);
+
+      var instances={}, wrappers={};
+      ORDER.forEach(function(key){
+        var inst=MECHS[key].build();
+        instances[key]=inst;
+        var wrap=new THREE.Group();
+        wrap.add(inst.group);
+        wrappers[key]=wrap;
+        group.add(wrap);
+      });
+      wrappers.reducer.userData.explodeDir=new THREE.Vector3(-0.3,0.3,-0.7);
+      wrappers.chuck.userData.explodeDir=new THREE.Vector3(0,0,1);
+
+      return {
+        group:group,
+        update:function(s){
+          ORDER.forEach(function(key){ instances[key].update(s,false); });
+          structure.trigger.position.z = P.handleTopZ+0.05-s.trigger*0.02;
+        }
+      };
+    },
+    buildIsolated:function(key){
+      var inst=MECHS[key].build();
+      return { group:inst.group, animate:function(t){ inst.update(kinematics(t,true),true); } };
+    }
+  };
+})();
+
 /* ============================================================
    Object catalogue (built-in starter bank)
    ============================================================ */
@@ -2915,6 +3151,13 @@ var CATALOGUE = [
     category:'Système combiné',
     movementIn:'rotation rapide (moteur)', movementOut:'rotation du tambour + ouverture de la porte',
     desc:'Sécheuse à linge modélisée avec ses deux mécanismes réels. Le moteur entraîne une petite poulie reliée par une courroie qui fait presque le tour du tambour : celui-ci agit comme une très grande poulie, ce qui réduit fortement la vitesse de rotation. La porte est retenue par un loquet à came : tourner la poignée fait pivoter une came qui repousse le pêne hors de sa gâche pour libérer la porte, retenue par une charnière.',
+    builtin:true
+  },
+  {
+    id:'perceuse-sans-fil', name:'Perceuse-visseuse sans fil', detailed:'perceuseSansFil',
+    category:'Système combiné',
+    movementIn:'rotation rapide (moteur électrique)', movementOut:'rotation lente à couple élevé (mandrin)',
+    desc:'Perceuse-visseuse sans fil modélisée avec ses deux mécanismes réels. Un réducteur planétaire (un soleil central, trois satellites, une couronne fixe) ralentit fortement la rotation du moteur tout en augmentant le couple, la disposition des satellites permettant une réduction compacte impossible à obtenir avec un simple engrenage droit. Un mandrin auto-serrant (bague crantée entraînant une spirale interne) centre et serre le foret sans outil.',
     builtin:true
   },
   {
