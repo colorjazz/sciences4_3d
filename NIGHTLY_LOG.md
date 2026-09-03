@@ -5,6 +5,39 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-03 (suite 3) — Nouvel objet : perceuse-visseuse sans fil
+
+- L'utilisateur a fourni un visualiseur PBR statique d'une perceuse
+  18V (Three.js r154, modules ES, aucun mécanisme animé) en demandant
+  si ça pouvait aider à la modélisation. Évalué honnêtement : pas
+  réutilisable comme code (incompatible avec l'architecture r128/
+  script classique de l'app, et statique donc sans valeur pour montrer
+  un mécanisme), mais utile comme référence de proportions pour un
+  objet qu'on n'avait pas encore : une perceuse-visseuse PORTATIVE
+  (on avait déjà la perceuse à colonne et la perceuse à manivelle).
+- Construit `DetailedObjects.perceuseSansFil` avec 2 mécanismes
+  couplés : un réducteur PLANÉTAIRE (soleil + 3 satellites + couronne
+  fixe, avec un vrai calcul de rapport épicycloïdal
+  ratio=Zsoleil/(Zsoleil+Zcouronne)) — premier mécanisme de ce type
+  dans la banque — et un mandrin auto-serrant (bague + spirale + 3
+  mors, sur le même principe que celui de la perceuse à colonne).
+- Bug rencontré : la fonction de mise à jour des mors du mandrin avait
+  été laissée incomplète lors de la première écriture (un
+  `forEach` vide, aucun déplacement radial réel appliqué). Repéré en
+  relisant le code avant même de tester, corrigé pour que les mors
+  s'écartent/se referment réellement selon le paramètre `grip`.
+- Vérifié par mesure de bounding-box 3D (moteur, soleil, satellites,
+  mandrin) que chaque pièce est positionnée le long de l'axe attendu,
+  et par surlignage d'un maillage en vert pour confirmer visuellement
+  quelle pièce correspond à quelle mesure quand un résultat semblait
+  incohérent (l'écart mesuré venait d'une question de tessellation,
+  pas d'un vrai bug de position — vérifié en confirmant que le rendu
+  visuel était correct).
+- Vue éclatée testée sans erreur (réducteur et mandrin se séparent
+  proprement du corps).
+- Commit poussé : `fa4346e` sur `colorjazz/sciences4_3d`. Banque :
+  14/30 objets.
+
 ## 2026-09-03 (suite 2) — Nouvel objet : sécheuse à linge
 
 - Construit `DetailedObjects.secheuse` avec 2 mécanismes couplés :

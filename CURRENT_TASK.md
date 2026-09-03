@@ -7,8 +7,8 @@
 ## Tâche actuelle
 
 Choisir et commencer le prochain objet de la liste TODO.md, section
-"Prochains objets à créer" (ex. robinet mélangeur, ciseaux à cliquet,
-ouvre-boîte déjà fait → passer au suivant non coché).
+"Prochains objets à créer" (premier non coché : robinet mélangeur ou
+ciseaux à cliquet).
 
 ## État actuel
 
@@ -26,9 +26,13 @@ ouvre-boîte déjà fait → passer au suivant non coché).
 - Sécheuse à linge (`DetailedObjects.secheuse`) : **terminée et
   vérifiée**. 2 mécanismes couplés (courroie sur tambour, loquet à
   came). Vue éclatée testée sans erreur.
+- Perceuse-visseuse sans fil (`DetailedObjects.perceuseSansFil`) :
+  **terminée et vérifiée**. 2 mécanismes couplés (réducteur
+  planétaire, mandrin auto-serrant). Positions vérifiées par mesure
+  de bounding-box, vue éclatée testée sans erreur.
 - 9 objets catalogue "mécanisme simple" existants et fonctionnels
   (voir TODO.md).
-- Total banque actuelle : 13/30 objets.
+- Total banque actuelle : 14/30 objets.
 
 ## Note technique importante pour les prochains objets détaillés
 

@@ -20,6 +20,10 @@ vue éclatée fonctionnelle, fiche pédagogique) plutôt que la quantité.
       (entraînement du tambour par courroie, loquet de porte à came).
       Châssis ouvert (pas de carénage plein) pour garder le mécanisme
       visible.
+- [x] Perceuse-visseuse sans fil (`perceuseSansFil`) — 2 mécanismes
+      couplés (réducteur planétaire soleil/satellites/couronne,
+      mandrin auto-serrant). Premier réducteur épicycloïdal de la
+      banque, avec vrai calcul de rapport.
 
 ## Objets catalogue existants (mécanisme générique simple — à évaluer)
 
