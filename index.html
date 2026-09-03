@@ -2646,6 +2646,226 @@ DetailedObjects.ouvreBoite = (function(){
   };
 })();
 
+DetailedObjects.secheuse = (function(){
+  var P = {
+    cabW:0.90, cabH:1.00, cabD:0.62,
+    drumR:0.30, drumLen:0.46, drumX:0,
+    motorPulleyR:0.035, idlerR:0.05,
+    hingeX:-0.30, doorR:0.335, doorThick:0.03,
+    latchX:0.30, latchArmLen:0.10
+  };
+  P.drumZFront = P.cabD*0.5 - P.doorThick - 0.02;
+  P.drumZ = P.drumZFront - P.drumLen/2;
+  P.motorPulleyX = -P.cabW*0.5 + 0.16;
+  P.motorPulleyZ = -P.cabD*0.5 + 0.14;
+  P.motorPulleyY = 0.16;
+  P.drumY = P.cabH*0.52;
+  P.idlerX = P.drumX + P.drumR*0.55;
+  P.idlerY = P.drumY - P.drumR - P.idlerR - 0.015;
+
+  var CAB=0xd7dadd, CABD=0xb7bbbf, DRUM=0xc7ccd1, DARKM=0x2c3136,
+      ACCENT=0xc9501c, STEEL=0x9aa9b8, DARK=0x232c36, GLASS=0x8fb4c9, CHROME=0xced6db;
+
+  function cyl(r1,r2,h,color,seg,opts){
+    return new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||24), stdMat(color,opts||{metalness:.5,roughness:.4}));
+  }
+  function box(w,h,d,color,opts){
+    return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), stdMat(color,opts||{metalness:.35,roughness:.6}));
+  }
+  /* les cylindres three.js ont leur axe natif en Y ; on l'incline une
+     fois pour de bon (X=90°) pour obtenir un axe Z, parallèle au
+     tambour, qui reste l'axe de rotation animé (rotation.z). */
+  function zAxis(mesh){ mesh.rotation.x=Math.PI/2; return mesh; }
+
+  function beltLoop(r1,r2,d,width,thick){
+    function hull(a1,a2){
+      var beta=Math.acos(clamp((a1-a2)/d,-1,1));
+      var s=new THREE.Shape();
+      s.moveTo(Math.cos(beta)*a1, Math.sin(beta)*a1);
+      s.absarc(0,0,a1,beta,2*Math.PI-beta,false);
+      s.lineTo(d+Math.cos(-beta)*a2, Math.sin(-beta)*a2);
+      s.absarc(d,0,a2,-beta,beta,false);
+      s.closePath();
+      return s;
+    }
+    var shape=hull(r1,r2);
+    shape.holes.push(hull(r1-thick,r2-thick));
+    var geo=new THREE.ExtrudeGeometry(shape,{depth:width,bevelEnabled:false,curveSegments:48});
+    return new THREE.Mesh(geo, stdMat(0x1d232a,{metalness:.15,roughness:.85}));
+  }
+
+  /* --- 1. Entraînement du tambour (moteur, poulie, courroie) --------- */
+  function buildDrive(){
+    var group=new THREE.Group();
+    var motor=zAxis(cyl(0.06,0.06,0.16,ACCENT,20,{metalness:.4,roughness:.5}));
+    motor.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ-0.06);
+    group.add(motor);
+
+    var motorPulley=zAxis(cyl(P.motorPulleyR,P.motorPulleyR,0.03,STEEL,16,{metalness:.7,roughness:.3}));
+    motorPulley.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ);
+    group.add(motorPulley);
+
+    var idler=zAxis(cyl(P.idlerR,P.idlerR,0.03,STEEL,20,{metalness:.7,roughness:.3}));
+    idler.position.set(P.idlerX,P.idlerY,P.drumZ);
+    group.add(idler);
+    var idlerArm=box(0.14,0.02,0.02,DARKM,{metalness:.4,roughness:.5});
+    idlerArm.position.set((P.idlerX+P.drumX*0.4)/1.4, P.idlerY+0.03, P.drumZ);
+    group.add(idlerArm);
+
+    /* la courroie fait presque le tour du tambour (grande poulie) en
+       passant sous la poulie moteur puis sous le galet tendeur */
+    var d1=Math.hypot(P.motorPulleyX-P.drumX, P.motorPulleyY-P.drumY);
+    var belt1=beltLoop(P.motorPulleyR,P.drumR,d1,0.03,0.014);
+    belt1.rotation.z=Math.atan2(P.drumY-P.motorPulleyY,P.drumX-P.motorPulleyX);
+    belt1.position.set(P.motorPulleyX,P.motorPulleyY,P.drumZ-0.015);
+    group.add(belt1);
+
+    return {
+      group:group,
+      update:function(s){
+        motor.rotation.z=s.motorAngle;
+        motorPulley.rotation.z=s.motorAngle;
+        idler.rotation.z=s.drumAngle*(P.drumR/P.idlerR);
+      }
+    };
+  }
+
+  /* --- 2. Loquet de porte (poignée, came, pêne) ----------------------- */
+  function buildLatch(){
+    var group=new THREE.Group();
+    var knobGroup=new THREE.Group();
+    knobGroup.position.set(P.latchX,P.drumY,P.cabD*0.5+0.005);
+    var knob=cyl(0.03,0.03,0.03,CHROME,16,{metalness:.8,roughness:.2});
+    knob.rotation.x=Math.PI/2;
+    knobGroup.add(knob);
+    var knobGrip=box(0.014,0.05,0.014,DARK,{metalness:.3,roughness:.6});
+    knobGrip.position.z=0.02;
+    knobGroup.add(knobGrip);
+    group.add(knobGroup);
+
+    var bolt=box(0.05,0.018,0.018,STEEL,{metalness:.75,roughness:.3});
+    group.add(bolt);
+    var catchBox=box(0.03,0.03,0.03,CABD,{metalness:.35,roughness:.6});
+    catchBox.position.set(P.latchX+0.09,P.drumY,P.cabD*0.5-0.01);
+    group.add(catchBox);
+
+    return {
+      group:group,
+      update:function(s){
+        knobGroup.rotation.z=s.latchRetract*1.6;
+        var boltOutX=P.latchX+0.075, boltInX=P.latchX+0.045;
+        bolt.position.set(lerp(boltOutX,boltInX,s.latchRetract),P.drumY,P.cabD*0.5-0.01);
+      }
+    };
+  }
+
+  var MECHS = {
+    drive:{
+      label:'Entraînement du tambour (poulie et courroie)', movementIn:'rotation rapide (moteur)', movementOut:'rotation lente du tambour',
+      roleDesc:'Le moteur entraîne une petite poulie reliée par une longue courroie qui fait presque le tour du tambour : celui-ci agit comme une très grande poulie, ce qui réduit fortement la vitesse de rotation.',
+      build:buildDrive
+    },
+    latch:{
+      label:'Loquet de porte à came', movementIn:'rotation de la poignée', movementOut:'translation du pêne',
+      roleDesc:'Tourner la poignée fait pivoter une came solidaire de son axe ; en tournant, cette came repousse le pêne hors de sa gâche, ce qui libère la porte.',
+      build:buildLatch
+    }
+  };
+  var ORDER=['drive','latch'];
+
+  function kinematics(t, iso){
+    var motorAngle=t*7;
+    var drumAngle=motorAngle*(P.motorPulleyR/P.drumR);
+    var cyc=(t*0.16)%1;
+    var latchRetract = iso? 0 : clamp((cyc<0.5? cyc*2 : (1-cyc)*2)*1.6,0,1);
+    var doorOpen = clamp((latchRetract-0.4)/0.6,0,1);
+    return { motorAngle:motorAngle, drumAngle:drumAngle, latchRetract:latchRetract, doorOpen:doorOpen };
+  }
+
+  function buildStructure(){
+    var g=new THREE.Group();
+    /* châssis ouvert (base, montants d'angle, paroi arrière, dessus) :
+       pas de carénage plein, pour laisser voir le tambour, la
+       courroie et le moteur — l'objectif ici est de montrer le
+       mécanisme, pas de reproduire une carrosserie fermée. */
+    var base=box(P.cabW+0.04,0.05,P.cabD+0.04,CABD,{metalness:.3,roughness:.6});
+    base.position.set(0,0.025,0);
+    g.add(base);
+    var back=box(P.cabW,P.cabH,0.025,CABD,{metalness:.25,roughness:.6});
+    back.position.set(0,P.cabH/2,-P.cabD/2+0.012);
+    g.add(back);
+    [-1,1].forEach(function(sx){
+      [-1,1].forEach(function(sz){
+        var post=box(0.03,P.cabH,0.03,CAB,{metalness:.25,roughness:.55});
+        post.position.set(sx*(P.cabW/2-0.02),P.cabH/2,sz*(P.cabD/2-0.02));
+        g.add(post);
+      });
+    });
+    var control=box(P.cabW*0.9,0.10,P.cabD*0.9,CABD,{metalness:.3,roughness:.5});
+    control.position.set(0,P.cabH+0.05,-0.03);
+    g.add(control);
+
+    var drum=zAxis(cyl(P.drumR,P.drumR,P.drumLen,DRUM,28,{metalness:.55,roughness:.35}));
+    drum.position.set(P.drumX,P.drumY,P.drumZ);
+    g.add(drum);
+    var drumBack=cyl(P.drumR*0.96,P.drumR*0.96,0.01,CABD,28,{metalness:.4,roughness:.5});
+    drumBack.rotation.x=Math.PI/2;
+    drumBack.position.set(P.drumX,P.drumY,P.drumZ-P.drumLen/2);
+    g.add(drumBack);
+
+    var doorGroup=new THREE.Group();
+    doorGroup.position.set(P.hingeX,P.drumY,P.cabD*0.5);
+    var doorFrame=cyl(P.doorR,P.doorR,P.doorThick,CABD,32,{metalness:.4,roughness:.45});
+    doorFrame.rotation.x=Math.PI/2;
+    doorFrame.position.set(P.drumX-P.hingeX,0,P.doorThick/2);
+    doorGroup.add(doorFrame);
+    var glass=cyl(P.doorR*0.72,P.doorR*0.72,0.012,GLASS,32,{metalness:.3,roughness:.15});
+    glass.rotation.x=Math.PI/2;
+    glass.position.set(P.drumX-P.hingeX,0,P.doorThick+0.006);
+    doorGroup.add(glass);
+    g.add(doorGroup);
+
+    var hinge=box(0.02,0.14,0.05,DARKM,{metalness:.5,roughness:.4});
+    hinge.position.set(P.hingeX,P.drumY,P.cabD*0.5);
+    g.add(hinge);
+
+    return {group:g, doorGroup:doorGroup};
+  }
+
+  return {
+    label:'Sécheuse à linge', order:ORDER, mechs:MECHS, kinematics:kinematics,
+    buildFull:function(){
+      var group=new THREE.Group();
+      var structure=buildStructure();
+      group.add(structure.group);
+
+      var instances={}, wrappers={};
+      ORDER.forEach(function(key){
+        var inst=MECHS[key].build();
+        instances[key]=inst;
+        var wrap=new THREE.Group();
+        wrap.add(inst.group);
+        wrappers[key]=wrap;
+        group.add(wrap);
+      });
+      wrappers.drive.userData.explodeDir=new THREE.Vector3(-1,0,-0.6);
+      wrappers.latch.userData.explodeDir=new THREE.Vector3(1,0.3,0.6);
+
+      return {
+        group:group,
+        update:function(s){
+          ORDER.forEach(function(key){ instances[key].update(s,false); });
+          structure.doorGroup.rotation.y=-s.doorOpen*1.75;
+        }
+      };
+    },
+    buildIsolated:function(key){
+      var inst=MECHS[key].build();
+      return { group:inst.group, animate:function(t){ inst.update(kinematics(t,true),true); } };
+    }
+  };
+})();
+
 /* ============================================================
    Object catalogue (built-in starter bank)
    ============================================================ */
@@ -2688,6 +2908,13 @@ var CATALOGUE = [
     category:'Système combiné',
     movementIn:'rotation rapide (moteur)', movementOut:'rotation de la boîte + coupe du couvercle',
     desc:'Ouvre-boîte électrique modélisé avec ses deux mécanismes réels. Un réducteur à poulies et courroie ralentit fortement la rotation du moteur pour entraîner la molette dentée qui agrippe le rebord de la boîte. Un levier abaisse la molette coupante contre ce même rebord : la boîte, serrée entre les deux molettes, tourne et se fait découper le long de son couvercle.',
+    builtin:true
+  },
+  {
+    id:'secheuse', name:'Sécheuse à linge', detailed:'secheuse',
+    category:'Système combiné',
+    movementIn:'rotation rapide (moteur)', movementOut:'rotation du tambour + ouverture de la porte',
+    desc:'Sécheuse à linge modélisée avec ses deux mécanismes réels. Le moteur entraîne une petite poulie reliée par une courroie qui fait presque le tour du tambour : celui-ci agit comme une très grande poulie, ce qui réduit fortement la vitesse de rotation. La porte est retenue par un loquet à came : tourner la poignée fait pivoter une came qui repousse le pêne hors de sa gâche pour libérer la porte, retenue par une charnière.',
     builtin:true
   },
   {
