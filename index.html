@@ -2422,6 +2422,230 @@ DetailedObjects.velo = (function(){
   };
 })();
 
+DetailedObjects.ouvreBoite = (function(){
+  var P = {
+    canR:0.16, canH:0.30, canX:0.34,
+    feedWheelR:0.075, feedWheelTeeth:14, feedWheelY:0.10,
+    feedPulleyR:0.075, feedPulleyY:0.26,
+    motorPulleyR:0.03, motorR:0.045, motorLen:0.16,
+    cutterR:0.028
+  };
+  P.feedWheelX = P.canX - (P.canR + P.feedWheelR);
+  P.motorX = P.feedWheelX - (P.feedPulleyR + P.motorPulleyR + 0.03);
+  P.motorPulleyY = P.feedPulleyY;
+  P.motorY0 = P.motorPulleyY - 0.03 - P.motorLen;
+  P.pivotX = P.feedWheelX; P.pivotY = 0.40; P.pivotZ = 0;
+  /* point que doit atteindre la molette coupante, engagée contre le rebord */
+  P.armReachX = P.canX - P.canR - P.cutterR;
+  P.armReachY = P.canH - 0.02;
+  var armDx = P.armReachX - P.pivotX, armDy = P.armReachY - P.pivotY;
+  P.armLen = Math.sqrt(armDx*armDx + armDy*armDy);
+  P.closedAngle = Math.atan2(armDy, armDx);
+  P.openAngle = P.closedAngle + 0.9;
+
+  var BODY=0xdedfe0, BODYD=0xb9bbbe, DARKM=0x2c3136, CHROME=0xced6db,
+      ACCENT=0xc9501c, STEEL=0x9aa9b8, DARK=0x232c36, TIN=0xc7ccd1, LABEL=0xd94f3a;
+
+  function cyl(r1,r2,h,color,seg,opts){
+    return new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||20), stdMat(color,opts||{metalness:.5,roughness:.4}));
+  }
+  function box(w,h,d,color,opts){
+    return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), stdMat(color,opts||{metalness:.35,roughness:.6}));
+  }
+  /* engrenage vertical : la roue générique (Mechanisms) tourne nativement
+     autour de Z ; on l'incline une fois pour de bon (X=90°) pour que sa
+     face devienne horizontale, puis on anime la rotation de l'enveloppe
+     autour de Y pour obtenir un axe de rotation vertical, parallèle à
+     l'axe de la boîte. */
+  function verticalGear(radius,teeth,thickness,color){
+    var wrap=new THREE.Group();
+    var g=gearGroup({radius:radius, thickness:thickness, teeth:teeth, color:color});
+    g.rotation.x=Math.PI/2;
+    wrap.add(g);
+    return wrap;
+  }
+
+  function beltLoop(r1,r2,d,width,thick){
+    function hull(a1,a2){
+      var beta=Math.acos(clamp((a1-a2)/d,-1,1));
+      var s=new THREE.Shape();
+      s.moveTo(Math.cos(beta)*a1, Math.sin(beta)*a1);
+      s.absarc(0,0,a1,beta,2*Math.PI-beta,false);
+      s.lineTo(d+Math.cos(-beta)*a2, Math.sin(-beta)*a2);
+      s.absarc(d,0,a2,-beta,beta,false);
+      s.closePath();
+      return s;
+    }
+    var shape=hull(r1,r2);
+    shape.holes.push(hull(r1-thick,r2-thick));
+    var geo=new THREE.ExtrudeGeometry(shape,{depth:width,bevelEnabled:false,curveSegments:40});
+    return new THREE.Mesh(geo, stdMat(0x1d232a,{metalness:.15,roughness:.85}));
+  }
+
+  /* --- 1. Réducteur à poulies (moteur -> arbre de la molette) -------- */
+  function buildReducer(){
+    var group=new THREE.Group();
+    var motor=cyl(P.motorR,P.motorR,P.motorLen,ACCENT,24,{metalness:.4,roughness:.5});
+    motor.position.set(P.motorX,P.motorY0+P.motorLen/2,0);
+    group.add(motor);
+
+    var motorPulley=cyl(P.motorPulleyR,P.motorPulleyR,0.045,STEEL,16,{metalness:.7,roughness:.3});
+    motorPulley.position.set(P.motorX,P.motorPulleyY,0);
+    group.add(motorPulley);
+
+    var feedPulley=cyl(P.feedPulleyR,P.feedPulleyR,0.045,STEEL,20,{metalness:.7,roughness:.3});
+    feedPulley.position.set(P.feedWheelX,P.feedPulleyY,0);
+    group.add(feedPulley);
+
+    var d=P.feedWheelX-P.motorX;
+    var belt=beltLoop(P.motorPulleyR,P.feedPulleyR,d,0.022,0.012);
+    belt.rotation.x=Math.PI/2;
+    belt.position.set(P.motorX,P.feedPulleyY-0.011,0);
+    group.add(belt);
+
+    var shaft=cyl(0.014,0.014,P.feedPulleyY-P.feedWheelY+0.06,DARKM,12,{metalness:.6,roughness:.4});
+    shaft.position.set(P.feedWheelX,(P.feedPulleyY+P.feedWheelY)/2,0);
+    group.add(shaft);
+
+    return {
+      group:group,
+      update:function(s){
+        motor.rotation.y=s.motorAngle;
+        motorPulley.rotation.y=s.motorAngle;
+        feedPulley.rotation.y=s.feedAngle;
+        shaft.rotation.y=s.feedAngle;
+      }
+    };
+  }
+
+  /* --- 2. Levier de serrage (molette coupante) ------------------------ */
+  function buildLever(){
+    var group=new THREE.Group();
+    var pivot=new THREE.Group();
+    pivot.position.set(P.pivotX,P.pivotY,P.pivotZ);
+    group.add(pivot);
+
+    var arm=box(P.armLen,0.028,0.028,DARKM,{metalness:.45,roughness:.5});
+    arm.position.set(P.armLen/2,0,0);
+    var handle=box(0.16,0.045,0.045,DARK,{metalness:.25,roughness:.7});
+    handle.position.set(-0.09,0,0);
+
+    var cutterGroup=new THREE.Group();
+    cutterGroup.position.set(P.armLen,0,0);
+    var cutterAxle=cyl(0.008,0.008,0.05,STEEL,10,{metalness:.75,roughness:.3});
+    cutterAxle.rotation.x=Math.PI/2;
+    cutterGroup.add(cutterAxle);
+    var cutterWrap=new THREE.Group();
+    var cutter=cyl(P.cutterR,P.cutterR,0.012,CHROME,20,{metalness:.85,roughness:.15});
+    cutterWrap.add(cutter);
+    cutterGroup.add(cutterWrap);
+
+    pivot.add(arm,cutterGroup,handle);
+
+    return {
+      group:group,
+      update:function(s){
+        pivot.rotation.z=lerp(P.openAngle,P.closedAngle,s.squeeze);
+        cutterWrap.rotation.y=s.cutterAngle;
+      }
+    };
+  }
+
+  var MECHS = {
+    reducer:{
+      label:'Réducteur à poulies et courroie', movementIn:'rotation rapide (moteur)', movementOut:'rotation lente (arbre de la molette)',
+      roleDesc:'Le moteur entraîne une petite poulie reliée par une courroie à une poulie beaucoup plus grande : la vitesse de rotation diminue dans le même rapport que celui des diamètres des poulies.',
+      build:buildReducer
+    },
+    lever:{
+      label:'Levier de serrage', movementIn:'rotation du levier (main)', movementOut:'abaissement de la molette coupante',
+      roleDesc:'En abaissant le levier, la molette coupante pivote autour d’un axe fixe et vient serrer le rebord de la boîte contre la molette d’entraînement dentée, l’engageant dans le mécanisme.',
+      build:buildLever
+    }
+  };
+  var ORDER=['reducer','lever'];
+
+  function kinematics(t, iso){
+    var motorAngle=t*9;
+    var beltRatio=P.motorPulleyR/P.feedPulleyR;
+    var feedAngle=motorAngle*beltRatio;
+    var squeeze = iso? 1 : clamp(Math.sin(t*0.5)*1.3,0,1);
+    var canAngle=-feedAngle*(P.feedWheelR/P.canR)*squeeze;
+    var cutterAngle=-canAngle*(P.canR/P.cutterR);
+    return { motorAngle:motorAngle, feedAngle:feedAngle, squeeze:squeeze, canAngle:canAngle, cutterAngle:cutterAngle };
+  }
+
+  function buildStructure(){
+    var g=new THREE.Group();
+    var base=box(P.canX+0.3,0.03,0.34,BODYD,{metalness:.3,roughness:.6});
+    base.position.set((P.motorX-0.1+P.canX)/2,0.015,0);
+    g.add(base);
+
+    var housing=box(0.24,P.feedPulleyY+0.10,0.24,BODY,{metalness:.25,roughness:.55});
+    housing.position.set(P.motorX,(P.feedPulleyY+0.10)/2,0);
+    g.add(housing);
+
+    var neck=box(0.12,0.10,0.16,BODY,{metalness:.25,roughness:.55});
+    neck.position.set((P.motorX+P.feedWheelX)/2,P.feedPulleyY,0);
+    g.add(neck);
+
+    var post=box(0.09,P.pivotY-P.feedPulleyY+0.06,0.09,BODYD,{metalness:.3,roughness:.55});
+    post.position.set(P.feedWheelX,(P.pivotY+0.06+P.feedPulleyY)/2,0);
+    g.add(post);
+
+    var feedWheelGroup=verticalGear(P.feedWheelR,P.feedWheelTeeth,0.05,CHROME);
+    feedWheelGroup.position.set(P.feedWheelX,P.feedWheelY,0);
+    g.add(feedWheelGroup);
+
+    var can=new THREE.Group();
+    var canBody=cyl(P.canR,P.canR,P.canH,TIN,28,{metalness:.55,roughness:.35});
+    can.add(canBody);
+    var lid=cyl(P.canR*0.97,P.canR*0.97,0.01,STEEL,28,{metalness:.7,roughness:.3});
+    lid.position.y=P.canH/2;
+    can.add(lid);
+    var label=cyl(P.canR+0.002,P.canR+0.002,P.canH*0.62,LABEL,28,{metalness:.1,roughness:.85});
+    can.add(label);
+    can.position.set(P.canX,P.canH/2,0);
+    g.add(can);
+
+    return {group:g, feedWheelGroup:feedWheelGroup, can:can};
+  }
+
+  return {
+    label:'Ouvre-boîte électrique', order:ORDER, mechs:MECHS, kinematics:kinematics,
+    buildFull:function(){
+      var group=new THREE.Group();
+      var structure=buildStructure();
+      group.add(structure.group);
+
+      var instances={}, wrappers={};
+      ORDER.forEach(function(key){
+        var inst=MECHS[key].build();
+        instances[key]=inst;
+        var wrap=new THREE.Group();
+        wrap.add(inst.group);
+        wrappers[key]=wrap;
+        group.add(wrap);
+      });
+      wrappers.reducer.userData.explodeDir=new THREE.Vector3(-1,0.2,0);
+      wrappers.lever.userData.explodeDir=new THREE.Vector3(0,1,0.6);
+
+      return {
+        group:group,
+        update:function(s){
+          ORDER.forEach(function(key){ instances[key].update(s,false); });
+          structure.feedWheelGroup.rotation.y=s.feedAngle;
+          structure.can.rotation.y=s.canAngle;
+        }
+      };
+    },
+    buildIsolated:function(key){
+      var inst=MECHS[key].build();
+      return { group:inst.group, animate:function(t){ inst.update(kinematics(t,true),true); } };
+    }
+  };
+})();
+
 /* ============================================================
    Object catalogue (built-in starter bank)
    ============================================================ */
@@ -2449,7 +2673,7 @@ var CATALOGUE = [
     id:'velo', name:'Vélo', detailed:'velo',
     category:'Système combiné',
     movementIn:'rotation (pédalage)', movementOut:'roulement + orientation + freinage',
-    desc:'Vélo complet modélisé avec ses cinq mécanismes réels. Le pédalier entraîne la roue arrière par une chaîne et une cassette ; une roue libre à cliquets permet de rouler sans pédaler ; la direction fait pivoter ensemble le guidon, la fourche et la roue avant sur l’axe du tube de direction ; un frein à étrier serre la jante par câble ; un dérailleur déplace la chaîne d’un pignon à l’autre par un parallélogramme articulé. Tous les mouvements dérivent des mêmes relations que sur le vrai vélo (rapport de dents, verrouillage à sens unique du cliquet, axe de direction incliné).',
+    desc:'Vélo complet modélisé avec ses cinq mécanismes réels. Le pédalier entraîne la roue arrière par une chaîne et une cassette ; une roue libre à cliquets permet de rouler sans pédaler ; la direction fait pivoter ensemble le guidon, la fourche et la roue avant sur l’axe du tube de direction ; un frein à disque serre le rotor fixé à la roue ; un dérailleur déplace la chaîne d’un pignon à l’autre par un parallélogramme articulé. Tous les mouvements dérivent des mêmes relations que sur le vrai vélo (rapport de dents, verrouillage à sens unique du cliquet, axe de direction incliné).',
     builtin:true
   },
   {
@@ -2457,6 +2681,13 @@ var CATALOGUE = [
     category:'Système combiné',
     movementIn:'rotation du moteur électrique', movementOut:'rotation + descente du foret',
     desc:'Machine complète modélisée avec ses cinq mécanismes réels. Le moteur entraîne la broche par des poulies étagées ; les leviers d’avance descendent le fourreau par un pignon et une crémaillère ; un ressort spiral le fait remonter ; une vis règle la hauteur de la table ; un mandrin à trois mors serre le foret. Tous les mouvements sont calculés à partir des mêmes relations que sur la vraie machine (rapport des poulies, r × θ pour la crémaillère, un pas par tour pour la vis).',
+    builtin:true
+  },
+  {
+    id:'ouvre-boite', name:'Ouvre-boîte électrique', detailed:'ouvreBoite',
+    category:'Système combiné',
+    movementIn:'rotation rapide (moteur)', movementOut:'rotation de la boîte + coupe du couvercle',
+    desc:'Ouvre-boîte électrique modélisé avec ses deux mécanismes réels. Un réducteur à poulies et courroie ralentit fortement la rotation du moteur pour entraîner la molette dentée qui agrippe le rebord de la boîte. Un levier abaisse la molette coupante contre ce même rebord : la boîte, serrée entre les deux molettes, tourne et se fait découper le long de son couvercle.',
     builtin:true
   },
   {
