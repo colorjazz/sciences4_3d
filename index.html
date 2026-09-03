@@ -1871,8 +1871,8 @@ DetailedObjects.velo = (function(){
   var P = {
     wheelR:0.70, rearX:0, axleY:0.70, frontX:1.85,
     bbX:0.80, bbY:0.58,
-    headBotX:1.55, headBotY:1.05, headTopX:1.50, headTopY:1.22,
-    seatTopX:0.63, seatTopY:1.22, saddleX:0.58, saddleY:1.42,
+    headBotX:1.55, headBotY:1.25, headTopX:1.50, headTopY:1.45,
+    seatTopX:0.63, seatTopY:1.35, saddleX:0.58, saddleY:1.55,
     chainringR:0.19, chainringTeeth:42, chainringZ:0.19, crankLen:0.30,
     cassetteSteps:[0.155,0.125,0.10], cassetteTeeth:[26,20,15],
     cassetteZTable:[0.14,0.175,0.21],
@@ -1896,7 +1896,7 @@ DetailedObjects.velo = (function(){
      nettement au-dessus de la fourche pour ne pas traverser la roue avant. */
   var headP0=new THREE.Vector3(P.headBotX,P.headBotY,0);
   var headAxis=new THREE.Vector3(P.headTopX-P.headBotX,P.headTopY-P.headBotY,0).normalize();
-  var steererTopW=new THREE.Vector3(P.headTopX,P.headTopY,0).add(headAxis.clone().multiplyScalar(0.06));
+  var steererTopW=new THREE.Vector3(P.headTopX,P.headTopY,0).add(headAxis.clone().multiplyScalar(0.05));
   var stemTopL=steererTopW.clone().sub(headP0);
   var stemEndL=stemTopL.clone().add(new THREE.Vector3(-0.06,0.22,0));
   var leverL=stemEndL.clone().add(new THREE.Vector3(0.02,0,0.36));
@@ -1931,19 +1931,19 @@ DetailedObjects.velo = (function(){
 
   function wheelAssembly(R){
     var g=new THREE.Group();
-    var tire=new THREE.Mesh(new THREE.TorusGeometry(R,0.052,10,40), stdMat(RUBBER,{metalness:.08,roughness:.92}));
+    var tire=new THREE.Mesh(new THREE.TorusGeometry(R,0.032,12,50), stdMat(RUBBER,{metalness:.1,roughness:.9}));
     g.add(tire);
-    var rim=new THREE.Mesh(new THREE.TorusGeometry(R-0.05,0.018,8,40), stdMat(CHROME,{metalness:.85,roughness:.22}));
+    var rim=new THREE.Mesh(new THREE.TorusGeometry(R-0.035,0.018,8,40), stdMat(CHROME,{metalness:.85,roughness:.22}));
     g.add(rim);
     var hub=cyl(0.045,0.045,0.11,DARKM,18,{metalness:.55,roughness:.4});
     hub.rotation.x=Math.PI/2;
     g.add(hub);
-    var spokeLen=(R-0.05)-0.045-0.02;
+    var spokeLen=(R-0.035)-0.045;
     for(var i=0;i<24;i++){
       var pivot=new THREE.Group();
       pivot.rotation.z=(i/24)*Math.PI*2;
-      var sp=cyl(0.006,0.006,spokeLen,CHROME,5,{metalness:.75,roughness:.3});
-      sp.position.y=0.045+0.02+spokeLen/2;
+      var sp=cyl(0.0025,0.0025,spokeLen,CHROME,4,{metalness:.8,roughness:.2});
+      sp.position.y=0.045+spokeLen/2;
       pivot.add(sp);
       g.add(pivot);
     }
@@ -2031,7 +2031,7 @@ DetailedObjects.velo = (function(){
           pts.push(p[0],p[1]);
         });
         var curve=new THREE.CatmullRomCurve3(pts,true,'catmullrom',0.4);
-        var geo=new THREE.TubeGeometry(curve,140,0.023,6,true);
+        var geo=new THREE.TubeGeometry(curve,140,0.019,6,true);
         chainMesh.geometry.dispose();
         chainMesh.geometry=geo;
       }
@@ -2159,41 +2159,41 @@ DetailedObjects.velo = (function(){
   /* --- 4. Frein à étrier (levier, câble, mâchoires) ------------------ */
   function buildBrake(){
     var group=new THREE.Group();
-    var pivotY=P.brakePivotY;
+    var pivotY=P.axleY;
+    var sign=-1;
 
-    var bridge=box(0.11,0.025,0.05,DARKM,{metalness:.4,roughness:.5});
-    bridge.position.set(P.rearX,pivotY+0.02,0);
-    group.add(bridge);
+    var rotorGroup=new THREE.Group();
+    rotorGroup.position.set(P.rearX, pivotY, 0.08*sign);
+    var rotor=cyl(0.12,0.12,0.006,CHROME,24,{metalness:.9,roughness:.2});
+    rotor.rotation.x=Math.PI/2;
+    rotorGroup.add(rotor);
+    group.add(rotorGroup);
+
+    var caliperPivot=new THREE.Group();
+    caliperPivot.position.set(P.rearX-0.08, pivotY+0.08, 0.08*sign);
+    var caliper=box(0.06,0.04,0.03,DARKM,{metalness:.4,roughness:.5});
+    caliperPivot.add(caliper);
+    var pad1=box(0.03,0.02,0.008,PAD);
+    pad1.position.set(0,-0.01,0.015);
+    var pad2=box(0.03,0.02,0.008,PAD);
+    pad2.position.set(0,-0.01,-0.015);
+    caliperPivot.add(pad1,pad2);
+    group.add(caliperPivot);
 
     var cablePull=new THREE.Group();
-    var cableStub=cyl(0.008,0.008,0.16,DARK,8,{metalness:.5,roughness:.4});
-    cableStub.position.set(P.rearX,pivotY+0.1,0);
+    var cableStub=cyl(0.006,0.006,0.12,DARK,8,{metalness:.5,roughness:.4});
+    cableStub.position.set(P.rearX-0.08, pivotY+0.14, 0.08*sign);
     cablePull.add(cableStub);
     group.add(cablePull);
-
-    var arms=[];
-    [-1,1].forEach(function(sign){
-      var pivot=new THREE.Group();
-      pivot.position.set(P.rearX, pivotY, 0.05*sign);
-      var arm=box(0.03,0.16,0.045,DARKM,{metalness:.45,roughness:.5});
-      arm.position.y=-0.08;
-      pivot.add(arm);
-      var pad=box(0.05,0.05,0.022,PAD,{metalness:.15,roughness:.85});
-      pad.position.y=-0.11;
-      pivot.add(pad);
-      group.add(pivot);
-      arms.push({pivot:pivot,pad:pad,sign:sign});
-    });
 
     return {
       group:group,
       update:function(s){
-        cablePull.position.y=-s.squeeze*0.03;
-        arms.forEach(function(a){
-          var openZ=0.09*a.sign, closedZ=0.028*a.sign;
-          a.pad.position.z=lerp(openZ,closedZ,s.squeeze);
-          a.pivot.rotation.x=a.sign*0.1*s.squeeze;
-        });
+        rotorGroup.rotation.z=DIR*s.wheelAngle;
+        cablePull.position.y=-s.squeeze*0.02;
+        var openZ=0.015, closedZ=0.005;
+        pad1.position.z=lerp(openZ,closedZ,s.squeeze);
+        pad2.position.z=-lerp(openZ,closedZ,s.squeeze);
       }
     };
   }
@@ -2268,9 +2268,9 @@ DetailedObjects.velo = (function(){
       build:buildSteering
     },
     brake:{
-      label:'Frein à étrier',
-      movementIn:'rotation du levier (câble)', movementOut:'serrage des mâchoires sur la jante',
-      roleDesc:'En tirant le levier, le câble se tend et rapproche les deux bras articulés sur l’étrier. Les patins fixés au bout de chaque bras viennent alors serrer la jante des deux côtés, ce qui freine la roue par friction.',
+      label:'Frein à disque',
+      movementIn:'tension du câble', movementOut:'serrage des plaquettes sur le disque',
+      roleDesc:'Le câble tendu pousse les plaquettes de l’étrier contre le disque de frein fixé au moyeu de la roue, ce qui la freine par friction.',
       build:buildBrake
     },
     derailleur:{
@@ -2370,7 +2370,7 @@ DetailedObjects.velo = (function(){
     var cableStop=V(P.headTopX-0.02,P.headTopY+0.05,0.045);
     g.add(tubeBetween(P.leverWorld, cableStop, 0.008, DARK,{metalness:.3,roughness:.6}));
     g.add(tubeBetween(cableStop, V(seatTop.x,seatTop.y+0.02,0), 0.007, DARK,{metalness:.3,roughness:.6}));
-    g.add(tubeBetween(V(seatTop.x,seatTop.y+0.02,0), V(rearAxle.x,P.brakePivotY+0.1,0), 0.007, DARK,{metalness:.3,roughness:.6}));
+    g.add(tubeBetween(V(seatTop.x,seatTop.y+0.02,0), V(rearAxle.x-0.08,P.axleY+0.14,-0.08), 0.007, DARK,{metalness:.3,roughness:.6}));
 
     return {group:g, rearWheelGroup:rearWheelGroup};
   }
