@@ -92,3 +92,25 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
   mandrin trois mors).
 - Correctif de mise en page mobile (rail rétractable, viewport meta
   tag).
+
+---
+
+## 2026-09-03 (suite 2) — Nouvel objet : sécheuse à linge
+
+- Construit `DetailedObjects.secheuse` avec 2 mécanismes couplés :
+  entraînement du tambour (moteur → petite poulie → courroie qui fait
+  presque le tour du tambour, celui-ci agissant comme une très grande
+  poulie), et loquet de porte à came (poignée → came → pêne qui se
+  rétracte → porte à charnière libérée).
+- Premier essai : carénage plein (boîte fermée façon vraie sécheuse)
+  → cachait complètement le tambour et l'entraînement, contraire à
+  l'objectif pédagogique. Corrigé en remplaçant par un châssis ouvert
+  (base, 4 montants d'angle, paroi arrière, dessus) — mécanisme
+  visible de l'extérieur, cohérent avec le vélo/la perceuse/l'ouvre-
+  boîte.
+- Vue éclatée testée sans erreur (entraînement et loquet se séparent
+  correctement).
+- Commit poussé : `35c46de` sur `colorjazz/sciences4_3d`. Banque :
+  13/30 objets.
+- Note ajoutée à CURRENT_TASK.md sur le piège du carénage plein pour
+  les prochains objets de type appareil fermé.

@@ -16,6 +16,10 @@ vue éclatée fonctionnelle, fiche pédagogique) plutôt que la quantité.
       (réducteur à poulies/courroie, levier de serrage). Vérifié par
       mesure de bounding-box 3D (pas juste visuel) que la molette
       d'entraînement et la molette coupante touchent bien la boîte.
+- [x] Sécheuse à linge (`secheuse`) — 2 mécanismes couplés
+      (entraînement du tambour par courroie, loquet de porte à came).
+      Châssis ouvert (pas de carénage plein) pour garder le mécanisme
+      visible.
 
 ## Objets catalogue existants (mécanisme générique simple — à évaluer)
 
@@ -45,7 +49,6 @@ Candidats réalistes pour Sciences 4 (mécanismes-machines), par ordre
 de priorité suggéré :
 
 - [ ] Robinet mélangeur (vis + came ou simple rotation→translation)
-- [ ] Sécheuse à linge (courroie + tambour, moteur + poulies étagées)
 - [ ] Ciseaux de jardin à cliquet (cliquet-rochet)
 - [ ] Serrure à pêne (came + ressort)
 - [ ] Grille-pain (levier + ressort + électroaimant simplifié)

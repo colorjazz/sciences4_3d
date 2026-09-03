@@ -7,8 +7,8 @@
 ## Tâche actuelle
 
 Choisir et commencer le prochain objet de la liste TODO.md, section
-"Prochains objets à créer" (candidat suivant suggéré : sécheuse à
-linge — courroie + tambour, moteur + poulies étagées).
+"Prochains objets à créer" (ex. robinet mélangeur, ciseaux à cliquet,
+ouvre-boîte déjà fait → passer au suivant non coché).
 
 ## État actuel
 
@@ -23,9 +23,12 @@ linge — courroie + tambour, moteur + poulies étagées).
   de serrage). Vérifié par mesure de bounding-box 3D que la molette
   d'entraînement et la molette coupante touchent tangentiellement la
   boîte. Vue éclatée testée sans erreur.
+- Sécheuse à linge (`DetailedObjects.secheuse`) : **terminée et
+  vérifiée**. 2 mécanismes couplés (courroie sur tambour, loquet à
+  came). Vue éclatée testée sans erreur.
 - 9 objets catalogue "mécanisme simple" existants et fonctionnels
   (voir TODO.md).
-- Total banque actuelle : 12/30 objets.
+- Total banque actuelle : 13/30 objets.
 
 ## Note technique importante pour les prochains objets détaillés
 
@@ -41,6 +44,13 @@ DYNAMIQUE via `.rotation.y` sur le groupe englobant. Voir
 de référence. Une roue simple (`cyl()`, pas un gearGroup) a déjà son
 axe par défaut en Y — pas besoin de cette gymnastique pour un simple
 disque/poulie/roue lisse.
+
+Autre leçon (sécheuse) : pour un appareil normalement fermé (électro-
+ménager, boîtier), NE PAS construire un carénage plein qui englobe le
+mécanisme — ça le rend invisible, ce qui va à l'encontre du but de
+l'outil. Construire plutôt un châssis ouvert (plaque de base, montants
+d'angle fins, une paroi arrière au besoin, un dessus) qui suggère
+l'appareil réel sans cacher les pièces mobiles.
 
 ## Fichiers concernés
 
