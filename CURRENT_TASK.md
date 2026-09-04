@@ -24,8 +24,11 @@ ciseaux à cliquet).
   d'entraînement et la molette coupante touchent tangentiellement la
   boîte. Vue éclatée testée sans erreur.
 - Sécheuse à linge (`DetailedObjects.secheuse`) : **terminée et
-  vérifiée**. 2 mécanismes couplés (courroie sur tambour, loquet à
-  came). Vue éclatée testée sans erreur.
+  vérifiée, y compris le bug d'axe de rotation "pièce qui flip"
+  finalement corrigé le 2026-09-04**. 2 mécanismes couplés (courroie
+  sur tambour, loquet à came). Poulie moteur et galet tendeur tournent
+  maintenant sur un axe fixe (vérifié par mesure directe de l'axe dans
+  le temps, pas juste visuellement). Vue éclatée testée sans erreur.
 - Perceuse-visseuse sans fil (`DetailedObjects.perceuseSansFil`) :
   **terminée et vérifiée**. 2 mécanismes couplés (réducteur
   planétaire, mandrin auto-serrant). Positions vérifiées par mesure
@@ -55,6 +58,29 @@ mécanisme — ça le rend invisible, ce qui va à l'encontre du but de
 l'outil. Construire plutôt un châssis ouvert (plaque de base, montants
 d'angle fins, une paroi arrière au besoin, un dessus) qui suggère
 l'appareil réel sans cacher les pièces mobiles.
+
+**Piège critique à ne JAMAIS reproduire** (sécheuse, poulie moteur +
+galet tendeur, corrigé le 2026-09-04) : NE JAMAIS appliquer une
+inclinaison statique (`rotation.x`, typiquement via `zAxis()`) ET une
+rotation dynamique animée (`rotation.z=angle` à chaque frame) sur le
+MÊME objet mesh. L'ordre de composition des angles d'Euler 'XYZ' de
+Three.js applique Z AVANT X — combiner les deux sur un seul objet fait
+dériver l'axe de rotation réel au fil de l'animation, donnant un effet
+"pièce de monnaie qui flip dans les airs" au lieu d'une roue qui tourne
+normalement sur un axe fixe. C'est un bug SILENCIEUX visuellement
+subtil : une rotation qui semble "à peu près correcte" en capture
+d'écran statique peut être fausse en mouvement — seule une mesure de
+l'axe réel dans le temps (direction locale Y du cylindre transformée
+par `matrixWorld`, échantillonnée à plusieurs instants) le révèle de
+façon fiable.
+Solution obligatoire : séparer en groupe parent/enfant — inclinaison
+statique sur le disque/mesh (enfant), rotation dynamique sur un groupe
+englobant créé spécifiquement pour ça (parent), ex. `motorPulleySpin`,
+`idlerSpin`. Déjà fait correctement ailleurs dans le fichier :
+`motorGroup`/`motorBody` (sécheuse), `verticalGear()` (ouvre-boîte).
+Un `boltRing()` (groupe de repères) est un exemple de bon pattern
+existant : ses enfants ont chacun leur `zAxis()` statique, et c'est le
+GROUPE qui reçoit la rotation dynamique — jamais l'inverse.
 
 ## Fichiers concernés
 

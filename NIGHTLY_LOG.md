@@ -5,6 +5,41 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-04 (suite) — Sécheuse : correction définitive de l'axe de rotation poulie/galet
+
+- Après plusieurs allers-retours (moteur qui traversait le mur arrière,
+  courroie mal alignée en Z, tambour transparent/plein), l'utilisateur
+  a signalé un dernier bug persistant sur la poulie moteur et le galet
+  tendeur : "elle doivent rouler avec la courroie et non tourner", puis
+  précisé de façon décisive via AskUserQuestion : "ça ne tourne pas
+  comme une roue qui roule. Ils tournent comme si je faisais 'flip' une
+  pièce de monnaie dans les airs."
+- Diagnostic par mesure directe (pas par inspection visuelle) : script
+  Playwright échantillonnant l'axe de symétrie natif du cylindre
+  (direction locale Y transformée par `matrixWorld`) à 6 instants
+  espacés de 150ms. Résultat AVANT correctif : l'axe balayait tout le
+  plan XZ (ex. [-0.57,0,-0.82] → [0.71,0,-0.71] → [0.87,0,0.49] → ...)
+  au lieu de rester fixe — preuve directe du bug "pièce qui flip".
+- Cause racine identifiée : `motorPulley` et `idler` avaient chacun
+  `rotation.x` (statique, via `zAxis()`) ET `rotation.z` (dynamique,
+  animée dans `update()`) appliqués sur le MÊME objet mesh. L'ordre de
+  composition Euler 'XYZ' de Three.js applique Z avant X — combiner les
+  deux sur un seul objet fait dériver l'axe réel de rotation au fil de
+  l'animation.
+- Correctif : chaque poulie enveloppée dans un nouveau groupe parent
+  (`motorPulleySpin`, `idlerSpin`) qui reçoit la rotation dynamique
+  Z ; l'inclinaison statique reste sur le disque (enfant), comme le
+  pattern déjà correct de `motorGroup`/`motorBody` et `verticalGear()`.
+- Vérifié : re-mesure du même axe après correctif → EXACTEMENT constant
+  à (0,0,1) sur les 6 échantillons, pour les deux pièces. Vue éclatée
+  et rendu retestés sans erreur JS (aucune régression, l'explode
+  fonctionne toujours par `userData.explodeDir` au niveau des groupes
+  wrapper, pas affecté par l'ajout d'un niveau d'imbrication interne).
+- Commit poussé : `e06391c` sur `colorjazz/sciences4_3d`.
+- Note technique ajoutée à CURRENT_TASK.md : ne jamais combiner
+  `rotation.x` statique et `rotation.z` dynamique sur le même objet ;
+  toujours séparer en groupe parent (dynamique) / enfant (statique).
+
 ## 2026-09-04 — Vélo : dérailleur retravaillé (proposition Gemini)
 
 - L'utilisateur a soumis une proposition de Gemini pour retravailler
