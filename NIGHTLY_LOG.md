@@ -5,6 +5,31 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-04 — Vélo : dérailleur retravaillé (proposition Gemini)
+
+- L'utilisateur a soumis une proposition de Gemini pour retravailler
+  le dérailleur du vélo. Analysée avant adoption plutôt qu'appliquée
+  aveuglément : les galets suivent maintenant dynamiquement le rayon
+  du pignon engagé (position Y = axleY - cassetteR - offset, pas
+  seulement Z comme avant), le corps du dérailleur est un lien
+  télescopique orienté par lookAt+scale, et la chaîne trace un vrai
+  "S" croisé (cassette→plateau→galet bas→galet haut→cassette).
+  Amélioration réelle, vérifiée visuellement (rendu isolé chaîne en
+  vert : tracé tangent aux 4 pignons/galets) et par vue éclatée.
+- Régression repérée AVANT de committer : le code proposé
+  réintroduisait l'extension de potence à 0.40 (déjà corrigée à 0.05
+  dans une session précédente). Remis à 0.05 avant de pousser, sinon
+  le "cou de girafe" serait revenu.
+- brakePivotY simplifié à une valeur fixe (0.78) cohérente avec le
+  frein à disque (plus besoin d'un pont remontant à la jante).
+- Commit poussé : `6077aa4` sur `colorjazz/sciences4_3d`.
+- Leçon : quand l'utilisateur fournit du code externe (Gemini ou
+  autre) pour une pièce déjà corrigée dans une session précédente,
+  TOUJOURS diffé/vérifier que les correctifs précédents (potence,
+  couleur de chaîne, etc.) survivent avant de committer — un collage
+  complet écrase silencieusement les fix antérieurs qui ne sont pas
+  dans le nouveau code source.
+
 ## 2026-09-03 (suite 3) — Nouvel objet : perceuse-visseuse sans fil
 
 - L'utilisateur a fourni un visualiseur PBR statique d'une perceuse
