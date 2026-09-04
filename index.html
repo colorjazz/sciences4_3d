@@ -2411,20 +2411,59 @@ DetailedObjects.secheuse = (function(){
   /* --- 1. Entraînement du tambour (moteur, poulie, courroie) --------- */
   function buildDrive(){
     var group=new THREE.Group();
-    var motor=zAxis(cyl(0.06,0.06,0.16,ACCENT,20,{metalness:.4,roughness:.5}));
-    motor.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ-0.06);
-    group.add(motor);
+    var motorR=0.10, motorLen=0.20;
+    var motorGroup=new THREE.Group();
+    motorGroup.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ-motorLen/2-0.02);
+    group.add(motorGroup);
+
+    var motorBody=zAxis(cyl(motorR,motorR,motorLen,ACCENT,24,{metalness:.4,roughness:.5}));
+    motorGroup.add(motorBody);
+    /* ailettes + boulons de fixation : sans détail asymétrique, un
+       cylindre qui tourne sur son propre axe ne montre aucun
+       mouvement visible. */
+    for(var f=0;f<8;f++){
+      var af=(f/8)*Math.PI*2;
+      var fin=box(0.012,motorLen*0.75,0.018,0x8a3418,{metalness:.35,roughness:.55});
+      fin.position.set(Math.cos(af)*motorR,Math.sin(af)*motorR,0);
+      fin.rotation.z=af;
+      motorGroup.add(fin);
+    }
+    var motorCap=zAxis(cyl(motorR*0.55,motorR*0.55,0.012,DARKM,20,{metalness:.5,roughness:.4}));
+    motorCap.position.z=-motorLen/2-0.006;
+    motorGroup.add(motorCap);
+    for(var b=0;b<4;b++){
+      var ab=(b/4)*Math.PI*2+Math.PI/4;
+      var bolt=zAxis(cyl(0.008,0.008,0.014,DARK,8,{metalness:.6,roughness:.35}));
+      bolt.position.set(Math.cos(ab)*motorR*0.55,Math.sin(ab)*motorR*0.55,-motorLen/2-0.012);
+      motorGroup.add(bolt);
+    }
+
+    var motorShaft=zAxis(cyl(0.014,0.014,0.05,STEEL,14,{metalness:.75,roughness:.3}));
+    motorShaft.position.z=motorLen/2+0.02;
+    motorGroup.add(motorShaft);
 
     var motorPulley=zAxis(cyl(P.motorPulleyR,P.motorPulleyR,0.03,STEEL,16,{metalness:.7,roughness:.3}));
     motorPulley.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ);
     group.add(motorPulley);
+    /* méplat sur la poulie : repère visuel de la rotation */
+    var pulleyKey=box(P.motorPulleyR*1.7,0.006,0.006,DARK,{metalness:.4,roughness:.5});
+    pulleyKey.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ+0.017);
+    group.add(pulleyKey);
 
+    var idlerArmGroup=new THREE.Group();
+    idlerArmGroup.position.set(P.drumX,P.idlerY+P.idlerR+0.05,P.drumZ);
+    var idlerArm=box(0.02,0.09,0.02,DARKM,{metalness:.4,roughness:.5});
+    idlerArm.position.y=-0.045;
+    idlerArmGroup.add(idlerArm);
     var idler=zAxis(cyl(P.idlerR,P.idlerR,0.03,STEEL,20,{metalness:.7,roughness:.3}));
-    idler.position.set(P.idlerX,P.idlerY,P.drumZ);
-    group.add(idler);
-    var idlerArm=box(0.14,0.02,0.02,DARKM,{metalness:.4,roughness:.5});
-    idlerArm.position.set((P.idlerX+P.drumX*0.4)/1.4, P.idlerY+0.03, P.drumZ);
-    group.add(idlerArm);
+    idler.position.y=-0.09;
+    idlerArmGroup.add(idler);
+    group.add(idlerArmGroup);
+    /* ressort de tension : hélice autour de l'axe du bras */
+    var springCurve=new THREE.Curve();
+    springCurve.getPoint=function(u){ var ang=u*Math.PI*2*8; var r=0.014; return new THREE.Vector3(Math.cos(ang)*r, -u*0.075, Math.sin(ang)*r+0.028); };
+    var spring=new THREE.Mesh(new THREE.TubeGeometry(springCurve,120,0.0035,6,false), stdMat(0x8d97a1,{metalness:.75,roughness:.35}));
+    idlerArmGroup.add(spring);
 
     /* la courroie fait presque le tour du tambour (grande poulie) en
        passant sous la poulie moteur puis sous le galet tendeur */
@@ -2437,8 +2476,9 @@ DetailedObjects.secheuse = (function(){
     return {
       group:group,
       update:function(s){
-        motor.rotation.z=s.motorAngle;
+        motorGroup.rotation.z=s.motorAngle;
         motorPulley.rotation.z=s.motorAngle;
+        pulleyKey.rotation.z=s.motorAngle;
         idler.rotation.z=s.drumAngle*(P.drumR/P.idlerR);
       }
     };
