@@ -2472,7 +2472,7 @@ DetailedObjects.secheuse = (function(){
     group.add(pulleyKey);
 
     var idlerArmGroup=new THREE.Group();
-    idlerArmGroup.position.set(P.drumX,P.idlerY+P.idlerR+0.05,P.drumZ);
+    idlerArmGroup.position.set(P.drumX,P.idlerY+P.idlerR+0.05,P.motorPulleyZ);
     var idlerArm=box(0.02,0.09,0.02,DARKM,{metalness:.4,roughness:.5});
     idlerArm.position.y=-0.045;
     idlerArmGroup.add(idlerArm);
@@ -2491,7 +2491,7 @@ DetailedObjects.secheuse = (function(){
     var d1=Math.hypot(P.motorPulleyX-P.drumX, P.motorPulleyY-P.drumY);
     var belt1=beltLoop(P.motorPulleyR,P.drumR,d1,0.03,0.014);
     belt1.rotation.z=Math.atan2(P.drumY-P.motorPulleyY,P.drumX-P.motorPulleyX);
-    belt1.position.set(P.motorPulleyX,P.motorPulleyY,P.drumZ-0.015);
+    belt1.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ);
     group.add(belt1);
 
     return {
@@ -2707,7 +2707,7 @@ DetailedObjects.perceuseSansFil = (function(){
     group.add(motor);
     for(var f=0;f<10;f++){
       var af=(f/10)*Math.PI*2;
-      var fin=box(0.012,P.motorLen*0.7,0.03,0x151a1f,{metalness:.3,roughness:.6});
+      var fin=box(0.012,0.03,P.motorLen*0.7,0x151a1f,{metalness:.3,roughness:.6});
       fin.position.set(Math.cos(af)*P.motorR,Math.sin(af)*P.motorR,(P.motorZ0+P.motorZ1)/2);
       fin.rotation.z=af;
       group.add(fin);
