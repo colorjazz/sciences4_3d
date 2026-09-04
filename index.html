@@ -2559,13 +2559,33 @@ DetailedObjects.secheuse = (function(){
     control.position.set(0,P.cabH+0.05,-0.03);
     g.add(control);
 
-    var drum=zAxis(cyl(P.drumR,P.drumR,P.drumLen,DRUM,28,{metalness:.55,roughness:.35}));
-    drum.position.set(P.drumX,P.drumY,P.drumZ);
-    g.add(drum);
+    var drumGroup=new THREE.Group();
+    drumGroup.position.set(P.drumX,P.drumY,P.drumZ);
+    g.add(drumGroup);
+    /* tambour creux et ouvert à l'avant (côté porte) : un simple
+       cylindre plein cache l'intérieur. openEnded=true retire les
+       deux capuchons de la géométrie ; DoubleSide affiche la paroi
+       intérieure vue depuis l'ouverture, et un fond distinct ferme
+       uniquement l'arrière, comme sur une vraie sécheuse. */
+    var drumWall=new THREE.Mesh(
+      new THREE.CylinderGeometry(P.drumR,P.drumR,P.drumLen,28,1,true),
+      stdMat(DRUM,{metalness:.5,roughness:.4,side:THREE.DoubleSide})
+    );
+    drumWall.rotation.x=Math.PI/2;
+    drumGroup.add(drumWall);
     var drumBack=cyl(P.drumR*0.96,P.drumR*0.96,0.01,CABD,28,{metalness:.4,roughness:.5});
     drumBack.rotation.x=Math.PI/2;
-    drumBack.position.set(P.drumX,P.drumY,P.drumZ-P.drumLen/2);
-    g.add(drumBack);
+    drumBack.position.z=-P.drumLen/2;
+    drumGroup.add(drumBack);
+    /* 3 ailettes de brassage à l'intérieur, réparties à 120° */
+    for(var lp=0;lp<3;lp++){
+      var lift=box(0.05,0.05,P.drumLen*0.82,0xa7adb3,{metalness:.4,roughness:.5});
+      var la=(lp/3)*Math.PI*2;
+      lift.position.set(Math.cos(la)*(P.drumR-0.03),Math.sin(la)*(P.drumR-0.03),0.02);
+      lift.rotation.z=la;
+      drumGroup.add(lift);
+    }
+    var drum=drumGroup;
 
     var doorGroup=new THREE.Group();
     doorGroup.position.set(P.hingeX,P.drumY,P.cabD*0.5);
@@ -2583,7 +2603,7 @@ DetailedObjects.secheuse = (function(){
     hinge.position.set(P.hingeX,P.drumY,P.cabD*0.5);
     g.add(hinge);
 
-    return {group:g, doorGroup:doorGroup};
+    return {group:g, doorGroup:doorGroup, drumGroup:drumGroup};
   }
 
   return {
@@ -2610,6 +2630,7 @@ DetailedObjects.secheuse = (function(){
         update:function(s){
           ORDER.forEach(function(key){ instances[key].update(s,false); });
           structure.doorGroup.rotation.y=-s.doorOpen*1.75;
+          structure.drumGroup.rotation.z=s.drumAngle;
         }
       };
     },
