@@ -2481,9 +2481,19 @@ DetailedObjects.secheuse = (function(){
       return g;
     }
 
+    /* la poulie doit tourner comme une roue (axe fixe), pas "flipper"
+       comme une pièce de monnaie : l'inclinaison statique (zAxis, sur
+       X) et la rotation dynamique (Z, à chaque frame) ne peuvent PAS
+       être appliquées sur le même objet — l'ordre de composition des
+       angles d'Euler de Three.js ferait dériver l'axe de rotation
+       réel au fil de l'animation. On sépare donc : inclinaison
+       statique sur le disque (enfant), rotation dynamique sur un
+       groupe englobant (parent). */
+    var motorPulleySpin=new THREE.Group();
+    motorPulleySpin.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ);
     var motorPulley=zAxis(cyl(P.motorPulleyR,P.motorPulleyR,0.03,STEEL,16,{metalness:.7,roughness:.3}));
-    motorPulley.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ);
-    group.add(motorPulley);
+    motorPulleySpin.add(motorPulley);
+    group.add(motorPulleySpin);
     var motorPulleyMarks=boltRing(3,P.motorPulleyR*0.6,0.008,0.02);
     motorPulleyMarks.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ+0.023);
     group.add(motorPulleyMarks);
@@ -2493,9 +2503,11 @@ DetailedObjects.secheuse = (function(){
     var idlerArm=box(0.02,0.09,0.02,DARKM,{metalness:.4,roughness:.5});
     idlerArm.position.y=-0.045;
     idlerArmGroup.add(idlerArm);
+    var idlerSpin=new THREE.Group();
+    idlerSpin.position.y=-0.09;
     var idler=zAxis(cyl(P.idlerR,P.idlerR,0.03,STEEL,20,{metalness:.7,roughness:.3}));
-    idler.position.y=-0.09;
-    idlerArmGroup.add(idler);
+    idlerSpin.add(idler);
+    idlerArmGroup.add(idlerSpin);
     var idlerMarks=boltRing(3,P.idlerR*0.55,0.010,0.022);
     idlerMarks.position.set(0,-0.09,0.025);
     idlerArmGroup.add(idlerMarks);
@@ -2518,10 +2530,10 @@ DetailedObjects.secheuse = (function(){
       group:group,
       update:function(s){
         motorGroup.rotation.z=s.motorAngle;
-        motorPulley.rotation.z=s.motorAngle;
+        motorPulleySpin.rotation.z=s.motorAngle;
         motorPulleyMarks.rotation.z=s.motorAngle;
         var idlerAngle=s.drumAngle*(P.drumR/P.idlerR);
-        idler.rotation.z=idlerAngle;
+        idlerSpin.rotation.z=idlerAngle;
         idlerMarks.rotation.z=idlerAngle;
       }
     };
