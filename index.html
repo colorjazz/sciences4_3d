@@ -2372,7 +2372,7 @@ DetailedObjects.secheuse = (function(){
   P.drumZFront = P.cabD*0.5 - P.doorThick - 0.02;
   P.drumZ = P.drumZFront - P.drumLen/2;
   P.motorPulleyX = -P.cabW*0.5 + 0.16;
-  P.motorPulleyZ = -P.cabD*0.5 + 0.14;
+  P.motorPulleyZ = -P.cabD*0.5 + 0.26;
   P.motorPulleyY = 0.16;
   P.drumY = P.cabH*0.52;
   P.idlerX = P.drumX + P.drumR*0.55;
@@ -2421,10 +2421,14 @@ DetailedObjects.secheuse = (function(){
     motorGroup.add(motorBody);
     /* ailettes + boulons de fixation : sans détail asymétrique, un
        cylindre qui tourne sur son propre axe ne montre aucun
-       mouvement visible. */
+       mouvement visible. La grande dimension de l'ailette doit courir
+       le long de l'axe du moteur (Z, après le tilt de zAxis) et non
+       dans le plan XY, sinon elle ressemble à une pale de ventilateur
+       tournant dans le mauvais plan plutôt qu'à une nervure de
+       refroidissement qui suit le cylindre. */
     for(var f=0;f<8;f++){
       var af=(f/8)*Math.PI*2;
-      var fin=box(0.012,motorLen*0.75,0.018,0x8a3418,{metalness:.35,roughness:.55});
+      var fin=box(0.018,0.012,motorLen*0.75,0x8a3418,{metalness:.35,roughness:.55});
       fin.position.set(Math.cos(af)*motorR,Math.sin(af)*motorR,0);
       fin.rotation.z=af;
       motorGroup.add(fin);
@@ -2442,6 +2446,22 @@ DetailedObjects.secheuse = (function(){
     var motorShaft=zAxis(cyl(0.014,0.014,0.05,STEEL,14,{metalness:.75,roughness:.3}));
     motorShaft.position.z=motorLen/2+0.02;
     motorGroup.add(motorShaft);
+
+    /* support de fixation : plaque + pieds boulonnés à la paroi
+       arrière. Ajouté hors de motorGroup (ne tourne pas avec le
+       moteur) pour que celui-ci ait l'air réellement monté sur le
+       châssis plutôt que de flotter dans le vide. */
+    var mountZ=P.motorPulleyZ-motorLen-0.03;
+    var mountPlate=box(motorR*2.3,motorR*2.3,0.02,CABD,{metalness:.35,roughness:.55});
+    mountPlate.position.set(P.motorPulleyX,P.motorPulleyY,mountZ);
+    group.add(mountPlate);
+    [-1,1].forEach(function(sx){
+      [-1,1].forEach(function(sy){
+        var foot=box(0.03,0.03,0.05,DARKM,{metalness:.4,roughness:.5});
+        foot.position.set(P.motorPulleyX+sx*motorR*0.85,P.motorPulleyY+sy*motorR*0.85,mountZ-0.015);
+        group.add(foot);
+      });
+    });
 
     var motorPulley=zAxis(cyl(P.motorPulleyR,P.motorPulleyR,0.03,STEEL,16,{metalness:.7,roughness:.3}));
     motorPulley.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ);
