@@ -693,14 +693,15 @@ var THEME_LINE_HEX = null;
 var matCache = {};
 function stdMat(hex, opts){
   opts = opts || {};
-  var key = hex+'|'+(opts.metalness||0)+'|'+(opts.roughness||0)+'|'+(opts.emissive||'');
+  var key = hex+'|'+(opts.metalness||0)+'|'+(opts.roughness||0)+'|'+(opts.emissive||'')+'|'+(opts.side!==undefined?opts.side:THREE.FrontSide);
   if(matCache[key]) return matCache[key];
   var m = new THREE.MeshStandardMaterial({
     color: hex,
     metalness: opts.metalness!==undefined?opts.metalness:0.55,
     roughness: opts.roughness!==undefined?opts.roughness:0.45,
     emissive: opts.emissive!==undefined? opts.emissive : 0x000000,
-    emissiveIntensity: 0.4
+    emissiveIntensity: 0.4,
+    side: opts.side!==undefined?opts.side:THREE.FrontSide
   });
   matCache[key]=m;
   return m;
