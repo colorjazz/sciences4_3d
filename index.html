@@ -1869,137 +1869,62 @@ DetailedObjects.perceuse = (function(){
 
 DetailedObjects.velo = (function(){
   var P = {
-    wheelR:0.70, rearX:0, axleY:0.70, frontX:1.85,
-    bbX:0.80, bbY:0.58,
+    wheelR:0.70, rearX:0, axleY:0.70, frontX:1.85, bbX:0.80, bbY:0.58,
     headBotX:1.55, headBotY:1.25, headTopX:1.50, headTopY:1.45,
     seatTopX:0.63, seatTopY:1.35, saddleX:0.58, saddleY:1.55,
     chainringR:0.19, chainringTeeth:42, chainringZ:0.19, crankLen:0.30,
-    cassetteSteps:[0.155,0.125,0.10], cassetteTeeth:[26,20,15],
-    cassetteZTable:[0.14,0.175,0.21],
-    freewheelZ:0.095,
-    chainW:0.03, chainThick:0.028,
-    brakePivotY:0, derMountX:0, derMountY:0, derRefZ:0.175
+    cassetteSteps:[0.155,0.125,0.10], cassetteTeeth:[26,20,15], cassetteZTable:[0.14,0.175,0.21],
+    freewheelZ:0.095, chainW:0.03, chainThick:0.028, 
+    brakePivotY: 0.78, derMountX: -0.02, derMountY: 0.65, derRefZ: 0.175
   };
-  P.brakePivotY = P.axleY + P.wheelR + 0.08;
-  /* la patte de dérailleur part du moyeu arrière, pas en avant vers le pédalier */
-  P.derMountX = P.rearX-0.02;
-  P.derMountY = P.axleY-0.30;
 
-  var FRAME=0xb43a2f, FRAMED=0x8a2c22, CHROME=0xced6db, DARKM=0x2c3136,
-      RUBBER=0x17191b, BRASS=0xd7a552, PAD=0x232527, DARK=0x232c36;
-  /* sens de rotation : positif = pédalage vers l'avant vu du côté chaîne */
+  var FRAME=0xb43a2f, FRAMED=0x8a2c22, CHROME=0xced6db, DARKM=0x2c3136, RUBBER=0x17191b, BRASS=0xd7a552, PAD=0x232527, DARK=0x232c36;
   var DIR=-1;
-
-  /* Géométrie de la potence/guidon calculée une seule fois : réutilisée
-     pour positionner le guidon (buildSteering) et le câble de frein qui
-     part de sa position au repos (buildStructure). La potence remonte
-     nettement au-dessus de la fourche pour ne pas traverser la roue avant. */
-  var headP0=new THREE.Vector3(P.headBotX,P.headBotY,0);
-  var headAxis=new THREE.Vector3(P.headTopX-P.headBotX,P.headTopY-P.headBotY,0).normalize();
+  var headP0=new THREE.Vector3(P.headBotX,P.headBotY,0); var headAxis=new THREE.Vector3(P.headTopX-P.headBotX,P.headTopY-P.headBotY,0).normalize();
   var steererTopW=new THREE.Vector3(P.headTopX,P.headTopY,0).add(headAxis.clone().multiplyScalar(0.05));
-  var stemTopL=steererTopW.clone().sub(headP0);
-  var stemEndL=stemTopL.clone().add(new THREE.Vector3(-0.06,0.22,0));
-  var leverL=stemEndL.clone().add(new THREE.Vector3(0.02,0,0.36));
-  P.leverWorld=headP0.clone().add(leverL);
+  var stemTopL=steererTopW.clone().sub(headP0); var stemEndL=stemTopL.clone().add(new THREE.Vector3(-0.06,0.22,0));
+  var leverL=stemEndL.clone().add(new THREE.Vector3(0.02,0,0.36)); P.leverWorld=headP0.clone().add(leverL);
 
-  function cyl(r1,r2,h,color,seg,opts){
-    return new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||16), stdMat(color,opts||{metalness:.55,roughness:.4}));
-  }
-  function box(w,h,d,color,opts){
-    return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), stdMat(color,opts||{metalness:.35,roughness:.6}));
-  }
-  function tubeBetween(p1,p2,r,color,opts){
-    var v=new THREE.Vector3().subVectors(p2,p1);
-    var len=v.length();
-    var m=cyl(r,r,len,color,12,opts);
-    m.position.copy(p1).add(p2).multiplyScalar(0.5);
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), v.clone().normalize());
-    return m;
-  }
+  function cyl(r1,r2,h,color,seg,opts){ return new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||16), stdMat(color,opts||{metalness:.55,roughness:.4})); }
+  function box(w,h,d,color,opts){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), stdMat(color,opts||{metalness:.35,roughness:.6})); }
+  function tubeBetween(p1,p2,r,color,opts){ var v=new THREE.Vector3().subVectors(p2,p1); var len=v.length(); var m=cyl(r,r,len,color,12,opts); m.position.copy(p1).add(p2).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), v.clone().normalize()); return m; }
   function V(x,y,z){ return new THREE.Vector3(x,y,z); }
-
-  function hull(a1,a2,d){
-    var beta=Math.acos(clamp((a1-a2)/d,-1,1));
-    var s=new THREE.Shape();
-    s.moveTo(Math.cos(beta)*a1, Math.sin(beta)*a1);
-    s.absarc(0,0,a1,beta,2*Math.PI-beta,false);
-    s.lineTo(d+Math.cos(-beta)*a2, Math.sin(-beta)*a2);
-    s.absarc(d,0,a2,-beta,beta,false);
-    s.closePath();
-    return s;
-  }
 
   function wheelAssembly(R){
     var g=new THREE.Group();
-    var tire=new THREE.Mesh(new THREE.TorusGeometry(R,0.032,12,50), stdMat(RUBBER,{metalness:.1,roughness:.9}));
-    g.add(tire);
-    var rim=new THREE.Mesh(new THREE.TorusGeometry(R-0.035,0.018,8,40), stdMat(CHROME,{metalness:.85,roughness:.22}));
-    g.add(rim);
-    var hub=cyl(0.045,0.045,0.11,DARKM,18,{metalness:.55,roughness:.4});
-    hub.rotation.x=Math.PI/2;
-    g.add(hub);
+    var tire=new THREE.Mesh(new THREE.TorusGeometry(R,0.032,12,50), stdMat(RUBBER,{metalness:.1,roughness:.9})); g.add(tire);
+    var rim=new THREE.Mesh(new THREE.TorusGeometry(R-0.035,0.018,8,40), stdMat(CHROME,{metalness:.85,roughness:.22})); g.add(rim);
+    var hub=cyl(0.045,0.045,0.11,DARKM,18,{metalness:.55,roughness:.4}); hub.rotation.x=Math.PI/2; g.add(hub);
     var spokeLen=(R-0.035)-0.045;
     for(var i=0;i<24;i++){
-      var pivot=new THREE.Group();
-      pivot.rotation.z=(i/24)*Math.PI*2;
-      var sp=cyl(0.0025,0.0025,spokeLen,CHROME,4,{metalness:.8,roughness:.2});
-      sp.position.y=0.045+spokeLen/2;
-      pivot.add(sp);
-      g.add(pivot);
+      var pivot=new THREE.Group(); pivot.rotation.z=(i/24)*Math.PI*2;
+      var sp=cyl(0.0025,0.0025,spokeLen,CHROME,4,{metalness:.8,roughness:.2}); sp.position.y=0.045 + spokeLen/2; pivot.add(sp); g.add(pivot);
     }
     return g;
   }
 
-  /* --- 1. Pédalier, chaîne et cassette (transmission) --------------- */
   function buildDrivetrain(){
     var group=new THREE.Group();
-
-    var axleShaft=cyl(0.024,0.024,0.5,CHROME,14,{metalness:.75,roughness:.3});
-    axleShaft.rotation.x=Math.PI/2;
-    axleShaft.position.set(P.bbX,P.bbY,0.01);
-    group.add(axleShaft);
-    var bbShell=cyl(0.058,0.058,0.11,DARKM,18);
-    bbShell.rotation.x=Math.PI/2;
-    bbShell.position.set(P.bbX,P.bbY,0);
-    group.add(bbShell);
-
-    var crankGroup=new THREE.Group();
-    crankGroup.position.set(P.bbX,P.bbY,0);
+    var axleShaft=cyl(0.024,0.024,0.5,CHROME,14,{metalness:.75,roughness:.3}); axleShaft.rotation.x=Math.PI/2; axleShaft.position.set(P.bbX,P.bbY,0.01); group.add(axleShaft);
+    var bbShell=cyl(0.058,0.058,0.11,DARKM,18); bbShell.rotation.x=Math.PI/2; bbShell.position.set(P.bbX,P.bbY,0); group.add(bbShell);
+    
+    var crankGroup=new THREE.Group(); crankGroup.position.set(P.bbX,P.bbY,0);
     function crankArm(z, withRing, phase){
-      var g=new THREE.Group();
-      g.rotation.z=phase;
-      var arm=box(0.045,P.crankLen,0.03,DARKM,{metalness:.5,roughness:.4});
-      arm.position.y=P.crankLen/2;
-      g.add(arm);
-      var pedal=box(0.09,0.03,0.06,DARK,{metalness:.3,roughness:.6});
-      pedal.position.y=P.crankLen;
-      g.add(pedal);
-      g.position.z=z;
-      crankGroup.add(g);
-      if(withRing){
-        var ring=gearGroup({radius:P.chainringR,thickness:0.03,teeth:P.chainringTeeth,color:CHROME});
-        ring.position.z=z;
-        crankGroup.add(ring);
-      }
+      var g=new THREE.Group(); g.rotation.z=phase;
+      var arm=box(0.045,P.crankLen,0.03,DARKM,{metalness:.5,roughness:.4}); arm.position.y=P.crankLen/2; g.add(arm);
+      var pedal=box(0.09,0.03,0.06,DARK,{metalness:.3,roughness:.6}); pedal.position.y=P.crankLen; g.add(pedal); g.position.z=z; crankGroup.add(g);
+      if(withRing){ var ring=gearGroup({radius:P.chainringR,thickness:0.03,teeth:P.chainringTeeth,color:CHROME}); ring.position.z=z; crankGroup.add(ring); }
       return g;
     }
-    var rightCrank=crankArm(P.chainringZ, true, 0);
-    var leftCrank=crankArm(-0.19, false, Math.PI);
-
-    group.add(crankGroup);
-
-    var cassetteGroup=new THREE.Group();
-    cassetteGroup.position.set(P.rearX,P.axleY,0);
-    P.cassetteSteps.forEach(function(r,i){
-      var sp=gearGroup({radius:r,thickness:0.026,teeth:P.cassetteTeeth[i],color:BRASS});
-      sp.position.z=P.cassetteZTable[i];
-      cassetteGroup.add(sp);
-    });
+    var rightCrank=crankArm(P.chainringZ, true, 0); var leftCrank=crankArm(-0.19, false, Math.PI); group.add(crankGroup);
+    
+    var cassetteGroup=new THREE.Group(); cassetteGroup.position.set(P.rearX,P.axleY,0);
+    P.cassetteSteps.forEach(function(r,i){ var sp=gearGroup({radius:r,thickness:0.026,teeth:P.cassetteTeeth[i],color:BRASS}); sp.position.z=P.cassetteZTable[i]; cassetteGroup.add(sp); });
     group.add(cassetteGroup);
+    
+    var chainMesh=new THREE.Mesh(new THREE.BufferGeometry(), stdMat(0x555b62,{metalness:.75,roughness:.35})); group.add(chainMesh);
 
-    var chainMesh=new THREE.Mesh(new THREE.BufferGeometry(), stdMat(0x555b62,{metalness:.75,roughness:.35}));
-    group.add(chainMesh);
-
+    // Fonction pour générer un arc parfait le long d'un engrenage
     function arcPts(C, r, a1, a2, steps) {
       var arr = [];
       for(var i=0; i<=steps; i++) {
@@ -2012,410 +1937,202 @@ DetailedObjects.velo = (function(){
     return {
       group:group,
       update:function(s){
-        crankGroup.rotation.z=DIR*s.pedalAngle;
-        cassetteGroup.rotation.z=DIR*s.cassetteAngle;
-        var zNow=lerp(P.cassetteZTable[s.stepIdx],P.cassetteZTable[s.nextIdx],s.shiftEase);
+        crankGroup.rotation.z=DIR*s.pedalAngle; cassetteGroup.rotation.z=DIR*s.cassetteAngle;
+        
+        var zNow = lerp(P.cassetteZTable[s.stepIdx], P.cassetteZTable[s.nextIdx], s.shiftEase);
+        var r1 = P.chainringR;
+        var r2 = s.cassetteR;
+        var r3 = 0.045; // upper pulley
+        var r4 = 0.040; // lower pulley
+        
+        var C1 = new THREE.Vector3(P.bbX, P.bbY, P.chainringZ);
+        var C2 = new THREE.Vector3(P.rearX, P.axleY, zNow);
+        
+        // C3 et C4 correspondent EXACTEMENT à la position du dérailleur généré plus bas
+        var C3 = new THREE.Vector3(P.rearX + 0.02, P.axleY - s.cassetteR - 0.04, zNow);
+        var C4 = new THREE.Vector3(P.rearX + 0.04, P.axleY - s.cassetteR - 0.18, zNow);
 
-        var C1=new THREE.Vector3(P.bbX,P.bbY,P.chainringZ), r1=P.chainringR;
-        var C2=new THREE.Vector3(P.rearX,P.axleY,zNow), r2=s.cassetteR;
-        var C3=new THREE.Vector3(P.derMountX+0.01,P.derMountY-0.08,zNow+0.045), r3=0.045;
-        var C4=new THREE.Vector3(P.derMountX+0.01,P.derMountY-0.21,zNow+0.045), r4=0.04;
-
-        var pts=[];
-        pts = pts.concat(arcPts(C1, r1, -Math.PI/2 + 0.05, Math.PI/2 - 0.05, 16));
-        pts = pts.concat(arcPts(C2, r2, Math.PI/2 + 0.05, Math.PI*1.35, 16));
-        pts = pts.concat(arcPts(C3, r3, Math.PI*0.1, Math.PI, 8));
-        pts = pts.concat(arcPts(C4, r4, Math.PI, Math.PI*1.5 - 0.05, 8));
-
-        var curve=new THREE.CatmullRomCurve3(pts,true,'centripetal',0);
-        var geo=new THREE.TubeGeometry(curve,150,0.019,6,true);
-        chainMesh.geometry.dispose();
-        chainMesh.geometry=geo;
+        var pts = [];
+        // 1. Arc Cassette (C2) : de l'avant vers le haut
+        pts = pts.concat(arcPts(C2, r2, Math.PI * 1.15, Math.PI / 2, 16));
+        // 2. Arc Pédalier (C1) : du haut vers le bas via l'avant
+        pts = pts.concat(arcPts(C1, r1, Math.PI / 2, -Math.PI / 2, 24));
+        // 3. Arc Poulie Basse (C4) : du bas vers l'arrière
+        pts = pts.concat(arcPts(C4, r4, -Math.PI / 2, -Math.PI * 1.16, 12));
+        // 4. Arc Poulie Haute (C3) : de l'arrière vers l'avant (crée le "S" croisé du dérailleur)
+        pts = pts.concat(arcPts(C3, r3, -Math.PI * 0.16, Math.PI / 2, 12));
+        
+        // "centripetal" tension à 0 relie les arcs par des lignes droites parfaites, sans ondulation
+        var curve = new THREE.CatmullRomCurve3(pts, true, 'centripetal', 0);
+        
+        // Pas de scale aplati qui décale la géométrie ! On utilise simplement un rayon fin.
+        var geo = new THREE.TubeGeometry(curve, 150, 0.019, 6, true);
+        chainMesh.geometry.dispose(); 
+        chainMesh.geometry = geo; 
       }
     };
   }
 
-  /* --- 2. Roue libre (cliquet et rochet) ----------------------------- */
   function buildFreewheel(){
-    var group=new THREE.Group();
-
-    var ratchet=new THREE.Group();
-    var ring=cyl(0.075,0.075,0.05,DARKM,24,{metalness:.5,roughness:.45});
-    ring.rotation.x=Math.PI/2;
-    ratchet.add(ring);
+    var group=new THREE.Group(); var ratchet=new THREE.Group();
+    var ring=cyl(0.075,0.075,0.05,DARKM,24,{metalness:.5,roughness:.45}); ring.rotation.x=Math.PI/2; ratchet.add(ring);
     var nTeeth=20;
     for(var i=0;i<nTeeth;i++){
-      var a=(i/nTeeth)*Math.PI*2;
-      var piv=new THREE.Group();
-      piv.rotation.z=a;
-      var tooth=box(0.02,0.018,0.024,CHROME,{metalness:.6,roughness:.35});
-      tooth.position.y=0.086;
-      piv.add(tooth);
-      ratchet.add(piv);
+      var a=(i/nTeeth)*Math.PI*2; var piv=new THREE.Group(); piv.rotation.z=a;
+      var tooth=box(0.02,0.018,0.024,CHROME,{metalness:.6,roughness:.35}); tooth.position.y=0.086; piv.add(tooth); ratchet.add(piv);
     }
     group.add(ratchet);
-
-    var hubShell=new THREE.Group();
-    var shell=cyl(0.095,0.095,0.09,DARK,24,{metalness:.55,roughness:.4});
-    shell.rotation.x=Math.PI/2;
-    hubShell.add(shell);
+    var hubShell=new THREE.Group(); var shell=cyl(0.095,0.095,0.09,DARK,24,{metalness:.55,roughness:.4}); shell.rotation.x=Math.PI/2; hubShell.add(shell);
     var pawls=[];
     for(var j=0;j<2;j++){
-      var pivot=new THREE.Group();
-      pivot.rotation.z=j*Math.PI;
-      var pawl=box(0.016,0.045,0.02,CHROME,{metalness:.7,roughness:.3});
-      pawl.position.y=0.09;
-      pivot.add(pawl);
-      hubShell.add(pivot);
-      pawls.push(pivot);
+      var pivot=new THREE.Group(); pivot.rotation.z=j*Math.PI;
+      var pawl=box(0.016,0.045,0.02,CHROME,{metalness:.7,roughness:.3}); pawl.position.y=0.09; pivot.add(pawl); hubShell.add(pivot); pawls.push(pivot);
     }
-    group.add(hubShell);
-
-    group.position.set(P.rearX,P.axleY,P.freewheelZ);
-    var pitch=Math.PI*2/nTeeth;
-
+    group.add(hubShell); group.position.set(P.rearX,P.axleY,P.freewheelZ); var pitch=Math.PI*2/nTeeth;
     return {
-      group:group,
-      update:function(s){
-        ratchet.rotation.z=DIR*s.cassetteAngle;
-        hubShell.rotation.z=DIR*s.wheelAngle;
-        var rel=s.wheelAngle-s.cassetteAngle;
-        var phase=((rel%pitch)+pitch)%pitch;
-        var click=phase/pitch;
+      group:group, update:function(s){
+        ratchet.rotation.z=DIR*s.cassetteAngle; hubShell.rotation.z=DIR*s.wheelAngle;
+        var rel=s.wheelAngle-s.cassetteAngle; var phase=((rel%pitch)+pitch)%pitch; var click=phase/pitch;
         pawls.forEach(function(p){ p.rotation.x=-0.3*Math.sin(click*Math.PI); });
       }
     };
   }
 
-  /* --- 3. Direction (guidon, fourche, roue avant) -------------------- */
   function buildSteering(){
-    var group=new THREE.Group();
-    var P0=headP0.clone();
-    var axisDir=headAxis.clone();
-
-    var steererTopWorld=steererTopW.clone();
-    group.add(tubeBetween(V(0,0,0), steererTopWorld.clone().sub(P0), 0.017, CHROME,{metalness:.7,roughness:.3}));
-
-    var crown=cyl(0.045,0.045,0.06,DARKM,16);
-    group.add(crown);
-
-    var frontAxleLocal=V(P.frontX,P.axleY,0).sub(P0);
-    var forkTops=[];
-    [-0.05,0.05].forEach(function(zoff){
-      var top=V(0,0.02,zoff*0.6);
-      var bot=frontAxleLocal.clone().setZ(zoff);
-      forkTops.push(top);
-      group.add(tubeBetween(top,bot,0.03,FRAME,{metalness:.4,roughness:.55}));
-    });
+    var group=new THREE.Group(); var P0=headP0.clone(); var axisDir=headAxis.clone();
+    var steererTopWorld=steererTopW.clone(); group.add(tubeBetween(V(0,0,0), steererTopWorld.clone().sub(P0), 0.017, CHROME,{metalness:.7,roughness:.3}));
+    var crown=cyl(0.045,0.045,0.06,DARKM,16); group.add(crown);
+    var frontAxleLocal=V(P.frontX,P.axleY,0).sub(P0); var forkTops=[];
+    [-0.05,0.05].forEach(function(zoff){ var top=V(0,0.02,zoff*0.6); var bot=frontAxleLocal.clone().setZ(zoff); forkTops.push(top); group.add(tubeBetween(top,bot,0.03,FRAME,{metalness:.4,roughness:.55})); });
     group.add(tubeBetween(forkTops[0],forkTops[1],0.04,FRAMED,{metalness:.4,roughness:.5}));
-
-    var frontWheelGroup=wheelAssembly(P.wheelR);
-    frontWheelGroup.position.copy(frontAxleLocal);
-    group.add(frontWheelGroup);
-    var frontHubCap=cyl(0.05,0.05,0.02,CHROME,16);
-    frontHubCap.rotation.x=Math.PI/2;
-    frontHubCap.position.copy(frontAxleLocal);
-    group.add(frontHubCap);
-
-    var stemTopLocal=stemTopL.clone();
-    var stemEnd=stemEndL.clone();
-    group.add(tubeBetween(stemTopLocal,stemEnd,0.02,DARKM,{metalness:.5,roughness:.4}));
-
-    var barGroup=new THREE.Group();
-    barGroup.position.copy(stemEnd);
-    var bar=cyl(0.02,0.02,0.85,CHROME,12,{metalness:.7,roughness:.3});
-    bar.rotation.x=Math.PI/2;
-    barGroup.add(bar);
-    [-0.4,0.4].forEach(function(zg){
-      var grip=cyl(0.028,0.028,0.13,DARK,12,{metalness:.2,roughness:.8});
-      grip.rotation.x=Math.PI/2;
-      grip.position.z=zg;
-      barGroup.add(grip);
-    });
-    group.add(barGroup);
-
-    var leverPivot=new THREE.Group();
-    leverPivot.position.copy(leverL.clone());
-    var lever=box(0.012,0.09,0.018,DARKM,{metalness:.4,roughness:.5});
-    lever.position.set(0.045,-0.02,0);
-    leverPivot.add(lever);
-    group.add(leverPivot);
-
+    var frontWheelGroup=wheelAssembly(P.wheelR); frontWheelGroup.position.copy(frontAxleLocal); group.add(frontWheelGroup);
+    var frontHubCap=cyl(0.05,0.05,0.02,CHROME,16); frontHubCap.rotation.x=Math.PI/2; frontHubCap.position.copy(frontAxleLocal); group.add(frontHubCap);
+    var stemTopLocal=stemTopL.clone(); var stemEnd=stemEndL.clone(); group.add(tubeBetween(stemTopLocal,stemEnd,0.02,DARKM,{metalness:.5,roughness:.4}));
+    var barGroup=new THREE.Group(); barGroup.position.copy(stemEnd); var bar=cyl(0.02,0.02,0.85,CHROME,12,{metalness:.7,roughness:.3}); bar.rotation.x=Math.PI/2; barGroup.add(bar);
+    [-0.4,0.4].forEach(function(zg){ var grip=cyl(0.028,0.028,0.13,DARK,12,{metalness:.2,roughness:.8}); grip.rotation.x=Math.PI/2; grip.position.z=zg; barGroup.add(grip); }); group.add(barGroup);
+    var leverPivot=new THREE.Group(); leverPivot.position.copy(leverL.clone()); var lever=box(0.012,0.09,0.018,DARKM,{metalness:.4,roughness:.5}); lever.position.set(0.045,-0.02,0); leverPivot.add(lever); group.add(leverPivot);
     group.position.copy(P0);
-
-    return {
-      group:group,
-      update:function(s){
-        frontWheelGroup.rotation.z=DIR*s.wheelAngle;
-        leverPivot.rotation.z=-s.squeeze*0.35;
-        group.quaternion.setFromAxisAngle(axisDir, s.steerAngle);
-      }
-    };
+    return { group:group, update:function(s){ frontWheelGroup.rotation.z=DIR*s.wheelAngle; leverPivot.rotation.z=-s.squeeze*0.35; group.quaternion.setFromAxisAngle(axisDir, s.steerAngle); } };
   }
 
-  /* --- 4. Frein à étrier (levier, câble, mâchoires) ------------------ */
   function buildBrake(){
-    var group=new THREE.Group();
-    var pivotY=P.axleY;
-    var sign=-1;
-
-    var rotorGroup=new THREE.Group();
-    rotorGroup.position.set(P.rearX, pivotY, 0.08*sign);
-    var rotor=cyl(0.12,0.12,0.006,CHROME,24,{metalness:.9,roughness:.2});
-    rotor.rotation.x=Math.PI/2;
-    rotorGroup.add(rotor);
-    group.add(rotorGroup);
-
-    var caliperPivot=new THREE.Group();
-    caliperPivot.position.set(P.rearX-0.08, pivotY+0.08, 0.08*sign);
-    var caliper=box(0.06,0.04,0.03,DARKM,{metalness:.4,roughness:.5});
-    caliperPivot.add(caliper);
-    var pad1=box(0.03,0.02,0.008,PAD);
-    pad1.position.set(0,-0.01,0.015);
-    var pad2=box(0.03,0.02,0.008,PAD);
-    pad2.position.set(0,-0.01,-0.015);
-    caliperPivot.add(pad1,pad2);
-    group.add(caliperPivot);
-
-    var cablePull=new THREE.Group();
-    var cableStub=cyl(0.006,0.006,0.12,DARK,8,{metalness:.5,roughness:.4});
-    cableStub.position.set(P.rearX-0.08, pivotY+0.14, 0.08*sign);
-    cablePull.add(cableStub);
-    group.add(cablePull);
-
+    var group=new THREE.Group(); var pivotY=P.axleY; var sign = -1;
+    var rotorGroup = new THREE.Group(); rotorGroup.position.set(P.rearX, pivotY, 0.08 * sign);
+    var rotor = cyl(0.12, 0.12, 0.006, CHROME, 24, {metalness:.9,roughness:.2}); rotor.rotation.x = Math.PI/2; rotor.position.set(0, 0, 0); 
+    rotorGroup.add(rotor); group.add(rotorGroup);
+    var caliperPivot = new THREE.Group(); caliperPivot.position.set(P.rearX - 0.08, pivotY + 0.08, 0.08 * sign);
+    var caliper = box(0.06, 0.04, 0.03, DARKM, {metalness:.4,roughness:.5}); caliperPivot.add(caliper);
+    var pad1 = box(0.03, 0.02, 0.008, PAD); pad1.position.set(0, -0.01, 0.015);
+    var pad2 = box(0.03, 0.02, 0.008, PAD); pad2.position.set(0, -0.01, -0.015); caliperPivot.add(pad1, pad2); group.add(caliperPivot);
+    var cablePull=new THREE.Group(); var cableStub=cyl(0.006,0.006,0.12,DARK,8,{metalness:.5,roughness:.4}); cableStub.position.set(P.rearX - 0.08, pivotY + 0.14, 0.08 * sign); cablePull.add(cableStub); group.add(cablePull);
     return {
-      group:group,
-      update:function(s){
-        rotorGroup.rotation.z=DIR*s.wheelAngle;
-        cablePull.position.y=-s.squeeze*0.02;
-        var openZ=0.015, closedZ=0.005;
-        pad1.position.z=lerp(openZ,closedZ,s.squeeze);
-        pad2.position.z=-lerp(openZ,closedZ,s.squeeze);
+      group:group, update:function(s){
+        rotorGroup.rotation.z = DIR * s.wheelAngle;
+        cablePull.position.y = -s.squeeze * 0.02;
+        var openZ = 0.015; var closedZ = 0.005;
+        pad1.position.z = lerp(openZ, closedZ, s.squeeze); pad2.position.z = -lerp(openZ, closedZ, s.squeeze);
       }
     };
   }
 
-  /* --- 5. Dérailleur arrière (parallélogramme) ------------------------ */
   function buildDerailleur(){
-    var group=new THREE.Group();
-    var mountX=P.derMountX, mountY=P.derMountY, refZ=P.derRefZ;
-
-    var mount=box(0.05,0.11,0.05,DARKM,{metalness:.4,roughness:.5});
-    mount.position.set(mountX,mountY+0.05,refZ);
+    var group=new THREE.Group(); 
+    var mountPos = new THREE.Vector3(P.derMountX, P.derMountY, P.derRefZ);
+    
+    var mount = box(0.03, 0.05, 0.04, DARKM);
+    mount.position.copy(mountPos);
     group.add(mount);
 
-    var linkTop=new THREE.Group();
-    linkTop.position.set(mountX,mountY,refZ);
-    var linkBot=new THREE.Group();
-    linkBot.position.set(mountX,mountY-0.05,refZ);
-    group.add(linkTop,linkBot);
+    // Corps principal stylisé GRX (relie le cadre au premier pivot)
+    var geoBody = new THREE.CylinderGeometry(0.02, 0.015, 1, 12);
+    geoBody.rotateX(Math.PI/2);
+    var bodyMesh = new THREE.Mesh(geoBody, stdMat(DARKM, {metalness:.5, roughness:.4}));
+    var bodyWrap = new THREE.Group();
+    bodyWrap.add(bodyMesh);
+    group.add(bodyWrap);
 
-    var link1=box(0.028,0.028,0.1,CHROME,{metalness:.6,roughness:.35});
-    link1.position.z=0.05;
-    linkTop.add(link1);
-    var link2=box(0.028,0.028,0.1,CHROME,{metalness:.6,roughness:.35});
-    link2.position.z=0.05;
-    linkBot.add(link2);
+    var cagePlate = box(0.015, 0.16, 0.008, DARKM);
+    group.add(cagePlate);
 
-    var cage=new THREE.Group();
-    var pKnuckle=box(0.045,0.09,0.045,DARKM,{metalness:.4,roughness:.5});
-    cage.add(pKnuckle);
-    var cagePlate=box(0.045,0.19,0.06,DARKM,{metalness:.4,roughness:.5});
-    cagePlate.position.set(0,-0.1,0.02);
-    cage.add(cagePlate);
-    var pulleyTop=gearGroup({radius:0.045,thickness:0.024,teeth:12,color:BRASS});
-    pulleyTop.position.set(0,-0.06,0.045);
-    cage.add(pulleyTop);
-    var pulleyBot=gearGroup({radius:0.04,thickness:0.024,teeth:11,color:BRASS});
-    pulleyBot.position.set(0,-0.19,0.045);
-    cage.add(pulleyBot);
-    group.add(cage);
+    var pulleyTop = gearGroup({radius:0.045, thickness:0.02, teeth:12, color:BRASS});
+    group.add(pulleyTop);
+    var pulleyBot = gearGroup({radius:0.04, thickness:0.02, teeth:11, color:BRASS});
+    group.add(pulleyBot);
 
     return {
-      group:group,
+      group:group, 
       update:function(s){
-        var zNow=lerp(P.cassetteZTable[s.stepIdx],P.cassetteZTable[s.nextIdx],s.shiftEase);
-        var swing=zNow-refZ;
-        linkTop.rotation.y=swing*1.4;
-        linkBot.rotation.y=swing*1.4;
-        cage.position.set(mountX+0.01, mountY-0.02, zNow);
-        pulleyTop.rotation.z=DIR*s.cassetteAngle*1.4;
-        pulleyBot.rotation.z=DIR*s.cassetteAngle*1.4;
+        var zNow = lerp(P.cassetteZTable[s.stepIdx], P.cassetteZTable[s.nextIdx], s.shiftEase);
+        
+        // Pulleys alignés sur la chaîne
+        var C3 = new THREE.Vector3(P.rearX + 0.02, P.axleY - s.cassetteR - 0.04, zNow);
+        var C4 = new THREE.Vector3(P.rearX + 0.04, P.axleY - s.cassetteR - 0.18, zNow);
+
+        pulleyTop.position.copy(C3);
+        pulleyBot.position.copy(C4);
+        pulleyTop.rotation.z = DIR * s.cassetteAngle * 1.5;
+        pulleyBot.rotation.z = DIR * s.cassetteAngle * 1.5;
+
+        // Le corps principal s'oriente dynamiquement vers la poulie supérieure (B-tension visuelle)
+        var dist = mountPos.distanceTo(C3);
+        bodyWrap.position.copy(mountPos).add(C3).multiplyScalar(0.5);
+        bodyWrap.lookAt(C3);
+        bodyMesh.scale.set(1, 1, dist);
+
+        // La cage suit exactement l'axe entre les deux poulies
+        var mid = C3.clone().add(C4).multiplyScalar(0.5);
+        mid.z += 0.012;
+        cagePlate.position.copy(mid);
+        cagePlate.rotation.z = Math.atan2(C4.y - C3.y, C4.x - C3.x) + Math.PI/2;
       }
     };
   }
 
   var MECHS = {
-    drivetrain:{
-      label:'Pédalier, chaîne et cassette',
-      movementIn:'rotation (pédalage)', movementOut:'rotation de la roue arrière (vitesse accrue)',
-      roleDesc:'Le plateau, entraîné par les pédales, engrène la chaîne qui entraîne un pignon de la cassette. Le plateau ayant plus de dents que le pignon, la roue tourne plus vite que le pédalier : le rapport de vitesse vaut (dents du plateau)/(dents du pignon).',
-      build:buildDrivetrain
-    },
-    freewheel:{
-      label:'Roue libre (cliquet et rochet)',
-      movementIn:'rotation de la cassette', movementOut:'rotation du moyeu (à sens unique)',
-      roleDesc:'À l’intérieur du moyeu, des cliquets à ressort s’appuient sur les dents d’un rochet solidaire de la cassette. Quand le pédalage entraîne le rochet plus vite que la roue, les cliquets s’accrochent et entraînent la roue ; quand la roue tourne plus vite (on cesse de pédaler), les cliquets glissent sur les dents et cliquettent librement : c’est ce qui permet de rouler sans pédaler.',
-      build:buildFreewheel
-    },
-    steering:{
-      label:'Direction (guidon, fourche, roue avant)',
-      movementIn:'rotation du guidon', movementOut:'orientation de la roue avant',
-      roleDesc:'Le tube de direction traverse le cadre et porte, sur un même axe incliné, la fourche, le guidon et la roue avant : tourner le guidon fait pivoter l’ensemble autour de cet axe et oriente la roue avant.',
-      build:buildSteering
-    },
-    brake:{
-      label:'Frein à disque',
-      movementIn:'tension du câble', movementOut:'serrage des plaquettes sur le disque',
-      roleDesc:'Le câble tendu pousse les plaquettes de l’étrier contre le disque de frein fixé au moyeu de la roue, ce qui la freine par friction.',
-      build:buildBrake
-    },
-    derailleur:{
-      label:'Dérailleur arrière',
-      movementIn:'tension du câble', movementOut:'déplacement latéral de la chaîne',
-      roleDesc:'Le câble tire un parallélogramme articulé qui déplace latéralement la chape et ses deux galets de guidage. La chaîne, portée par les galets, se déplace alors d’un pignon à l’autre sur la cassette, ce qui change le rapport de vitesse.',
-      build:buildDerailleur
-    }
+    drivetrain:{ label:'Pédalier, chaîne et cassette', movementIn:'rotation (pédalage)', movementOut:'rotation de la roue arrière', roleDesc:'Le plateau, entraîné par les pédales, engrène la chaîne qui entraîne un pignon de la cassette. Le plateau ayant plus de dents que le pignon, la roue tourne plus vite que le pédalier.', build:buildDrivetrain },
+    freewheel:{ label:'Roue libre (cliquet et rochet)', movementIn:'rotation de la cassette', movementOut:'rotation du moyeu (à sens unique)', roleDesc:'À l’intérieur du moyeu, des cliquets à ressort s’appuient sur les dents d’un rochet solidaire de la cassette : quand la cassette tourne plus vite que la roue, les cliquets s’accrochent et entraînent la roue ; sinon ils glissent librement.', build:buildFreewheel },
+    steering:{ label:'Direction (guidon, fourche, roue avant)', movementIn:'rotation du guidon', movementOut:'orientation de la roue avant', roleDesc:'Le tube de direction traverse le cadre et porte, sur un même axe incliné, la fourche, le guidon et la roue avant : tourner le guidon fait pivoter l’ensemble et oriente la roue avant.', build:buildSteering },
+    brake:{ label:'Frein à disque', movementIn:'tension du câble', movementOut:'serrage des plaquettes sur le disque', roleDesc:'Le câble tendu pousse les plaquettes de l’étrier contre le disque de frein fixé au moyeu de la roue, ce qui la freine par friction.', build:buildBrake },
+    derailleur:{ label:'Dérailleur arrière', movementIn:'tension du câble', movementOut:'déplacement latéral de la chaîne', roleDesc:'Le corps du dérailleur, fixé à la patte du cadre, s’ajuste à la position de la cassette ; il déplace la cage porte-galets pour guider la chaîne d’un pignon à l’autre selon le rapport choisi.', build:buildDerailleur }
   };
   var ORDER=['drivetrain','freewheel','steering','brake','derailleur'];
 
   function kinematics(t, iso){
-    var A=1.5, B=1.35, freq=0.42;
-    var pedalAngle = A*t - (B/freq)*Math.sin(freq*t);
-
-    var nSteps=P.cassetteSteps.length;
-    var cyclePos=(t*0.10)%nSteps;
-    var stepIdx=Math.floor(cyclePos);
-    var nextIdx=(stepIdx+1)%nSteps;
-    var frac=cyclePos-stepIdx;
-    var shiftT=clamp((frac-0.8)/0.2,0,1);
-    var shiftEase=shiftT*shiftT*(3-2*shiftT);
-
-    var cassetteR=lerp(P.cassetteSteps[stepIdx],P.cassetteSteps[nextIdx],shiftEase);
-    var cassetteTeethNow=lerp(P.cassetteTeeth[stepIdx],P.cassetteTeeth[nextIdx],shiftEase);
-    var chainRatio=P.chainringTeeth/cassetteTeethNow;
-    var cassetteAngle=pedalAngle*chainRatio;
-
-    var D0=3.2;
-    var wheelAngle=Math.max(cassetteAngle, D0*t);
-
-    var squeeze=clamp(Math.sin(t*0.5)*1.2,0,1);
-    var steerAngle=0.32*Math.sin(t*0.23);
-
-    return {
-      pedalAngle:pedalAngle, cassetteAngle:cassetteAngle, wheelAngle:wheelAngle,
-      steerAngle:steerAngle, squeeze:squeeze,
-      stepIdx:stepIdx, nextIdx:nextIdx, shiftEase:shiftEase, cassetteR:cassetteR
-    };
+    var A=1.5, B=1.35, freq=0.42; var pedalAngle = A*t - (B/freq)*Math.sin(freq*t);
+    var nSteps=P.cassetteSteps.length; var cyclePos=(t*0.10)%nSteps; var stepIdx=Math.floor(cyclePos); var nextIdx=(stepIdx+1)%nSteps; var frac=cyclePos-stepIdx; var shiftT=clamp((frac-0.8)/0.2,0,1); var shiftEase=shiftT*shiftT*(3-2*shiftT);
+    var cassetteR=lerp(P.cassetteSteps[stepIdx],P.cassetteSteps[nextIdx],shiftEase); var cassetteTeethNow=lerp(P.cassetteTeeth[stepIdx],P.cassetteTeeth[nextIdx],shiftEase); var chainRatio=P.chainringTeeth/cassetteTeethNow; var cassetteAngle=pedalAngle*chainRatio;
+    var D0=3.2; var wheelAngle=Math.max(cassetteAngle, D0*t);
+    var squeeze=clamp(Math.sin(t*0.5)*1.2,0,1); var steerAngle=0.32*Math.sin(t*0.23);
+    return { pedalAngle:pedalAngle, cassetteAngle:cassetteAngle, wheelAngle:wheelAngle, steerAngle:steerAngle, squeeze:squeeze, stepIdx:stepIdx, nextIdx:nextIdx, shiftEase:shiftEase, cassetteR:cassetteR };
   }
 
   function buildStructure(){
-    var g=new THREE.Group();
-    var seatTop=V(P.seatTopX,P.seatTopY,0);
-    var headTop=V(P.headTopX,P.headTopY,0);
-    var headBot=V(P.headBotX,P.headBotY,0);
-    var bb=V(P.bbX,P.bbY,0);
-    var rearAxle=V(P.rearX,P.axleY,0);
-
-    g.add(tubeBetween(seatTop,headTop,0.021,FRAME,{metalness:.35,roughness:.5}));
-    g.add(tubeBetween(bb,headBot,0.024,FRAME,{metalness:.35,roughness:.5}));
-    g.add(tubeBetween(bb,seatTop,0.021,FRAME,{metalness:.35,roughness:.5}));
-    g.add(tubeBetween(headBot,headTop,0.028,FRAMED,{metalness:.4,roughness:.45}));
-
-    [-0.065,0.065].forEach(function(z){
-      g.add(tubeBetween(V(bb.x,bb.y,z*0.55),V(rearAxle.x,rearAxle.y,z),0.017,FRAME,{metalness:.35,roughness:.5}));
-      g.add(tubeBetween(V(seatTop.x,seatTop.y,0),V(rearAxle.x,rearAxle.y,z),0.015,FRAME,{metalness:.35,roughness:.5}));
-    });
-
-    var seatpost=tubeBetween(seatTop, V(P.saddleX,P.saddleY,0), 0.016, CHROME,{metalness:.7,roughness:.3});
-    g.add(seatpost);
-    var saddleGroup=new THREE.Group();
-    var saddlePad=box(0.29,0.055,0.16,DARK,{metalness:.2,roughness:.75});
-    saddlePad.position.x=-0.07;
-    saddleGroup.add(saddlePad);
-    var saddleNose=box(0.24,0.04,0.065,DARK,{metalness:.2,roughness:.75});
-    saddleNose.position.x=0.19;
-    saddleGroup.add(saddleNose);
-    [-0.06,0.06].forEach(function(zr){
-      var rail=cyl(0.008,0.008,0.38,CHROME,8,{metalness:.7,roughness:.3});
-      rail.rotation.z=Math.PI/2;
-      rail.position.set(-0.02,-0.035,zr);
-      saddleGroup.add(rail);
-    });
-    saddleGroup.position.set(P.saddleX,P.saddleY+0.035,0);
-    saddleGroup.rotation.z=-0.07;
-    g.add(saddleGroup);
-
-    var rearWheelGroup=wheelAssembly(P.wheelR);
-    rearWheelGroup.position.copy(rearAxle);
-    g.add(rearWheelGroup);
-    var rearHubCap=cyl(0.05,0.05,0.02,CHROME,16);
-    rearHubCap.rotation.x=Math.PI/2;
-    rearHubCap.position.copy(rearAxle);
-    g.add(rearHubCap);
-
-    // le pont de frein n'est pas suspendu dans le vide : deux haubans le
-    // relient directement aux moyeux, comme sur un vrai cadre.
-    [-0.05,0.05].forEach(function(z){
-      g.add(tubeBetween(V(rearAxle.x,rearAxle.y,z*1.3),V(rearAxle.x,P.brakePivotY,z),0.013,FRAME,{metalness:.35,roughness:.5}));
-    });
-    // patte de dérailleur : relie le moyeu arrière au support du dérailleur.
+    var g=new THREE.Group(); var seatTop=V(P.seatTopX,P.seatTopY,0); var headTop=V(P.headTopX,P.headTopY,0); var headBot=V(P.headBotX,P.headBotY,0); var bb=V(P.bbX,P.bbY,0); var rearAxle=V(P.rearX,P.axleY,0);
+    g.add(tubeBetween(seatTop,headTop,0.021,FRAME,{metalness:.35,roughness:.5})); g.add(tubeBetween(bb,headBot,0.024,FRAME,{metalness:.35,roughness:.5})); g.add(tubeBetween(bb,seatTop,0.021,FRAME,{metalness:.35,roughness:.5})); g.add(tubeBetween(headBot,headTop,0.028,FRAMED,{metalness:.4,roughness:.45}));
+    [-0.065,0.065].forEach(function(z){ g.add(tubeBetween(V(bb.x,bb.y,z*0.55),V(rearAxle.x,rearAxle.y,z),0.017,FRAME,{metalness:.35,roughness:.5})); g.add(tubeBetween(V(P.seatTopX,P.seatTopY,0),V(rearAxle.x,rearAxle.y,z),0.015,FRAME,{metalness:.35,roughness:.5})); });
+    var seatpost=tubeBetween(seatTop, V(P.saddleX,P.saddleY,0), 0.016, CHROME,{metalness:.7,roughness:.3}); g.add(seatpost);
+    var saddleGroup=new THREE.Group(); var saddlePad=box(0.29,0.055,0.16,DARK,{metalness:.2,roughness:.75}); saddlePad.position.x=-0.07; saddleGroup.add(saddlePad); var saddleNose=box(0.24,0.04,0.065,DARK,{metalness:.2,roughness:.75}); saddleNose.position.x=0.19; saddleGroup.add(saddleNose);
+    [-0.06,0.06].forEach(function(zr){ var rail=cyl(0.008,0.008,0.38,CHROME,8,{metalness:.7,roughness:.3}); rail.rotation.z=Math.PI/2; rail.position.set(-0.02,-0.035,zr); saddleGroup.add(rail); });
+    saddleGroup.position.set(P.saddleX,P.saddleY+0.035,0); saddleGroup.rotation.z=-0.07; g.add(saddleGroup);
+    var rearWheelGroup=wheelAssembly(P.wheelR); rearWheelGroup.position.copy(rearAxle); g.add(rearWheelGroup);
+    var rearHubCap=cyl(0.05,0.05,0.02,CHROME,16); rearHubCap.rotation.x=Math.PI/2; rearHubCap.position.copy(rearAxle); g.add(rearHubCap);
+    [-0.05,0.05].forEach(function(z){ g.add(tubeBetween(V(rearAxle.x,rearAxle.y,z*1.3),V(rearAxle.x,P.brakePivotY,z),0.013,FRAME,{metalness:.35,roughness:.5})); });
     g.add(tubeBetween(V(rearAxle.x,rearAxle.y,P.derRefZ),V(P.derMountX,P.derMountY+0.05,P.derRefZ),0.016,DARKM,{metalness:.4,roughness:.5}));
-
-    // câble de frein : du levier (position au repos) à une butée sur le
-    // cadre près du tube de direction, puis jusqu'à l'étrier arrière.
-    var cableStop=V(P.headTopX-0.02,P.headTopY+0.05,0.045);
-    g.add(tubeBetween(P.leverWorld, cableStop, 0.008, DARK,{metalness:.3,roughness:.6}));
-    g.add(tubeBetween(cableStop, V(seatTop.x,seatTop.y+0.02,0), 0.007, DARK,{metalness:.3,roughness:.6}));
-    g.add(tubeBetween(V(seatTop.x,seatTop.y+0.02,0), V(rearAxle.x-0.08,P.axleY+0.14,-0.08), 0.007, DARK,{metalness:.3,roughness:.6}));
-
+    var cableStop=V(P.headTopX-0.02,P.headTopY+0.05,0.045); g.add(tubeBetween(P.leverWorld, cableStop, 0.008, DARK,{metalness:.3,roughness:.6})); g.add(tubeBetween(cableStop, V(P.seatTopX,P.seatTopY+0.02,0), 0.007, DARK,{metalness:.3,roughness:.6}));
+    g.add(tubeBetween(V(P.seatTopX,P.seatTopY+0.02,0), V(P.rearX - 0.08, P.axleY + 0.14, -0.08), 0.007, DARK,{metalness:.3,roughness:.6}));
     return {group:g, rearWheelGroup:rearWheelGroup};
   }
 
-  function buildFull(){
-    var group=new THREE.Group();
-    var structure=buildStructure();
-    group.add(structure.group);
-
-    var instances={};
-    var wrappers={};
-    ORDER.forEach(function(key){
-      var inst=MECHS[key].build();
-      instances[key]=inst;
-      var wrap=new THREE.Group();
-      wrap.add(inst.group);
-      wrappers[key]=wrap;
-      group.add(wrap);
-    });
-    wrappers.drivetrain.userData.explodeDir=new THREE.Vector3(0,0,1);
-    wrappers.freewheel.userData.explodeDir=new THREE.Vector3(0,0,-1);
-    wrappers.steering.userData.explodeDir=new THREE.Vector3(0,1,0.3);
-    wrappers.brake.userData.explodeDir=new THREE.Vector3(0,1,-0.4);
-    wrappers.derailleur.userData.explodeDir=new THREE.Vector3(-0.6,-0.8,0.4);
-
-    return {
-      group:group,
-      update:function(s){
-        ORDER.forEach(function(key){ instances[key].update(s,false); });
-        structure.rearWheelGroup.rotation.z=DIR*s.wheelAngle;
-      }
-    };
-  }
-
-  function buildIsolated(key){
-    var inst=MECHS[key].build();
-    return {
-      group:inst.group,
-      animate:function(t){ inst.update(kinematics(t,true),true); }
-    };
-  }
-
   return {
-    label:'Vélo',
-    order:ORDER, mechs:MECHS,
-    kinematics:kinematics,
-    buildFull:buildFull,
-    buildIsolated:buildIsolated
+    label:'Vélo', order:ORDER, mechs:MECHS, kinematics:kinematics,
+    buildFull:function(){
+      var group=new THREE.Group(); var structure=buildStructure(); group.add(structure.group);
+      var instances={}, wrappers={};
+      ORDER.forEach(function(key){ var inst=MECHS[key].build(); instances[key]=inst; var wrap=new THREE.Group(); wrap.add(inst.group); wrappers[key]=wrap; group.add(wrap); });
+      wrappers.drivetrain.userData.explodeDir=new THREE.Vector3(0,0,1); wrappers.freewheel.userData.explodeDir=new THREE.Vector3(0,0,-1); wrappers.steering.userData.explodeDir=new THREE.Vector3(0,1,0.3); wrappers.brake.userData.explodeDir=new THREE.Vector3(0,1,-0.4); wrappers.derailleur.userData.explodeDir=new THREE.Vector3(-0.6,-0.8,0.4);
+      return { group:group, update:function(s){ ORDER.forEach(function(key){ instances[key].update(s,false); }); structure.rearWheelGroup.rotation.z=DIR*s.wheelAngle; } };
+    },
+    buildIsolated:function(key){ var inst=MECHS[key].build(); return { group:inst.group, animate:function(t){ inst.update(kinematics(t,true),true); } }; }
   };
 })();
 
