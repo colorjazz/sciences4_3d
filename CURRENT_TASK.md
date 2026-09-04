@@ -32,7 +32,10 @@ ciseaux à cliquet).
 - Perceuse-visseuse sans fil (`DetailedObjects.perceuseSansFil`) :
   **terminée et vérifiée**. 2 mécanismes couplés (réducteur
   planétaire, mandrin auto-serrant). Positions vérifiées par mesure
-  de bounding-box, vue éclatée testée sans erreur.
+  de bounding-box, vue éclatée testée sans erreur. Carter/poignée/
+  batterie retravaillés le 2026-09-04 (LatheGeometry + ExtrudeGeometry,
+  inspirés d'une référence Three.js testée séparément) — les 2
+  mécanismes n'ont pas changé, seul l'habillage visuel statique.
 - 9 objets catalogue "mécanisme simple" existants et fonctionnels
   (voir TODO.md).
 - Total banque actuelle : 14/30 objets.
@@ -51,6 +54,22 @@ DYNAMIQUE via `.rotation.y` sur le groupe englobant. Voir
 de référence. Une roue simple (`cyl()`, pas un gearGroup) a déjà son
 axe par défaut en Y — pas besoin de cette gymnastique pour un simple
 disque/poulie/roue lisse.
+
+Leçon (perceuse sans fil, retouche du carter) : quand on retravaille
+l'habillage visuel STATIQUE d'un objet existant (LatheGeometry,
+ExtrudeGeometry pour une silhouette plus réaliste), vérifier les
+rayons/dimensions de TOUTES les pièces mécaniques fixes que ce
+carénage doit envelopper — pas seulement la pièce qu'on modifie. Un
+carter qui semble correct isolé peut quand même laisser dépasser une
+pièce interne (moteur, ailettes) si son profil descend, même
+localement, sous le rayon réel de cette pièce. Vérifier par un dump
+des rayons/dimensions de chaque maillage (pas seulement une capture
+d'écran), comme fait pour ce correctif. Attention aussi : contrairement
+à `CylinderGeometry`, `LatheGeometry` ne ferme PAS automatiquement son
+extrémité si le dernier point du profil n'a pas un rayon de 0 — ça
+peut rester invisible tant qu'une autre pièce masque l'ouverture, puis
+apparaître comme un trou béant dès que cette pièce s'écarte (vue
+éclatée). Ajouter un disque de fermeture si besoin.
 
 Autre leçon (sécheuse) : pour un appareil normalement fermé (électro-
 ménager, boîtier), NE PAS construire un carénage plein qui englobe le

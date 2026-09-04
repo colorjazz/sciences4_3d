@@ -5,6 +5,54 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-04 (suite 2) — Perceuse-visseuse sans fil : nouveau carter inspiré d'une référence testée
+
+- L'utilisateur a fourni un PDF contenant un visualiseur Three.js
+  autonome ("Perceuse Pro 3D", r160, modules ES, CDN unpkg) et a
+  demandé de le tester. Reconstruit le HTML complet à partir du texte
+  extrait du PDF, testé par Playwright (import map réécrit vers une
+  copie locale de three@0.160.0 + petit serveur HTTP local, car les
+  modules ES ne se chargent pas depuis `file://` — CORS — et unpkg.com
+  n'est pas joignable depuis ce bac à sable). Résultat : aucune erreur
+  JS ; gâchette (accélération/décélération), sens FWD/REV/LOCK, vue
+  éclatée (lerp), et inspection par raycasting (nom + matériau de la
+  pièce cliquée) fonctionnaient tous correctement.
+- L'utilisateur a ensuite demandé d'intégrer ça à l'atelier et de
+  remplacer la perceuse existante. Le fichier testé est incompatible
+  tel quel (modules ES + CDN externe vs script classique r128 sans
+  modules de l'atelier) — même décision qu'une session précédente pour
+  un visualiseur PBR statique : pas réutilisable comme code, mais ses
+  techniques de modélisation (LatheGeometry pour un carter bombé,
+  ExtrudeGeometry pour une poignée/batterie profilées) ont servi à
+  retravailler `DetailedObjects.perceuseSansFil` existant, en gardant
+  intacts ses deux mécanismes réels (réducteur planétaire, mandrin
+  auto-serrant) — seul l'habillage visuel statique (buildStructure())
+  a changé.
+- Deux bugs trouvés et corrigés par mesure directe des rayons de
+  chaque maillage (pas seulement visuellement) :
+  1. Le nouveau carter (Lathe), en s'effilant aux extrémités, passait
+     par endroits sous le rayon réel du moteur/des ailettes (cylindre
+     fixe de buildReducer, rayon constant 0.10) : le moteur dépassait
+     du carter. Corrigé en gardant le profil toujours >= ce rayon,
+     l'effilement du bout arrière se faisant désormais en z négatif,
+     derrière le capot du moteur plutôt que dedans.
+  2. La bague du réducteur (gearboxR, purement décorative, jamais
+     animée) était nettement plus large (0.135) que le nouveau carter,
+     créant un renflement disproportionné. Réduite à 0.116.
+  3. LatheGeometry ne ferme pas automatiquement son extrémité avant
+     (contrairement à CylinderGeometry) : invisible tant que la bague
+     du réducteur la masque, mais un trou béant apparaissait en vue
+     éclatée. Ajout d'un disque de fermeture (housingCap).
+- Vérifié : aucune erreur JS (chargement, lecture, éclaté 100 %/0 %),
+  comparaison capture d'écran avant/après le carter original.
+- Commit poussé : `76a7c40` sur `colorjazz/sciences4_3d`.
+- Leçon ajoutée à CURRENT_TASK.md : quand on retravaille l'habillage
+  visuel statique d'un objet existant, vérifier les rayons/dimensions
+  de TOUTES les pièces mécaniques fixes qu'il doit envelopper (pas
+  seulement celle qu'on modifie) — un carter qui semble correct isolé
+  peut quand même laisser dépasser une pièce interne si on ne compare
+  pas les rayons réels.
+
 ## 2026-09-04 (suite) — Sécheuse : correction définitive de l'axe de rotation poulie/galet
 
 - Après plusieurs allers-retours (moteur qui traversait le mur arrière,
