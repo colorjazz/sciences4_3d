@@ -2463,13 +2463,30 @@ DetailedObjects.secheuse = (function(){
       });
     });
 
+    /* une poulie parfaitement lisse qui tourne autour de son propre
+       axe ne montre AUCUN mouvement visible (symétrie de révolution) :
+       vue de face, rien ne bouge à l'écran même si elle tourne bel et
+       bien — elle donne l'impression de "tourner sur elle-même" sans
+       rien entraîner. On ajoute des boulons en relief sur la face,
+       qui orbitent visiblement autour de l'axe et rendent la rotation
+       (donc l'entraînement de la courroie) réellement perceptible. */
+    function boltRing(count, ringR, boltR, boltLen){
+      var g=new THREE.Group();
+      for(var i=0;i<count;i++){
+        var a=(i/count)*Math.PI*2;
+        var bolt=zAxis(cyl(boltR,boltR,boltLen,DARK,10,{metalness:.55,roughness:.4}));
+        bolt.position.set(Math.cos(a)*ringR,Math.sin(a)*ringR,0);
+        g.add(bolt);
+      }
+      return g;
+    }
+
     var motorPulley=zAxis(cyl(P.motorPulleyR,P.motorPulleyR,0.03,STEEL,16,{metalness:.7,roughness:.3}));
     motorPulley.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ);
     group.add(motorPulley);
-    /* méplat sur la poulie : repère visuel de la rotation */
-    var pulleyKey=box(P.motorPulleyR*1.7,0.006,0.006,DARK,{metalness:.4,roughness:.5});
-    pulleyKey.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ+0.017);
-    group.add(pulleyKey);
+    var motorPulleyMarks=boltRing(3,P.motorPulleyR*0.6,0.008,0.02);
+    motorPulleyMarks.position.set(P.motorPulleyX,P.motorPulleyY,P.motorPulleyZ+0.023);
+    group.add(motorPulleyMarks);
 
     var idlerArmGroup=new THREE.Group();
     idlerArmGroup.position.set(P.drumX,P.idlerY+P.idlerR+0.05,P.motorPulleyZ);
@@ -2479,6 +2496,9 @@ DetailedObjects.secheuse = (function(){
     var idler=zAxis(cyl(P.idlerR,P.idlerR,0.03,STEEL,20,{metalness:.7,roughness:.3}));
     idler.position.y=-0.09;
     idlerArmGroup.add(idler);
+    var idlerMarks=boltRing(3,P.idlerR*0.55,0.010,0.022);
+    idlerMarks.position.set(0,-0.09,0.025);
+    idlerArmGroup.add(idlerMarks);
     group.add(idlerArmGroup);
     /* ressort de tension : hélice autour de l'axe du bras */
     var springCurve=new THREE.Curve();
@@ -2499,8 +2519,10 @@ DetailedObjects.secheuse = (function(){
       update:function(s){
         motorGroup.rotation.z=s.motorAngle;
         motorPulley.rotation.z=s.motorAngle;
-        pulleyKey.rotation.z=s.motorAngle;
-        idler.rotation.z=s.drumAngle*(P.drumR/P.idlerR);
+        motorPulleyMarks.rotation.z=s.motorAngle;
+        var idlerAngle=s.drumAngle*(P.drumR/P.idlerR);
+        idler.rotation.z=idlerAngle;
+        idlerMarks.rotation.z=idlerAngle;
       }
     };
   }
