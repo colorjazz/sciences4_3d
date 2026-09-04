@@ -2000,14 +2000,13 @@ DetailedObjects.velo = (function(){
     var chainMesh=new THREE.Mesh(new THREE.BufferGeometry(), stdMat(0x555b62,{metalness:.75,roughness:.35}));
     group.add(chainMesh);
 
-    function beltPts(A,rA,B,rB){
-      var dx=B.x-A.x, dy=B.y-A.y;
-      var len=Math.sqrt(dx*dx+dy*dy)||1;
-      dx/=len; dy/=len;
-      return [
-        new THREE.Vector3(A.x-dy*rA, A.y+dx*rA, A.z),
-        new THREE.Vector3(B.x-dy*rB, B.y+dx*rB, B.z)
-      ];
+    function arcPts(C, r, a1, a2, steps) {
+      var arr = [];
+      for(var i=0; i<=steps; i++) {
+        var a = a1 + (a2 - a1) * (i / steps);
+        arr.push(new THREE.Vector3(C.x + r * Math.cos(a), C.y + r * Math.sin(a), C.z));
+      }
+      return arr;
     }
 
     return {
@@ -2017,21 +2016,19 @@ DetailedObjects.velo = (function(){
         cassetteGroup.rotation.z=DIR*s.cassetteAngle;
         var zNow=lerp(P.cassetteZTable[s.stepIdx],P.cassetteZTable[s.nextIdx],s.shiftEase);
 
-        /* la chaîne suit le plateau, le pignon engagé ET les deux galets
-           du dérailleur : elle ne saute pas directement d'un pignon à
-           l'autre sans passer par le dérailleur. */
         var C1=new THREE.Vector3(P.bbX,P.bbY,P.chainringZ), r1=P.chainringR;
         var C2=new THREE.Vector3(P.rearX,P.axleY,zNow), r2=s.cassetteR;
         var C3=new THREE.Vector3(P.derMountX+0.01,P.derMountY-0.08,zNow+0.045), r3=0.045;
         var C4=new THREE.Vector3(P.derMountX+0.01,P.derMountY-0.21,zNow+0.045), r4=0.04;
 
         var pts=[];
-        [ [C1,r1,C2,r2], [C2,r2,C3,r3], [C3,r3,C4,r4], [C4,r4,C1,r1] ].forEach(function(seg){
-          var p=beltPts(seg[0],seg[1],seg[2],seg[3]);
-          pts.push(p[0],p[1]);
-        });
-        var curve=new THREE.CatmullRomCurve3(pts,true,'catmullrom',0.4);
-        var geo=new THREE.TubeGeometry(curve,140,0.019,6,true);
+        pts = pts.concat(arcPts(C1, r1, -Math.PI/2 + 0.05, Math.PI/2 - 0.05, 16));
+        pts = pts.concat(arcPts(C2, r2, Math.PI/2 + 0.05, Math.PI*1.35, 16));
+        pts = pts.concat(arcPts(C3, r3, Math.PI*0.1, Math.PI, 8));
+        pts = pts.concat(arcPts(C4, r4, Math.PI, Math.PI*1.5 - 0.05, 8));
+
+        var curve=new THREE.CatmullRomCurve3(pts,true,'centripetal',0);
+        var geo=new THREE.TubeGeometry(curve,150,0.019,6,true);
         chainMesh.geometry.dispose();
         chainMesh.geometry=geo;
       }
