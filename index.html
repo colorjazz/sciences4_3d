@@ -2699,7 +2699,7 @@ DetailedObjects.secheuse = (function(){
 DetailedObjects.perceuseSansFil = (function(){
   var P = {
     motorR:0.10, motorLen:0.30,
-    gearboxR:0.135, gearboxLen:0.09,
+    gearboxR:0.116, gearboxLen:0.09,
     sunR:0.03, sunTeeth:10, planetR:0.03, planetTeeth:10, ringTeethVirt:30,
     chuckLen:0.16, bitLen:0.28, bitR:0.013,
     handleLen:0.40, handleR:0.055, handleTilt:0.30,
@@ -2729,6 +2729,14 @@ DetailedObjects.perceuseSansFil = (function(){
      three.js a son axe natif en Y, on l'incline une fois pour de bon. */
   function zCyl(r1,r2,h,color,seg,opts){
     var m=cyl(r1,r2,h,color,seg,opts);
+    m.rotation.x=Math.PI/2;
+    return m;
+  }
+  /* même principe pour un profil de révolution (Lathe, axe natif Y) :
+     silhouette bombée du carter moteur, orientée selon Z. Uniquement
+     statique (jamais de rotation.z dynamique dessus ensuite). */
+  function zLathe(points,seg,color,opts){
+    var m=new THREE.Mesh(new THREE.LatheGeometry(points,seg||32), stdMat(color,opts||{metalness:.3,roughness:.45}));
     m.rotation.x=Math.PI/2;
     return m;
   }
@@ -2875,25 +2883,97 @@ DetailedObjects.perceuseSansFil = (function(){
 
   function buildStructure(){
     var g=new THREE.Group();
-    var handle=cyl(P.handleR,P.handleR*1.15,P.handleLen,RUBBER,20,{metalness:.1,roughness:.85});
-    handle.position.set(0,(P.handleTopY+P.handleBotY)/2,(P.handleTopZ+P.handleBotZ)/2);
-    handle.rotation.x=P.handleTilt;
-    g.add(handle);
+
+    /* Carter moteur : profil de révolution (Lathe) bombé, comme un
+       vrai carter industriel, au lieu d'un simple tube. S'arrête là où
+       commence la bague du réducteur (déjà modélisée, plus large, dans
+       buildReducer) pour créer un épaulement réaliste — la bague noire
+       dépasse légèrement du carter jaune, comme sur un vrai outil.
+       IMPORTANT : le moteur et ses ailettes (buildReducer, dans le
+       même repère) sont un cylindre plein de rayon P.motorR=0.10 sur
+       toute la longueur z:[0,motorLen] — le carter doit donc rester
+       >= ~0.10 partout sur cette plage (le renflement/effilement ne se
+       fait qu'AU-DELÀ, en z négatif derrière le capot arrière du
+       moteur) sous peine de laisser le moteur/les ailettes dépasser. */
+    var housingPts=[
+      new THREE.Vector2(0.0,   -0.03),
+      new THREE.Vector2(0.06,  -0.015),
+      new THREE.Vector2(0.103,  0.0),
+      new THREE.Vector2(0.106,  0.05),
+      new THREE.Vector2(0.114,  0.11),
+      new THREE.Vector2(0.114,  0.17),
+      new THREE.Vector2(0.112,  0.23),
+      new THREE.Vector2(0.109,  0.28),
+      new THREE.Vector2(0.108,  P.motorLen)
+    ];
+    var housing=zLathe(housingPts,32,YELLOW,{metalness:.25,roughness:.4});
+    g.add(housing);
+    /* LatheGeometry ne ferme pas l'extrémité avant (contrairement à un
+       CylinderGeometry) : invisible tant que le réducteur/la bague
+       sont en place devant, mais un trou béant apparaît en vue éclatée
+       quand cette pièce s'écarte. Un disque plat referme l'ouverture. */
+    var housingCap=zCyl(0.108,0.108,0.003,YELLOW,32,{metalness:.25,roughness:.4});
+    housingCap.position.z=P.motorLen;
+    g.add(housingCap);
+
+    /* Poignée ergonomique : profil extrudé (au lieu d'un cylindre plein)
+       qui se resserre à mi-hauteur puis se réévase, comme une vraie
+       poignée pistolet. Même axe natif (Y, longueur de la poignée) et
+       même ancrage que l'ancien cylindre : remplacement direct, la
+       position/rotation qui suit n'a pas changé. */
+    var hw=0.05, hwWaist=0.038;
+    var handleShape=new THREE.Shape();
+    handleShape.moveTo(-hw,0);
+    handleShape.lineTo(hw,0);
+    handleShape.quadraticCurveTo(hw+0.012,-P.handleLen*0.35, hwWaist,-P.handleLen*0.55);
+    handleShape.quadraticCurveTo(hwWaist+0.01,-P.handleLen*0.8, hw+0.01,-P.handleLen);
+    handleShape.lineTo(-hw-0.01,-P.handleLen);
+    handleShape.quadraticCurveTo(-hwWaist-0.01,-P.handleLen*0.8, -hwWaist,-P.handleLen*0.55);
+    handleShape.quadraticCurveTo(-hw-0.012,-P.handleLen*0.35, -hw,0);
+    var handleDepth=0.10;
+    var handleGeo=new THREE.ExtrudeGeometry(handleShape,{depth:handleDepth,bevelEnabled:true,bevelThickness:0.006,bevelSize:0.006,bevelSegments:2,steps:1});
+    handleGeo.translate(0,P.handleLen/2,-handleDepth/2); // recentre comme l'ancien cylindre (centré à l'origine)
+    var handleMesh=new THREE.Mesh(handleGeo, stdMat(YELLOW,{metalness:.25,roughness:.4}));
+    handleMesh.position.set(0,(P.handleTopY+P.handleBotY)/2,(P.handleTopZ+P.handleBotZ)/2);
+    handleMesh.rotation.x=P.handleTilt;
+    g.add(handleMesh);
+
+    /* bande de grip caoutchouc sur la moitié basse de la poignée,
+       calculée par paramétrisation directe le long de l'axe incliné
+       (t=0 en haut, t=1 en bas) plutôt que par décalage approximatif
+       du point milieu, pour éviter toute erreur de signe. */
+    var gripT=0.72;
+    var gripY=P.handleTopY - gripT*P.handleLen*Math.cos(P.handleTilt);
+    var gripZ=P.handleTopZ - gripT*P.handleLen*Math.sin(P.handleTilt);
+    var gripBand=cyl(0.052,0.048,P.handleLen*0.5,RUBBER,20,{metalness:.05,roughness:.9});
+    gripBand.position.set(0,gripY,gripZ);
+    gripBand.rotation.x=P.handleTilt;
+    g.add(gripBand);
 
     var trigger=box(0.03,0.06,0.05,RED,{metalness:.2,roughness:.6});
     trigger.position.set(0,P.handleTopY-0.06,P.handleTopZ+0.05);
     g.add(trigger);
 
-    var battery=box(P.batW,P.batH,P.batD,PLASTIC,{metalness:.25,roughness:.55});
+    /* Batterie : coins arrondis (Extrude) plutôt qu'un bloc brut */
+    var w2=P.batW/2, h2=P.batH/2, rc=0.025;
+    var batShape=new THREE.Shape();
+    batShape.moveTo(-w2+rc,-h2);
+    batShape.lineTo(w2-rc,-h2);
+    batShape.quadraticCurveTo(w2,-h2, w2,-h2+rc);
+    batShape.lineTo(w2,h2-rc);
+    batShape.quadraticCurveTo(w2,h2, w2-rc,h2);
+    batShape.lineTo(-w2+rc,h2);
+    batShape.quadraticCurveTo(-w2,h2, -w2,h2-rc);
+    batShape.lineTo(-w2,-h2+rc);
+    batShape.quadraticCurveTo(-w2,-h2, -w2+rc,-h2);
+    var batGeo=new THREE.ExtrudeGeometry(batShape,{depth:P.batD,bevelEnabled:true,bevelThickness:0.006,bevelSize:0.006,bevelSegments:2,steps:1});
+    batGeo.translate(0,0,-P.batD/2); // recentre comme l'ancien box (centré à l'origine)
+    var battery=new THREE.Mesh(batGeo, stdMat(PLASTIC,{metalness:.25,roughness:.55}));
     battery.position.set(0,P.handleBotY-P.batH/2-0.01,P.handleBotZ);
     g.add(battery);
     var batStripe=box(P.batW*0.9,P.batH*0.28,P.batD*0.9,YELLOW,{metalness:.2,roughness:.5});
     batStripe.position.set(0,P.handleBotY-0.02,P.handleBotZ);
     g.add(batStripe);
-
-    var topShell=zCyl(P.motorR*1.06,P.motorR*1.06,P.motorLen+P.gearboxLen+0.03,YELLOW,26,{metalness:.25,roughness:.4});
-    topShell.position.z=(P.motorZ0+P.gearboxZ1)/2;
-    g.add(topShell);
 
     return {group:g, trigger:trigger};
   }
