@@ -25,9 +25,21 @@ consignes pour Claude »), en cours de traitement :
    exact disparaît. Cause originale précise toujours non identifiée
    avec certitude (aucune reproduction directe obtenue malgré tests
    étendus), mais toute la CLASSE de bug est maintenant couverte.
-   **En attente de confirmation de l'utilisateur** que le bug ne se
-   reproduit plus avant de commencer le point 6 (constructeur de
-   circuit électrique), comme demandé.
+   L'utilisateur a confirmé que le bug persiste encore après ce
+   deuxième correctif ("même problème"). Sans reproduction directe
+   possible malgré des tests très étendus, deviner un 3e correctif à
+   l'aveugle a un rendement décroissant. Ajouté à la place (`be415b6`)
+   un **bandeau de diagnostic visible dans la scène** (`#stageDiag`) :
+   dès qu'une erreur de construction/animation/rendu est attrapée par
+   un des filets de sécurité déjà en place, le message d'erreur exact
+   s'affiche directement à l'écran (pas seulement dans la console) —
+   si le bug se reproduit, une simple capture d'écran de l'utilisateur
+   suffira à voir la cause précise sans manipulation technique de sa
+   part. **En attente d'une capture d'écran de l'utilisateur montrant
+   ce bandeau** (ou d'infos sur navigateur/appareil/séquence exacte) la
+   prochaine fois que le bug apparaît, avant de tenter un correctif
+   ciblé. Le point 6 (constructeur de circuit) reste en attente tant
+   que ce bug n'est pas confirmé résolu, comme demandé par l'utilisateur.
 2. [x] Nouveau lettrage/icône « atelier. » — même commit.
 3. [x] Animations pour chaque mécanisme (« Les mécanismes ») et chaque
    guidage (« Liaisons et guidages ») — commit `0038e71`.
