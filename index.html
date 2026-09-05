@@ -296,6 +296,15 @@ header.titleblock{
   flex-direction:column;gap:10px;color:var(--ink-faint);text-align:center;
 }
 .stage-empty svg{opacity:.5;}
+.stage-diag{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  max-width:88%;z-index:5;
+  background:#fff4e0;border:1px solid #c9822a;color:#5c3d0e;
+  border-radius:var(--radius-m);padding:10px 14px;
+  font-family:var(--font-mono);font-size:11.5px;line-height:1.5;
+  box-shadow:var(--shadow);white-space:pre-wrap;word-break:break-word;
+}
+.stage-diag strong{display:block;font-family:var(--font-display);font-size:13px;margin-bottom:3px;color:#a35a00;}
 
 .stage-hud{
   position:absolute;left:26px;right:26px;bottom:20px;
@@ -750,6 +759,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
         <span class="pill arrow" id="annotOut"></span>
       </div>
     </div>
+    <div class="stage-diag" id="stageDiag" hidden></div>
     <div class="stage-empty" id="stageEmpty">
       <svg width="52" height="52" viewBox="0 0 100 100" fill="none">
         <circle cx="50" cy="50" r="22" stroke="currentColor" stroke-width="5"/>
@@ -3580,12 +3590,30 @@ renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
    page. On intercepte l'évènement pour permettre au navigateur de
    restaurer le contexte, puis on reconstruit automatiquement l'objet
    affiché dès que c'est fait — sans intervention de l'utilisateur. */
+/* Bandeau de diagnostic VISIBLE dans la scène (pas seulement dans la
+   console du navigateur) : si un problème d'affichage survient, le
+   message exact apparaît directement à l'écran — une simple capture
+   d'écran suffit alors à voir la cause précise, sans avoir besoin
+   d'ouvrir les outils de développement du navigateur. */
+function showDiag(title, err){
+  var el=document.getElementById('stageDiag');
+  if(!el) return;
+  var detail = err ? '\n'+(err.message||String(err)) : '';
+  el.innerHTML = '<strong>'+title+'</strong>'+detail;
+  el.hidden=false;
+}
+function hideDiag(){
+  var el=document.getElementById('stageDiag');
+  if(el) el.hidden=true;
+}
 canvas.addEventListener('webglcontextlost', function(e){
   e.preventDefault();
   console.warn('Contexte WebGL perdu (scène principale) — tentative de récupération automatique…');
+  showDiag('⚠ Contexte 3D perdu — récupération automatique en cours…');
 }, false);
 canvas.addEventListener('webglcontextrestored', function(){
   console.warn('Contexte WebGL restauré — rechargement de la scène.');
+  hideDiag();
   if(currentSpec) loadObject(currentSpec);
 }, false);
 var scene=new THREE.Scene();
@@ -3749,9 +3777,11 @@ function loadObject(spec){
        l'objet précédent affiché plutôt que de laisser la scène vide
        (nécessitant un rafraîchissement manuel de la page). */
     console.error('Échec de construction de l’objet "'+spec.id+'" :', err);
+    showDiag('⚠ Échec de construction de « '+spec.name+' »', err);
     currentSpec = previousSpec;
     return;
   }
+  hideDiag();
   if(previousGroup){ scene.remove(previousGroup); disposeGeometries(previousGroup); }
   currentInstance=built;
   animationBroken=false;
@@ -3803,6 +3833,7 @@ function render(){
         applyExplode(currentInstance.group, explodeAmt);
       }catch(err){
         console.error('Erreur d’animation — objet figé pour éviter un écran vide :', err);
+        showDiag('⚠ Erreur d’animation (image figée)', err);
         animationBroken=true;
       }
     }
@@ -3811,6 +3842,7 @@ function render(){
     renderer.render(scene,camera);
   }catch(err){
     console.error('Erreur de rendu :', err);
+    showDiag('⚠ Erreur de rendu 3D', err);
   }
 }
 
