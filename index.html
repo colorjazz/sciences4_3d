@@ -432,7 +432,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
   border:1px solid var(--line);border-radius:var(--radius-s);
   background:var(--bg);overflow:hidden;position:relative;
 }
-.stage-mini-wrap canvas{width:100%;height:100%;display:block;}
+.stage-mini-wrap canvas,.stage-mini-wrap img{width:100%;height:100%;display:block;object-fit:contain;}
 .stage-mini-num{
   position:absolute;top:3px;left:5px;font-family:var(--font-mono);font-size:10px;
   color:var(--ink-faint);pointer-events:none;
@@ -3923,63 +3923,60 @@ function clearMiniViewers(){
   activeMiniViewers.forEach(function(v){ v.dispose(); });
   activeMiniViewers=[];
 }
+/* Les mini-aperçus de la fiche technique tenaient chacun leur PROPRE
+   contexte WebGL en vie en permanence (jusqu'à 5 pour un objet comme
+   le vélo), en plus de la scène principale et de l'atelier — générer :
+   sur un GPU limité (ordinateur d'école), ça épuise la limite de
+   contextes WebGL simultanés du navigateur et peut faire perdre le
+   contexte de la scène PRINCIPALE (signalé par l'utilisateur : bandeau
+   "Contexte 3D perdu" qui ne se rétablit jamais sur ce matériel).
+   Correctif : chaque mini-aperçu rend UNE SEULE image (pose fixe, plus
+   d'animation en boucle) sur un canvas TEMPORAIRE hors-DOM, la capture
+   en PNG, puis détruit son contexte WebGL immédiatement — au lieu de
+   5+ contextes WebGL vivants en permanence, il n'y en a plus JAMAIS
+   qu'un seul à la fois (créé et détruit en une fraction de seconde),
+   qui redescend à zéro dès la fiche technique affichée. */
 function createMiniViewer(canvas, stage){
-  var renderer=new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
-  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
-  /* Autorise le navigateur à restaurer le contexte de ce mini-aperçu
-     s'il est perdu (limite de contextes WebGL simultanés atteinte) —
-     sans preventDefault(), certains navigateurs ne restaurent jamais. */
-  canvas.addEventListener('webglcontextlost', function(e){ e.preventDefault(); }, false);
+  var W=208, H=176; /* même ratio que .stage-mini-wrap (104×88), à x2 */
+  var tmp=document.createElement('canvas');
+  tmp.width=W; tmp.height=H;
+  var renderer=new THREE.WebGLRenderer({canvas:tmp, antialias:true, alpha:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(1);
+  renderer.setSize(W,H,false);
   var scene=new THREE.Scene();
-  var camera=new THREE.PerspectiveCamera(40,1,0.05,50);
+  var camera=new THREE.PerspectiveCamera(40,W/H,0.05,50);
   scene.add(new THREE.HemisphereLight(0xffffff,0x3a4a5a,1.0));
   var key=new THREE.DirectionalLight(0xffffff,0.95); key.position.set(3,5,4); scene.add(key);
-  var inst = stage.detailedKey
-    ? DetailedObjects[stage.detailedObj].buildIsolated(stage.detailedKey)
-    : Mechanisms[stage.mechType].build(stage.params);
-  scene.add(inst.group);
-  inst.group.updateMatrixWorld(true);
-  var box=new THREE.Box3().setFromObject(inst.group);
-  var size=new THREE.Vector3(); box.getSize(size);
-  var center=new THREE.Vector3(); box.getCenter(center);
-  var maxDim=Math.max(size.x,size.y,size.z,1);
-  var theta=0.7, phi=1.02;
-  var dist=maxDim*1.5;
-  function place(){
+  try{
+    var inst = stage.detailedKey
+      ? DetailedObjects[stage.detailedObj].buildIsolated(stage.detailedKey)
+      : Mechanisms[stage.mechType].build(stage.params);
+    scene.add(inst.group);
+    inst.group.updateMatrixWorld(true);
+    var box=new THREE.Box3().setFromObject(inst.group);
+    var size=new THREE.Vector3(); box.getSize(size);
+    var center=new THREE.Vector3(); box.getCenter(center);
+    var maxDim=Math.max(size.x,size.y,size.z,1);
+    var theta=0.7, phi=1.02, dist=maxDim*1.5;
     camera.position.set(
       center.x+dist*Math.sin(phi)*Math.sin(theta),
       center.y+dist*Math.cos(phi),
       center.z+dist*Math.sin(phi)*Math.cos(theta)
     );
     camera.lookAt(center);
+    inst.animate(0.6);
+    renderer.render(scene,camera);
+    var img=new Image();
+    img.src=tmp.toDataURL('image/png');
+    img.alt=stage.label||'';
+    img.style.cssText='width:100%;height:100%;object-fit:contain;display:block;';
+    if(canvas.parentNode) canvas.replaceWith(img);
+  }catch(err){
+    console.error('Erreur mini-aperçu (image statique conservée vide) :', err);
   }
-  var angle=0, raf=null, disposed=false;
-  var clk=new THREE.Clock();
-  function resize(){
-    var w=canvas.clientWidth, h=canvas.clientHeight;
-    if(w<4||h<4) return;
-    renderer.setSize(w,h,false);
-    camera.aspect=w/h; camera.updateProjectionMatrix();
-  }
-  var miniBroken=false;
-  function loop(){
-    if(disposed) return;
-    raf=requestAnimationFrame(loop);
-    resize();
-    angle += clk.getDelta()*1.1;
-    if(!miniBroken){
-      try{
-        inst.animate(angle);
-        place();
-      }catch(err){
-        console.error('Erreur d’animation (mini-aperçu) :', err);
-        miniBroken=true;
-      }
-    }
-    try{ renderer.render(scene,camera); }catch(err){ console.error('Erreur de rendu (mini-aperçu) :', err); }
-  }
-  resize(); place(); loop();
-  return { dispose:function(){ disposed=true; if(raf) cancelAnimationFrame(raf); renderer.dispose(); } };
+  scene.traverse(function(node){ if(node.geometry) node.geometry.dispose(); });
+  renderer.dispose();
+  return { dispose:function(){} };
 }
 
 function fillFiche(spec, stages){
