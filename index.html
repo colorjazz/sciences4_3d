@@ -1,8 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atelier des Mécanismes</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='24' fill='%231a2130' stroke='%23e8622a' stroke-width='6'/%3E%3Cg fill='none' stroke='%23e8622a' stroke-width='6.5' stroke-linecap='round'%3E%3Ccircle cx='50' cy='50' r='15'/%3E%3Cline x1='50' y1='21' x2='50' y2='31'/%3E%3Cline x1='50' y1='69' x2='50' y2='79'/%3E%3Cline x1='21' y1='50' x2='31' y2='50'/%3E%3Cline x1='69' y1='50' x2='79' y2='50'/%3E%3Cline x1='30' y1='30' x2='37' y2='37'/%3E%3Cline x1='63' y1='63' x2='70' y2='70'/%3E%3Cline x1='70' y1='30' x2='63' y2='37'/%3E%3Cline x1='37' y1='63' x2='30' y2='70'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Poppins:wght@700;800&display=swap">
 <style>
 :root{
   --bg:#f1e9d8;
@@ -26,6 +27,8 @@
   --font-display:'Barlow Condensed',system-ui,sans-serif;
   --font-body:'Barlow',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-logo:'Poppins',system-ui,sans-serif;
+  --badge-bg:#1a2130;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -140,16 +143,15 @@ header.titleblock{
   border-right:1px solid var(--line);
 }
 .tb-gear{
-  width:30px;height:30px;flex:0 0 auto;
+  width:34px;height:34px;flex:0 0 auto;
 }
 .tb-brand{
-  font-family:var(--font-display);
-  font-weight:700;
-  font-size:14px;
-  letter-spacing:.03em;
-  line-height:1.15;
+  font-family:var(--font-logo);
+  font-weight:800;
+  font-size:17px;
+  line-height:1.1;
 }
-.tb-brand span{display:block;font-family:var(--font-mono);font-weight:400;font-size:9px;letter-spacing:.08em;color:var(--ink-faint);text-transform:uppercase;}
+.tb-brand span{display:block;font-family:var(--font-mono);font-weight:400;font-size:9px;letter-spacing:.08em;color:var(--ink-faint);text-transform:uppercase;margin-top:2px;}
 
 /* ---------- layout ---------- */
 .workspace{flex:1 1 auto;display:flex;min-height:0;}
@@ -517,9 +519,9 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
   gap:28px;padding:32px 20px;text-align:center;overflow-y:auto;
 }
 .home-mark{display:flex;flex-direction:column;align-items:center;gap:10px;}
-.home-gear{width:60px;height:60px;}
-.home-brand{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.5px;color:var(--ink);text-transform:uppercase;}
-.home-brand span{display:block;font-family:var(--font-body);font-weight:500;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;}
+.home-gear{width:64px;height:64px;}
+.home-brand{font-family:var(--font-logo);font-weight:800;font-size:32px;color:var(--ink);}
+.home-brand span{display:block;font-family:var(--font-body);font-weight:500;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-top:6px;}
 .home-title{font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--ink);margin:0;}
 .home-choices{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;max-width:900px;}
 .home-card{
@@ -601,16 +603,17 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 
 <div id="homeScreen">
   <div class="home-mark">
-    <svg class="home-gear" viewBox="0 0 100 100" fill="none">
-      <circle cx="50" cy="50" r="20" stroke="var(--ink)" stroke-width="6"/>
-      <g stroke="var(--ink)" stroke-width="7" stroke-linecap="square">
-        <line x1="50" y1="6" x2="50" y2="22"/><line x1="50" y1="78" x2="50" y2="94"/>
-        <line x1="6" y1="50" x2="22" y2="50"/><line x1="78" y1="50" x2="94" y2="50"/>
-        <line x1="19" y1="19" x2="30" y2="30"/><line x1="70" y1="70" x2="81" y2="81"/>
-        <line x1="81" y1="19" x2="70" y2="30"/><line x1="30" y1="70" x2="19" y2="81"/>
+    <svg class="home-gear" viewBox="0 0 100 100">
+      <rect x="4" y="4" width="92" height="92" rx="24" fill="var(--badge-bg)" stroke="var(--accent)" stroke-width="6"/>
+      <g fill="none" stroke="var(--accent)" stroke-width="6.5" stroke-linecap="round">
+        <circle cx="50" cy="50" r="15"/>
+        <line x1="50" y1="21" x2="50" y2="31"/><line x1="50" y1="69" x2="50" y2="79"/>
+        <line x1="21" y1="50" x2="31" y2="50"/><line x1="69" y1="50" x2="79" y2="50"/>
+        <line x1="30" y1="30" x2="37" y2="37"/><line x1="63" y1="63" x2="70" y2="70"/>
+        <line x1="70" y1="30" x2="63" y2="37"/><line x1="37" y1="63" x2="30" y2="70"/>
       </g>
     </svg>
-    <div class="home-brand">Atelier des Mécanismes<span>Sciences 4 · analyse technique</span></div>
+    <div class="home-brand">atelier.<span>Sciences 4 · analyse technique</span></div>
   </div>
   <h1 class="home-title">Que veux-tu faire ?</h1>
   <div class="home-choices">
@@ -643,16 +646,17 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 </div>
 <header class="titleblock">
   <div class="tb-mark">
-    <svg class="tb-gear" viewBox="0 0 100 100" fill="none">
-      <circle cx="50" cy="50" r="20" stroke="var(--ink)" stroke-width="6"/>
-      <g stroke="var(--ink)" stroke-width="7" stroke-linecap="square">
-        <line x1="50" y1="6" x2="50" y2="22"/><line x1="50" y1="78" x2="50" y2="94"/>
-        <line x1="6" y1="50" x2="22" y2="50"/><line x1="78" y1="50" x2="94" y2="50"/>
-        <line x1="19" y1="19" x2="30" y2="30"/><line x1="70" y1="70" x2="81" y2="81"/>
-        <line x1="81" y1="19" x2="70" y2="30"/><line x1="30" y1="70" x2="19" y2="81"/>
+    <svg class="tb-gear" viewBox="0 0 100 100">
+      <rect x="4" y="4" width="92" height="92" rx="24" fill="var(--badge-bg)" stroke="var(--accent)" stroke-width="6"/>
+      <g fill="none" stroke="var(--accent)" stroke-width="6.5" stroke-linecap="round">
+        <circle cx="50" cy="50" r="15"/>
+        <line x1="50" y1="21" x2="50" y2="31"/><line x1="50" y1="69" x2="50" y2="79"/>
+        <line x1="21" y1="50" x2="31" y2="50"/><line x1="69" y1="50" x2="79" y2="50"/>
+        <line x1="30" y1="30" x2="37" y2="37"/><line x1="63" y1="63" x2="70" y2="70"/>
+        <line x1="70" y1="30" x2="63" y2="37"/><line x1="37" y1="63" x2="30" y2="70"/>
       </g>
     </svg>
-    <div class="tb-brand">Atelier des<br>Mécanismes<span>Sciences 4 · analyse technique</span></div>
+    <div class="tb-brand">atelier.<span>Sciences 4 · analyse technique</span></div>
   </div>
   <div class="tb-cell tb-title">
     <span class="tb-label">Objet sélectionné</span>
@@ -3412,6 +3416,22 @@ var CATALOGUE = [
 var canvas=document.getElementById('c');
 var renderer=new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
 renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+/* Filet de sécurité : si le navigateur perd le contexte WebGL (limite du
+   nombre de contextes actifs atteinte, pilote graphique qui flanche —
+   plus courant sur les ordinateurs d'école à GPU limité, surtout avec
+   plusieurs mini-aperçus 3D par fiche technique), la scène restait
+   auparavant figée/vide et exigeait un rafraîchissement manuel de la
+   page. On intercepte l'évènement pour permettre au navigateur de
+   restaurer le contexte, puis on reconstruit automatiquement l'objet
+   affiché dès que c'est fait — sans intervention de l'utilisateur. */
+canvas.addEventListener('webglcontextlost', function(e){
+  e.preventDefault();
+  console.warn('Contexte WebGL perdu (scène principale) — tentative de récupération automatique…');
+}, false);
+canvas.addEventListener('webglcontextrestored', function(){
+  console.warn('Contexte WebGL restauré — rechargement de la scène.');
+  if(currentSpec) loadObject(currentSpec);
+}, false);
 var scene=new THREE.Scene();
 var camera=new THREE.PerspectiveCamera(38,1,0.05,100);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x3a4a5a, 0.9));
@@ -3543,18 +3563,40 @@ function buildAssembly(stages){
   };
 }
 
+/* Ne libère QUE les géométries (recréées à neuf à chaque construction
+   d'objet) — jamais les matériaux : stdMat() les met en cache et les
+   PARTAGE entre tous les objets (plusieurs objets peuvent référencer
+   exactement le même THREE.Material). Les disposer ici casserait le
+   rendu du prochain objet qui réutilise cette entrée du cache. */
+function disposeGeometries(group){
+  group.traverse(function(node){
+    if(node.geometry) node.geometry.dispose();
+  });
+}
+
 function loadObject(spec){
-  if(currentInstance){ scene.remove(currentInstance.group); }
+  var previousGroup = currentInstance ? currentInstance.group : null;
+  var previousSpec = currentSpec;
   currentSpec=spec;
   var stages=getStages(spec);
   var built;
-  if(spec.detailed){
-    var D=DetailedObjects[spec.detailed];
-    var full=D.buildFull();
-    built={ group:full.group, animate:function(t){ full.update(D.kinematics(t,false)); } };
-  } else {
-    built=buildAssembly(stages);
+  try{
+    if(spec.detailed){
+      var D=DetailedObjects[spec.detailed];
+      var full=D.buildFull();
+      built={ group:full.group, animate:function(t){ full.update(D.kinematics(t,false)); } };
+    } else {
+      built=buildAssembly(stages);
+    }
+  }catch(err){
+    /* Filet de sécurité : si la construction d'un objet échoue, on garde
+       l'objet précédent affiché plutôt que de laisser la scène vide
+       (nécessitant un rafraîchissement manuel de la page). */
+    console.error('Échec de construction de l’objet "'+spec.id+'" :', err);
+    currentSpec = previousSpec;
+    return;
   }
+  if(previousGroup){ scene.remove(previousGroup); disposeGeometries(previousGroup); }
   currentInstance=built;
   scene.add(built.group);
   frameCamera(built.group);
