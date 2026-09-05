@@ -35,11 +35,25 @@ consignes pour Claude »), en cours de traitement :
    s'affiche directement à l'écran (pas seulement dans la console) —
    si le bug se reproduit, une simple capture d'écran de l'utilisateur
    suffira à voir la cause précise sans manipulation technique de sa
-   part. **En attente d'une capture d'écran de l'utilisateur montrant
-   ce bandeau** (ou d'infos sur navigateur/appareil/séquence exacte) la
-   prochaine fois que le bug apparaît, avant de tenter un correctif
-   ciblé. Le point 6 (constructeur de circuit) reste en attente tant
-   que ce bug n'est pas confirmé résolu, comme demandé par l'utilisateur.
+   part. L'utilisateur a envoyé une capture du bandeau : "Contexte 3D
+   perdu — récupération automatique en cours…" — confirme l'hypothèse
+   d'origine (perte de contexte WebGL), mais sur son matériel le
+   navigateur ne restaure jamais le contexte (GPU limité probable,
+   ordinateur d'école). Cause racine identifiée avec certitude cette
+   fois : chaque mini-aperçu de la fiche technique gardait son PROPRE
+   contexte WebGL + boucle d'animation vivants en permanence (jusqu'à 5
+   pour le vélo), en plus de la scène principale et de l'atelier
+   générer — jusqu'à ~7 contextes WebGL simultanés, largement de quoi
+   épuiser la limite du navigateur sur un GPU faible. Corrigé dans
+   `93299fd` : chaque mini-aperçu rend maintenant une seule image
+   statique (canvas temporaire hors-DOM → PNG → `<img>`), détruit son
+   contexte immédiatement — total de contextes WebGL persistants réduit
+   à 2 maximum (scène principale + atelier générer) au lieu de ~7.
+   Compromis assumé : les mini-aperçus n'ont plus leur légère rotation
+   continue, juste une pose fixe.
+   **En attente de confirmation de l'utilisateur** sur son matériel
+   réel avant de considérer ce bug clos et de commencer le point 6
+   (constructeur de circuit), comme demandé.
 2. [x] Nouveau lettrage/icône « atelier. » — même commit.
 3. [x] Animations pour chaque mécanisme (« Les mécanismes ») et chaque
    guidage (« Liaisons et guidages ») — commit `0038e71`.
