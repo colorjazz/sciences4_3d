@@ -3754,6 +3754,7 @@ function loadObject(spec){
   }
   if(previousGroup){ scene.remove(previousGroup); disposeGeometries(previousGroup); }
   currentInstance=built;
+  animationBroken=false;
   scene.add(built.group);
   frameCamera(built.group);
   document.getElementById('stageEmpty').hidden=true;
@@ -3776,18 +3777,42 @@ function loadObject(spec){
   }
 }
 
+var animAngle=0;
+var animationBroken=false;
 function render(){
   requestAnimationFrame(render);
   resizeRenderer();
   var dt=clock.getDelta();
   if(currentInstance){
     if(playing){ animAngle += dt*speed*2; }
-    currentInstance.animate(animAngle);
-    applyExplode(currentInstance.group, explodeAmt);
+    /* Filet de sécurité : si l'animation d'un objet lève une exception
+       à une frame donnée (bug dans un kinematics() ou update() précis,
+       p. ex. déclenché seulement à un certain angle accumulé), le fait
+       que requestAnimationFrame(render) soit déjà appelé plus haut
+       veut dire que la frame SUIVANTE retenterait la même chose et
+       lèverait la même erreur indéfiniment — sans plus jamais appeler
+       renderer.render(), donc un canvas transparent (blanc, sur le
+       thème clair) figé jusqu'au rafraîchissement de la page. On
+       n'anime plus cet objet après une erreur (au lieu de retenter à
+       chaque frame), mais on continue à appeler renderer.render()
+       ci-dessous pour garder au moins la dernière image valide affichée
+       plutôt qu'un écran vide. */
+    if(!animationBroken){
+      try{
+        currentInstance.animate(animAngle);
+        applyExplode(currentInstance.group, explodeAmt);
+      }catch(err){
+        console.error('Erreur d’animation — objet figé pour éviter un écran vide :', err);
+        animationBroken=true;
+      }
+    }
   }
-  renderer.render(scene,camera);
+  try{
+    renderer.render(scene,camera);
+  }catch(err){
+    console.error('Erreur de rendu :', err);
+  }
 }
-var animAngle=0;
 
 function applyExplode(group, amt){
   group.children.forEach(function(child){
@@ -3869,6 +3894,10 @@ function clearMiniViewers(){
 function createMiniViewer(canvas, stage){
   var renderer=new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
   renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  /* Autorise le navigateur à restaurer le contexte de ce mini-aperçu
+     s'il est perdu (limite de contextes WebGL simultanés atteinte) —
+     sans preventDefault(), certains navigateurs ne restaurent jamais. */
+  canvas.addEventListener('webglcontextlost', function(e){ e.preventDefault(); }, false);
   var scene=new THREE.Scene();
   var camera=new THREE.PerspectiveCamera(40,1,0.05,50);
   scene.add(new THREE.HemisphereLight(0xffffff,0x3a4a5a,1.0));
@@ -3900,14 +3929,22 @@ function createMiniViewer(canvas, stage){
     renderer.setSize(w,h,false);
     camera.aspect=w/h; camera.updateProjectionMatrix();
   }
+  var miniBroken=false;
   function loop(){
     if(disposed) return;
     raf=requestAnimationFrame(loop);
     resize();
     angle += clk.getDelta()*1.1;
-    inst.animate(angle);
-    place();
-    renderer.render(scene,camera);
+    if(!miniBroken){
+      try{
+        inst.animate(angle);
+        place();
+      }catch(err){
+        console.error('Erreur d’animation (mini-aperçu) :', err);
+        miniBroken=true;
+      }
+    }
+    try{ renderer.render(scene,camera); }catch(err){ console.error('Erreur de rendu (mini-aperçu) :', err); }
   }
   resize(); place(); loop();
   return { dispose:function(){ disposed=true; if(raf) cancelAnimationFrame(raf); renderer.dispose(); } };
@@ -3999,6 +4036,7 @@ document.getElementById('resetViewBtn').addEventListener('click', function(){
 var wcanvas=document.getElementById('wc');
 var wrenderer=new THREE.WebGLRenderer({canvas:wcanvas, antialias:true, alpha:true});
 wrenderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+wcanvas.addEventListener('webglcontextlost', function(e){ e.preventDefault(); }, false);
 var wscene=new THREE.Scene();
 var wcamera=new THREE.PerspectiveCamera(38,1,0.05,50);
 wscene.add(new THREE.HemisphereLight(0xffffff,0x3a4a5a,1.0));
@@ -4048,16 +4086,21 @@ function rebuildWorkshop(){
   if(wInstance) wscene.remove(wInstance.group);
   var mech=Mechanisms[wMechKey];
   wInstance=mech.build(wParams);
+  wAnimationBroken=false;
   wscene.add(wInstance.group);
   frameWCamera(wInstance.group);
 }
+var wAnimationBroken=false;
 function wrender(){
   requestAnimationFrame(wrender);
   resizeWorkshop();
   var dt=wClock.getDelta();
   wAngle += dt*1.1;
-  if(wInstance) wInstance.animate(wAngle);
-  wrenderer.render(wscene,wcamera);
+  if(wInstance && !wAnimationBroken){
+    try{ wInstance.animate(wAngle); }
+    catch(err){ console.error('Erreur d’animation (atelier — générer) :', err); wAnimationBroken=true; }
+  }
+  try{ wrenderer.render(wscene,wcamera); }catch(err){ console.error('Erreur de rendu (atelier — générer) :', err); }
 }
 
 function buildMechGrid(){
