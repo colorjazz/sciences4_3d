@@ -5,22 +5,22 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  --bg:#eef3f7;
-  --bg-grid:rgba(20,49,79,.07);
-  --surface:#ffffff;
-  --surface-2:#e3ebf2;
-  --surface-3:#d3e0ea;
-  --ink:#14314f;
-  --ink-dim:#4d6580;
-  --ink-faint:#7c93a8;
-  --line:#bccddb;
-  --line-strong:#8fa8bd;
-  --accent:#ff6a2b;
+  --bg:#f1e9d8;
+  --bg-grid:rgba(80,60,32,.06);
+  --surface:#fffcf5;
+  --surface-2:#ece0c4;
+  --surface-3:#ddcc9f;
+  --ink:#3a2f20;
+  --ink-dim:#6c5a41;
+  --ink-faint:#9c8a6c;
+  --line:#d9c8a0;
+  --line-strong:#b9a271;
+  --accent:#e8622a;
   --accent-ink:#ffffff;
-  --accent-soft:#ffe4d5;
-  --good:#1f7a52;
+  --accent-soft:#fbdcc3;
+  --good:#3d7a4a;
   --warn:#a35a00;
-  --shadow:0 8px 24px rgba(20,49,79,.14);
+  --shadow:0 8px 24px rgba(59,47,34,.16);
   --radius-s:3px;
   --radius-m:6px;
   --font-display:'Barlow Condensed',system-ui,sans-serif;
@@ -70,6 +70,7 @@ html,body{margin:0;padding:0;}
 [hidden]{display:none!important;}
 body{
   background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.23  0 0 0 0 0.18  0 0 0 0 0.12  0 0 0 0.05 0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>") 0 0/120px 120px,
     linear-gradient(var(--bg-grid) 1px,transparent 1px) 0 0/28px 28px,
     linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px) 0 0/28px 28px,
     var(--bg);
@@ -509,8 +510,137 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 
   .hud-btn{width:34px;height:34px;}
 }
+
+/* ---------- home screen ---------- */
+#homeScreen{
+  flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:28px;padding:32px 20px;text-align:center;overflow-y:auto;
+}
+.home-mark{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.home-gear{width:60px;height:60px;}
+.home-brand{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.5px;color:var(--ink);text-transform:uppercase;}
+.home-brand span{display:block;font-family:var(--font-body);font-weight:500;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;}
+.home-title{font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--ink);margin:0;}
+.home-choices{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;max-width:900px;}
+.home-card{
+  width:320px;max-width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+  padding:24px;cursor:pointer;font-family:inherit;color:inherit;
+  box-shadow:var(--shadow);transition:transform .15s,border-color .15s,background .15s;
+}
+.home-card:hover{border-color:var(--accent);transform:translateY(-3px);background:var(--surface-2);}
+.home-card-icon{width:40px;height:40px;color:var(--accent);}
+.home-card-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.5px;}
+.home-card-desc{font-size:13px;color:var(--ink-dim);line-height:1.5;}
+.home-foot{font-size:11.5px;color:var(--ink-faint);}
+
+/* ---------- back nav (comprendre / atelier) ---------- */
+#atelierScreen{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;}
+.screen-topbar{
+  display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:2px solid var(--ink);
+  background:var(--surface);flex:0 0 auto;
+}
+.back-btn{
+  display:flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:var(--surface-2);
+  color:var(--ink);border-radius:var(--radius-s);padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.back-btn:hover{background:var(--surface-3);}
+.screen-topbar h1{font-family:var(--font-display);font-size:17px;margin:0;color:var(--ink);text-transform:uppercase;letter-spacing:.5px;}
+
+/* ---------- comprendre screen ---------- */
+#comprendreScreen{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;}
+.comprendre-body{flex:1 1 auto;display:flex;min-height:0;}
+.topic-nav{
+  flex:0 0 240px;border-right:1px solid var(--line);background:var(--surface);
+  overflow-y:auto;padding:10px;
+}
+.topic-btn{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;
+  border-left:3px solid transparent;padding:12px 12px;font-size:13px;font-weight:500;color:var(--ink-dim);
+  cursor:pointer;border-radius:0 var(--radius-s) var(--radius-s) 0;
+}
+.topic-btn:hover{background:var(--surface-2);}
+.topic-btn.active{background:var(--surface-2);border-left-color:var(--accent);color:var(--ink);font-weight:600;}
+.topic-num{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);flex:0 0 auto;
+  width:20px;height:20px;border-radius:50%;border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;
+}
+.topic-btn.active .topic-num{border-color:var(--accent);color:var(--accent);}
+.topic-content{flex:1 1 auto;overflow-y:auto;padding:28px 36px;}
+.topic-article{max-width:820px;}
+.topic-article h2{font-family:var(--font-display);font-size:24px;color:var(--ink);margin:0 0 6px;}
+.topic-article .topic-lead{color:var(--ink-dim);font-size:14px;margin:0 0 22px;max-width:640px;}
+.concept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:18px 0;}
+.concept-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:14px 16px;
+}
+.concept-card h3{font-size:13.5px;margin:0 0 6px;color:var(--ink);display:flex;align-items:center;gap:8px;}
+.concept-card p{font-size:12.5px;color:var(--ink-dim);margin:0;line-height:1.5;}
+.concept-card svg{flex:0 0 auto;color:var(--accent);}
+.topic-section{margin:26px 0;}
+.topic-section h3.section-title{
+  font-family:var(--font-display);font-size:15px;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--ink-faint);border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 14px;
+}
+.diagram-row{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0;}
+.diagram-box{
+  flex:1 1 220px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+  padding:14px;text-align:center;
+}
+.diagram-box svg{max-width:100%;height:auto;}
+.diagram-box .diagram-caption{display:block;margin-top:8px;font-size:12px;color:var(--ink-dim);}
+.diagram-box .diagram-caption strong{color:var(--ink);}
+@media (max-width:760px){
+  .comprendre-body{flex-direction:column;}
+  .topic-nav{flex:0 0 auto;border-right:none;border-bottom:1px solid var(--line);display:flex;overflow-x:auto;}
+  .topic-btn{width:auto;white-space:nowrap;border-left:none;border-bottom:3px solid transparent;}
+  .topic-btn.active{border-left-color:transparent;border-bottom-color:var(--accent);}
+  .topic-content{padding:20px;}
+}
 </style>
 
+<div id="homeScreen">
+  <div class="home-mark">
+    <svg class="home-gear" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="20" stroke="var(--ink)" stroke-width="6"/>
+      <g stroke="var(--ink)" stroke-width="7" stroke-linecap="square">
+        <line x1="50" y1="6" x2="50" y2="22"/><line x1="50" y1="78" x2="50" y2="94"/>
+        <line x1="6" y1="50" x2="22" y2="50"/><line x1="78" y1="50" x2="94" y2="50"/>
+        <line x1="19" y1="19" x2="30" y2="30"/><line x1="70" y1="70" x2="81" y2="81"/>
+        <line x1="81" y1="19" x2="70" y2="30"/><line x1="30" y1="70" x2="19" y2="81"/>
+      </g>
+    </svg>
+    <div class="home-brand">Atelier des Mécanismes<span>Sciences 4 · analyse technique</span></div>
+  </div>
+  <h1 class="home-title">Que veux-tu faire ?</h1>
+  <div class="home-choices">
+    <button class="home-card" id="goComprendre" type="button">
+      <svg class="home-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 4C9.5 2.5 6.5 2 4 2.8V17c2.5-.8 5.5-.3 8 1.2"/>
+        <path d="M12 4c2.5-1.5 5.5-2 8-1.2V17c-2.5-.8-5.5-.3-8 1.2V4z"/>
+      </svg>
+      <span class="home-card-title">Comprendre</span>
+      <span class="home-card-desc">Les mécanismes, les liaisons et guidages, la schématisation, les matériaux et contraintes, les fonctions électriques — les notions d'analyse technique expliquées.</span>
+    </button>
+    <button class="home-card" id="goTester" type="button">
+      <svg class="home-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="3.4"/>
+        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>
+      </svg>
+      <span class="home-card-title">Tester</span>
+      <span class="home-card-desc">L'Atelier — une banque d'objets techniques en 3D, animés et démontables, pour observer leurs mécanismes réels en action.</span>
+    </button>
+  </div>
+  <div class="home-foot">Cours de sciences 4 · secondaire — analyse d'objets techniques</div>
+</div>
+
+<div id="atelierScreen" hidden>
+<div class="screen-topbar">
+  <button class="back-btn" id="atelierHomeBtn" type="button">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+    Accueil
+  </button>
+</div>
 <header class="titleblock">
   <div class="tb-mark">
     <svg class="tb-gear" viewBox="0 0 100 100" fill="none">
@@ -547,7 +677,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
   <aside class="rail" id="railAside">
     <div class="rail-head">
       <div class="rail-head-row" id="railToggleRow">
-        <h2>Banque d'objets</h2>
+        <h2>L'Atelier</h2>
         <button class="rail-toggle" id="railToggle" type="button" aria-label="Afficher ou masquer la banque d'objets">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </button>
@@ -679,6 +809,224 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
       <div class="status-line"><span class="status-dot" id="dbDot"></span><span id="dbStatus">Vérification de la banque partagée…</span></div>
     </div>
   </aside>
+</div>
+</div>
+
+<div id="comprendreScreen" hidden>
+  <div class="screen-topbar">
+    <button class="back-btn" id="comprendreHomeBtn" type="button">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+      Accueil
+    </button>
+    <h1>Comprendre — analyse technique</h1>
+  </div>
+  <div class="comprendre-body">
+    <nav class="topic-nav" id="topicNav">
+      <button class="topic-btn active" data-topic="mecanismes"><span class="topic-num">1</span>Les mécanismes</button>
+      <button class="topic-btn" data-topic="liaisons"><span class="topic-num">2</span>Liaisons et guidages</button>
+      <button class="topic-btn" data-topic="schematisation"><span class="topic-num">3</span>La schématisation</button>
+      <button class="topic-btn" data-topic="materiaux"><span class="topic-num">4</span>Matériaux et contraintes</button>
+      <button class="topic-btn" data-topic="electrique"><span class="topic-num">5</span>Fonctions électriques</button>
+    </nav>
+    <div class="topic-content" id="topicContent">
+
+      <article class="topic-article" id="topic-mecanismes">
+        <h2>Les mécanismes</h2>
+        <p class="topic-lead">Un mécanisme transmet ou transforme un mouvement d'une pièce à une autre. On le décrit toujours par ce qui entre (mouvement moteur) et ce qui sort (mouvement obtenu).</p>
+
+        <div class="topic-section">
+          <h3 class="section-title">Transmission du mouvement</h3>
+          <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">Le mouvement de sortie est de même nature que celui d'entrée (une rotation reste une rotation) : seuls la vitesse, le couple ou l'axe peuvent changer.</p>
+          <div class="concept-grid">
+            <div class="concept-card"><h3>⚙️ Engrenages</h3><p>Deux roues dentées qui engrènent : la vitesse change selon le rapport du nombre de dents.</p></div>
+            <div class="concept-card"><h3>🔗 Poulies et courroie</h3><p>Deux poulies reliées par une courroie : la vitesse dépend du rapport des diamètres.</p></div>
+            <div class="concept-card"><h3>⛓️ Chaîne et pignons</h3><p>Comme les poulies, mais la chaîne empêche tout glissement (vélo).</p></div>
+            <div class="concept-card"><h3>🌀 Vis sans fin</h3><p>Une vis entraîne une roue dentée à angle droit, avec une très grande réduction de vitesse.</p></div>
+          </div>
+        </div>
+
+        <div class="topic-section">
+          <h3 class="section-title">Transformation du mouvement</h3>
+          <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">Le mouvement de sortie change de nature : une rotation peut devenir une translation, une oscillation, etc.</p>
+          <div class="concept-grid">
+            <div class="concept-card"><h3>🔩 Vis-écrou</h3><p>Rotation de la vis → translation de l'écrou (ou l'inverse). Utilisé pour soulever, serrer, régler.</p></div>
+            <div class="concept-card"><h3>⚡ Bielle-manivelle</h3><p>Rotation continue → translation ou oscillation alternative (piston, essuie-glace).</p></div>
+            <div class="concept-card"><h3>📏 Pignon-crémaillère</h3><p>Rotation d'un pignon → translation en ligne droite d'une barre dentée (portail, direction de voiture).</p></div>
+            <div class="concept-card"><h3>🔵 Came</h3><p>Une pièce de profil irrégulier qui tourne fait suivre un mouvement précis à un suiveur (souvent une translation).</p></div>
+          </div>
+        </div>
+
+        <div class="topic-section">
+          <h3 class="section-title">Système combiné</h3>
+          <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">La plupart des objets réels combinent plusieurs mécanismes couplés en chaîne : c'est ce que montre chaque objet de <strong>L'Atelier</strong> (section Tester), pièce par pièce.</p>
+        </div>
+      </article>
+
+      <article class="topic-article" id="topic-liaisons" hidden>
+        <h2>Les liaisons et guidages</h2>
+        <p class="topic-lead">Une liaison relie deux pièces entre elles. On la caractérise selon quatre axes indépendants, puis on identifie le guidage qu'elle impose si elle permet un mouvement relatif.</p>
+
+        <div class="topic-section">
+          <h3 class="section-title">Les quatre caractéristiques</h3>
+          <div class="concept-grid">
+            <div class="concept-card"><h3>Directe / Indirecte</h3><p><strong>Directe</strong> : les deux pièces sont en contact l'une avec l'autre (emboîtement, tenon-mortaise). <strong>Indirecte</strong> : une pièce additionnelle les relie (vis, rivet, colle).</p></div>
+            <div class="concept-card"><h3>Rigide / Élastique</h3><p><strong>Rigide</strong> : aucune déformation entre les pièces liées. <strong>Élastique</strong> : un élément déformable (ressort, caoutchouc) permet un léger mouvement relatif.</p></div>
+            <div class="concept-card"><h3>Démontable / Indémontable</h3><p><strong>Démontable</strong> : séparable sans destruction (vis, boulon, clip). <strong>Indémontable</strong> : il faut détruire un élément pour séparer (soudure, rivetage, collage).</p></div>
+            <div class="concept-card"><h3>Complète / Partielle</h3><p><strong>Complète</strong> : bloque tous les mouvements relatifs (immobilise totalement). <strong>Partielle</strong> : laisse un ou plusieurs mouvements relatifs possibles — c'est elle qui impose un <em>guidage</em>.</p></div>
+          </div>
+        </div>
+
+        <div class="topic-section">
+          <h3 class="section-title">Les types de guidage (liaison partielle)</h3>
+          <div class="diagram-row">
+            <div class="diagram-box">
+              <svg viewBox="0 0 140 90" width="140" height="90">
+                <rect x="15" y="38" width="90" height="14" rx="3" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <rect x="8" y="30" width="16" height="30" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <path d="M108 45h18M120 39l6 6-6 6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+              </svg>
+              <span class="diagram-caption"><strong>Translation</strong><br>glissière — une pièce coulisse en ligne droite dans l'autre.</span>
+            </div>
+            <div class="diagram-box">
+              <svg viewBox="0 0 140 90" width="140" height="90">
+                <circle cx="70" cy="45" r="24" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <circle cx="70" cy="45" r="4" fill="var(--ink)"/>
+                <path d="M92 30a30 30 0 010 14" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+                <path d="M92 44l4 3-1-5.5z" fill="var(--accent)"/>
+              </svg>
+              <span class="diagram-caption"><strong>Rotation</strong><br>pivot — une pièce tourne autour d'un axe fixe par rapport à l'autre.</span>
+            </div>
+            <div class="diagram-box">
+              <svg viewBox="0 0 140 90" width="140" height="90">
+                <path d="M55 20 q15 6 0 12 q15 6 0 12 q15 6 0 12 q15 6 0 12" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+                <path d="M85 26h14M99 20l6 6-6 6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+                <path d="M85 62a26 26 0 0114-13" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+              </svg>
+              <span class="diagram-caption"><strong>Hélicoïdal</strong><br>vis-écrou — rotation et translation combinées et liées (un pas par tour).</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="topic-article" id="topic-schematisation" hidden>
+        <h2>La schématisation</h2>
+        <p class="topic-lead">On utilise deux types de schémas selon ce qu'on veut montrer : le fonctionnement (principe) ou l'assemblage réel (construction).</p>
+        <div class="diagram-row">
+          <div class="diagram-box">
+            <svg viewBox="0 0 160 110" width="160" height="110">
+              <rect x="20" y="70" width="120" height="8" fill="var(--ink)"/>
+              <circle cx="55" cy="70" r="6" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+              <line x1="55" y1="20" x2="55" y2="64" stroke="var(--ink)" stroke-width="2.5"/>
+              <path d="M40 30a20 20 0 0130-8" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+              <path d="M40 30l-2-7 7 2z" fill="var(--accent)"/>
+              <path d="M55 20l35 0" stroke="var(--ink)" stroke-width="2.5"/>
+              <path d="M100 45h20M112 39l6 6-6 6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+            </svg>
+            <span class="diagram-caption"><strong>Schéma de principe</strong><br>montre les mouvements et les forces avec des symboles normalisés — sans les formes ni matériaux réels.</span>
+          </div>
+          <div class="diagram-box">
+            <svg viewBox="0 0 160 110" width="160" height="110">
+              <rect x="20" y="66" width="120" height="14" fill="none" stroke="var(--ink)" stroke-width="2"/>
+              <rect x="20" y="66" width="120" height="14" fill="url(#hatch)"/>
+              <circle cx="55" cy="55" r="12" fill="none" stroke="var(--ink)" stroke-width="2"/>
+              <circle cx="55" cy="55" r="4" fill="var(--ink)"/>
+              <rect x="49" y="20" width="12" height="35" fill="none" stroke="var(--ink)" stroke-width="2"/>
+              <defs>
+                <pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink-faint)" stroke-width="1.4"/>
+                </pattern>
+              </defs>
+            </svg>
+            <span class="diagram-caption"><strong>Schéma de construction</strong><br>montre l'assemblage réel des pièces, leurs proportions et leurs matériaux (hachures).</span>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">Dans L'Atelier, la vue 3D et la vue éclatée jouent ce rôle de schéma de construction ; la fiche technique de chaque objet en résume le schéma de principe (mouvement d'entrée → mouvement de sortie).</p>
+      </article>
+
+      <article class="topic-article" id="topic-materiaux" hidden>
+        <h2>Les matériaux et contraintes</h2>
+        <p class="topic-lead">Chaque pièce d'un objet subit des efforts (contraintes) selon sa fonction ; le matériau est choisi pour bien résister à la contrainte qu'il subit.</p>
+
+        <div class="topic-section">
+          <h3 class="section-title">Les cinq contraintes mécaniques</h3>
+          <div class="diagram-row">
+            <div class="diagram-box">
+              <svg viewBox="0 0 120 60" width="120" height="60">
+                <rect x="35" y="24" width="50" height="12" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <path d="M10 30h20M24 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+                <path d="M110 30H90M96 25l-6 5 6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+              </svg>
+              <span class="diagram-caption"><strong>Traction</strong><br>étirement — forces qui tirent vers l'extérieur.</span>
+            </div>
+            <div class="diagram-box">
+              <svg viewBox="0 0 120 60" width="120" height="60">
+                <rect x="35" y="24" width="50" height="12" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <path d="M30 30h20M44 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5" transform="rotate(180 40 30)"/>
+                <path d="M10 30h20M24 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+                <path d="M110 30H90M96 25l-6 5 6 5" fill="none" stroke="var(--accent)" stroke-width="2.5" transform="rotate(180 100 30)"/>
+              </svg>
+              <span class="diagram-caption"><strong>Compression</strong><br>écrasement — forces qui poussent vers l'intérieur.</span>
+            </div>
+            <div class="diagram-box">
+              <svg viewBox="0 0 120 70" width="120" height="70">
+                <rect x="50" y="8" width="20" height="54" rx="2" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <path d="M50 18a30 14 0 0122 -3" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <path d="M71 13l3-7 5 5z" fill="var(--accent)"/>
+                <path d="M70 52a30 14 0 01-22 3" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <path d="M49 57l-3 7-5-5z" fill="var(--accent)"/>
+              </svg>
+              <span class="diagram-caption"><strong>Torsion</strong><br>un bout tourne, l'autre reste fixe — l'objet se tord sur son axe.</span>
+            </div>
+            <div class="diagram-box">
+              <svg viewBox="0 0 120 70" width="120" height="70">
+                <rect x="15" y="26" width="90" height="9" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <rect x="15" y="35" width="90" height="9" fill="none" stroke="var(--ink)" stroke-width="2"/>
+                <path d="M40 12v12" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <path d="M34 20l6 6 6-6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <path d="M80 58V46" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <path d="M74 50l6-6 6 6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+              </svg>
+              <span class="diagram-caption"><strong>Cisaillement</strong><br>deux plans glissent l'un contre l'autre, en sens opposés.</span>
+            </div>
+            <div class="diagram-box">
+              <svg viewBox="0 0 120 70" width="120" height="70">
+                <path d="M15 52 Q60 22 105 52" fill="none" stroke="var(--ink)" stroke-width="3"/>
+                <path d="M60 8v14" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <path d="M54 16l6 6 6-6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+              </svg>
+              <span class="diagram-caption"><strong>Flexion</strong><br>courbure sous une charge — un côté s'étire, l'autre s'écrase.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topic-section">
+          <h3 class="section-title">Propriétés des matériaux</h3>
+          <div class="concept-grid">
+            <div class="concept-card"><h3>Dureté</h3><p>Résistance à être rayé ou déformé en surface (ex. l'acier trempé d'un foret).</p></div>
+            <div class="concept-card"><h3>Résilience</h3><p>Résistance aux chocs brusques sans se briser (ex. un manche d'outil).</p></div>
+            <div class="concept-card"><h3>Malléabilité</h3><p>Capacité à être déformé en feuille ou étalé sans se rompre (ex. l'aluminium embouti).</p></div>
+            <div class="concept-card"><h3>Élasticité</h3><p>Capacité à reprendre sa forme initiale après une déformation (ex. un ressort).</p></div>
+            <div class="concept-card"><h3>Ductilité</h3><p>Capacité à être étiré en fil sans se rompre (ex. le cuivre d'un fil électrique).</p></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="topic-article" id="topic-electrique" hidden>
+        <h2>Les fonctions électriques</h2>
+        <p class="topic-lead">Dans un objet électrifié, chaque composante assure l'une de ces six fonctions du circuit.</p>
+        <div class="concept-grid">
+          <div class="concept-card"><h3>🔋 Alimentation</h3><p>Fournit l'énergie électrique au circuit (pile, prise murale, panneau solaire).</p></div>
+          <div class="concept-card"><h3>➰ Conduction</h3><p>Transporte le courant d'une composante à l'autre (fils de cuivre, pistes de circuit imprimé).</p></div>
+          <div class="concept-card"><h3>🛡️ Isolation</h3><p>Empêche le courant de sortir du chemin voulu (gaine de plastique, boîtier).</p></div>
+          <div class="concept-card"><h3>⚠️ Protection</h3><p>Interrompt le circuit en cas de défaut pour éviter un danger (fusible, disjoncteur).</p></div>
+          <div class="concept-card"><h3>🎛️ Commande</h3><p>Permet à l'utilisateur de contrôler le circuit (interrupteur, bouton, variateur).</p></div>
+          <div class="concept-card"><h3>🔄 Transformation d'énergie</h3><p>Convertit l'énergie électrique en une autre forme utile (moteur → mouvement, résistance → chaleur, DEL → lumière).</p></div>
+        </div>
+        <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">Plusieurs objets de <strong>L'Atelier</strong> (perceuse, sécheuse, ouvre-boîte) sont entraînés par un moteur électrique : c'est la fonction de transformation d'énergie qui produit le mouvement d'entrée de leur mécanisme.</p>
+      </article>
+
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -3022,20 +3370,6 @@ function schemaDefaults(mechKey){
 }
 var CATALOGUE = [
   {
-    id:'taille-crayon', name:'Taille-crayon manuel', mech:'gear',
-    category:'Transmission du mouvement',
-    movementIn:'rotation (manivelle)', movementOut:'rotation (lames, vitesse accrue)',
-    desc:'Une manivelle entraîne un premier engrenage qui engrène un second, plus petit : la vitesse de rotation augmente pour faire tourner les lames coniques autour du crayon.',
-    params:{teeth1:20, teeth2:9, thickness:0.35}, builtin:true
-  },
-  {
-    id:'perceuse-manivelle', name:'Perceuse à manivelle', mech:'bevel',
-    category:'Transmission du mouvement',
-    movementIn:'rotation (manivelle horizontale)', movementOut:'rotation (mèche verticale)',
-    desc:'Deux engrenages coniques changent l’axe de rotation de 90°, transmettant le mouvement de la manivelle horizontale vers la mèche verticale.',
-    params:{teeth1:12, teeth2:12, thickness:0.3}, builtin:true
-  },
-  {
     id:'velo', name:'Vélo', detailed:'velo',
     category:'Système combiné',
     movementIn:'rotation (pédalage)', movementOut:'roulement + orientation + freinage',
@@ -3069,55 +3403,6 @@ var CATALOGUE = [
     movementIn:'rotation rapide (moteur électrique)', movementOut:'rotation lente à couple élevé (mandrin)',
     desc:'Perceuse-visseuse sans fil modélisée avec ses deux mécanismes réels. Un réducteur planétaire (un soleil central, trois satellites, une couronne fixe) ralentit fortement la rotation du moteur tout en augmentant le couple, la disposition des satellites permettant une réduction compacte impossible à obtenir avec un simple engrenage droit. Un mandrin auto-serrant (bague crantée entraînant une spirale interne) centre et serre le foret sans outil.',
     builtin:true
-  },
-  {
-    id:'leve-vitre', name:'Lève-vitre électrique', mech:'worm',
-    category:'Transmission du mouvement',
-    movementIn:'rotation rapide (moteur)', movementOut:'rotation lente (axe perpendiculaire)',
-    desc:'La vis sans fin, entraînée par le moteur, engrène une roue dentée : le rapport de réduction est très élevé et l’axe de rotation change de direction.',
-    params:{wormLength:1.7, wheelTeeth:24}, builtin:true
-  },
-  {
-    id:'store-venitien', name:'Store vénitien à enrouleur', mech:'pulleyLoad',
-    category:'Transformation du mouvement',
-    movementIn:'rotation (manivelle)', movementOut:'translation verticale (store)',
-    desc:'En tournant la poulie, la corde s’enroule ou se déroule, ce qui transforme la rotation en une translation verticale du store.',
-    params:{radius:0.42, travel:1.3}, builtin:true
-  },
-  {
-    id:'cric-voiture', name:'Cric de voiture à vis', mech:'screw',
-    category:'Transformation du mouvement',
-    movementIn:'rotation (manivelle)', movementOut:'translation verticale (élévation)',
-    desc:'La rotation de la vis dans l’écrou fixe transforme le mouvement de rotation de la manivelle en une translation verticale qui soulève la charge.',
-    params:{length:2.2, travel:1.0}, builtin:true
-  },
-  {
-    id:'essuie-glace', name:'Essuie-glace d’auto', mech:'crankRocker',
-    category:'Transformation du mouvement',
-    movementIn:'rotation continue (moteur)', movementOut:'oscillation (balayage du pare-brise)',
-    desc:'Le système bielle-manivelle-oscillant transforme la rotation continue du moteur en un mouvement d’oscillation qui fait balayer l’essuie-glace.',
-    params:{crankR:0.32, rockerLen:1.2}, builtin:true
-  },
-  {
-    id:'scie-sauteuse', name:'Scie sauteuse électrique', mech:'crankSlider',
-    category:'Transformation du mouvement',
-    movementIn:'rotation continue (moteur)', movementOut:'translation alternative (lame)',
-    desc:'Le système bielle-manivelle-coulisseau transforme la rotation continue du moteur en un mouvement de va-et-vient rectiligne de la lame.',
-    params:{crankR:0.4, rodLen:1.3}, builtin:true
-  },
-  {
-    id:'portail', name:'Portail motorisé à crémaillère', mech:'rack',
-    category:'Transformation du mouvement',
-    movementIn:'rotation (moteur)', movementOut:'translation horizontale (vantail)',
-    desc:'Le pignon, entraîné par le moteur, roule sur la crémaillère fixée au portail : la rotation se transforme en translation horizontale du vantail.',
-    params:{teeth:12, rackLength:3.2}, builtin:true
-  },
-  {
-    id:'batteur', name:'Batteur électrique', mech:'mixerCombo',
-    category:'Système combiné',
-    movementIn:'rotation rapide (moteur)', movementOut:'rotation + translation (fouets)',
-    desc:'Le moteur entraîne un réducteur à engrenages qui ralentit la rotation, puis une came transforme cette rotation en un mouvement combiné des fouets. (Objet schématique — à refaire au format machine détaillée.)',
-    params:{teeth2:20}, builtin:true
   }
 ];
 
@@ -3709,6 +3994,32 @@ function initPersistence(){
 }
 
 /* ============================================================
+   Navigation entre écrans (accueil / comprendre / tester)
+   ============================================================ */
+function showScreen(id){
+  ['homeScreen','atelierScreen','comprendreScreen'].forEach(function(s){
+    document.getElementById(s).hidden = (s!==id);
+  });
+  if(id==='atelierScreen'){
+    resizeRenderer();
+    resizeWorkshop();
+  }
+}
+document.getElementById('goComprendre').addEventListener('click', function(){ showScreen('comprendreScreen'); });
+document.getElementById('goTester').addEventListener('click', function(){ showScreen('atelierScreen'); });
+document.getElementById('atelierHomeBtn').addEventListener('click', function(){ showScreen('homeScreen'); });
+document.getElementById('comprendreHomeBtn').addEventListener('click', function(){ showScreen('homeScreen'); });
+
+document.querySelectorAll('.topic-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var key=btn.dataset.topic;
+    document.querySelectorAll('.topic-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    document.querySelectorAll('.topic-article').forEach(function(a){ a.hidden = (a.id!=='topic-'+key); });
+    document.getElementById('topicContent').scrollTop = 0;
+  });
+});
+
+/* ============================================================
    Boot
    ============================================================ */
 renderRail('');
@@ -3723,6 +4034,7 @@ render();
 setTimeout(function(){ resizeWorkshop(); rebuildWorkshop(); wrender(); }, 60);
 initPersistence();
 loadObject(CATALOGUE[0]);
+showScreen('homeScreen');
 
 })();
 </script>
