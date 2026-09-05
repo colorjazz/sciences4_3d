@@ -594,6 +594,31 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 .spin-b-same{animation:spinCW 3.6s linear infinite;}
 .slide-h{animation:slideX 2.2s ease-in-out infinite;}
 .slide-v{animation:slideY 2.2s ease-in-out infinite;}
+@keyframes stretchPulse{0%,100%{transform:scaleX(1);}50%{transform:scaleX(1.18);}}
+@keyframes squishPulse{0%,100%{transform:scaleX(1);}50%{transform:scaleX(0.8);}}
+@keyframes arrowOutPulse{0%,100%{transform:translateX(0);}50%{transform:translateX(7px);}}
+@keyframes arrowOutPulseNeg{0%,100%{transform:translateX(0);}50%{transform:translateX(-7px);}}
+@keyframes arrowInPulse{0%,100%{transform:translateX(0);}50%{transform:translateX(-7px);}}
+@keyframes arrowInPulseNeg{0%,100%{transform:translateX(0);}50%{transform:translateX(7px);}}
+@keyframes twistPulse{0%,100%{transform:skewY(0deg);}50%{transform:skewY(10deg);}}
+@keyframes twistArrowPulse{0%,100%{transform:rotate(0deg);}50%{transform:rotate(14deg);}}
+@keyframes shearTopPulse{0%,100%{transform:translateX(0);}50%{transform:translateX(9px);}}
+@keyframes shearBotPulse{0%,100%{transform:translateX(0);}50%{transform:translateX(-9px);}}
+@keyframes flexBow{0%,100%{transform:scaleY(0.55);}50%{transform:scaleY(1.25);}}
+@keyframes flexArrow{0%,100%{transform:translateY(-4px);}50%{transform:translateY(4px);}}
+.stretch-a{transform-origin:60px 30px;animation:stretchPulse 2s ease-in-out infinite;}
+.squish-a{transform-origin:60px 30px;animation:squishPulse 2s ease-in-out infinite;}
+.arrow-out-l{transform-origin:center;animation:arrowOutPulseNeg 2s ease-in-out infinite;}
+.arrow-out-r{transform-origin:center;animation:arrowOutPulse 2s ease-in-out infinite;}
+.arrow-in-l{transform-origin:center;animation:arrowInPulse 2s ease-in-out infinite;}
+.arrow-in-r{transform-origin:center;animation:arrowInPulseNeg 2s ease-in-out infinite;}
+.twist-a{transform-origin:60px 62px;animation:twistPulse 2s ease-in-out infinite;}
+.twist-arrow-top{transform-origin:70px 15px;animation:twistArrowPulse 2s ease-in-out infinite;}
+.twist-arrow-bot{transform-origin:59px 55px;animation:twistArrowPulse 2s ease-in-out infinite reverse;}
+.shear-top{transform-origin:center;animation:shearTopPulse 1.8s ease-in-out infinite;}
+.shear-bot{transform-origin:center;animation:shearBotPulse 1.8s ease-in-out infinite;}
+.flex-bow{transform-origin:60px 52px;animation:flexBow 2.2s ease-in-out infinite;}
+.flex-arrow{animation:flexArrow 2.2s ease-in-out infinite;}
 .topic-section{margin:26px 0;}
 .topic-section h3.section-title{
   font-family:var(--font-display);font-size:15px;text-transform:uppercase;letter-spacing:.5px;
@@ -1078,47 +1103,56 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
           <div class="diagram-row">
             <div class="diagram-box">
               <svg viewBox="0 0 120 60" width="120" height="60">
-                <rect x="35" y="24" width="50" height="12" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <path d="M10 30h20M24 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-                <path d="M110 30H90M96 25l-6 5 6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+                <g class="stretch-a"><rect class="fixed" x="35" y="24" width="50" height="12"/></g>
+                <g class="arrow-out-l"><path d="M10 30h20M24 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/></g>
+                <g class="arrow-out-r"><path d="M110 30H90M96 25l-6 5 6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/></g>
               </svg>
               <span class="diagram-caption"><strong>Traction</strong><br>étirement — forces qui tirent vers l'extérieur.</span>
             </div>
             <div class="diagram-box">
               <svg viewBox="0 0 120 60" width="120" height="60">
-                <rect x="35" y="24" width="50" height="12" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <path d="M30 30h20M44 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5" transform="rotate(180 40 30)"/>
-                <path d="M10 30h20M24 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-                <path d="M110 30H90M96 25l-6 5 6 5" fill="none" stroke="var(--accent)" stroke-width="2.5" transform="rotate(180 100 30)"/>
+                <g class="squish-a"><rect class="fixed" x="35" y="24" width="50" height="12"/></g>
+                <g class="arrow-in-l"><path d="M10 30h20M24 25l6 5-6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/></g>
+                <g class="arrow-in-r"><path d="M110 30H90M96 25l-6 5 6 5" fill="none" stroke="var(--accent)" stroke-width="2.5"/></g>
               </svg>
               <span class="diagram-caption"><strong>Compression</strong><br>écrasement — forces qui poussent vers l'intérieur.</span>
             </div>
             <div class="diagram-box">
               <svg viewBox="0 0 120 70" width="120" height="70">
-                <rect x="50" y="8" width="20" height="54" rx="2" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <path d="M50 18a30 14 0 0122 -3" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
-                <path d="M71 13l3-7 5 5z" fill="var(--accent)"/>
-                <path d="M70 52a30 14 0 01-22 3" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
-                <path d="M49 57l-3 7-5-5z" fill="var(--accent)"/>
+                <g class="twist-a"><rect class="fixed" x="50" y="8" width="20" height="54" rx="2"/></g>
+                <g class="twist-arrow-top">
+                  <path d="M50 18a30 14 0 0122 -3" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                  <path d="M71 13l3-7 5 5z" fill="var(--accent)"/>
+                </g>
+                <g class="twist-arrow-bot">
+                  <path d="M70 52a30 14 0 01-22 3" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                  <path d="M49 57l-3 7-5-5z" fill="var(--accent)"/>
+                </g>
               </svg>
               <span class="diagram-caption"><strong>Torsion</strong><br>un bout tourne, l'autre reste fixe — l'objet se tord sur son axe.</span>
             </div>
             <div class="diagram-box">
               <svg viewBox="0 0 120 70" width="120" height="70">
-                <rect x="15" y="26" width="90" height="9" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <rect x="15" y="35" width="90" height="9" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <path d="M40 12v12" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
-                <path d="M34 20l6 6 6-6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
-                <path d="M80 58V46" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
-                <path d="M74 50l6-6 6 6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <g class="shear-top">
+                  <rect class="fixed" x="15" y="26" width="90" height="9"/>
+                  <path d="M40 12v12" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                  <path d="M34 20l6 6 6-6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                </g>
+                <g class="shear-bot">
+                  <rect class="fixed" x="15" y="35" width="90" height="9"/>
+                  <path d="M80 58V46" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                  <path d="M74 50l6-6 6 6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                </g>
               </svg>
               <span class="diagram-caption"><strong>Cisaillement</strong><br>deux plans glissent l'un contre l'autre, en sens opposés.</span>
             </div>
             <div class="diagram-box">
               <svg viewBox="0 0 120 70" width="120" height="70">
-                <path d="M15 52 Q60 22 105 52" fill="none" stroke="var(--ink)" stroke-width="3"/>
-                <path d="M60 8v14" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
-                <path d="M54 16l6 6 6-6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                <g class="flex-bow"><path d="M15 52 Q60 22 105 52" fill="none" stroke="var(--ink)" stroke-width="3"/></g>
+                <g class="flex-arrow">
+                  <path d="M60 8v14" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                  <path d="M54 16l6 6 6-6" fill="none" stroke="var(--accent)" stroke-width="2.3"/>
+                </g>
               </svg>
               <span class="diagram-caption"><strong>Flexion</strong><br>courbure sous une charge — un côté s'étire, l'autre s'écrase.</span>
             </div>
