@@ -5,6 +5,53 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-04 (suite 3) — Restructuration : accueil Comprendre/Tester, « L'Atelier », thème papier
+
+- L'utilisateur a demandé un ménage dans l'app (image des 9 objets à
+  retirer), un renommage de la banque en « L'Atelier », un nouvel
+  écran d'accueil à deux choix (Comprendre / Tester) et un nouveau
+  thème visuel (texture/couleur papier fournie en image). Clarifié par
+  AskUserQuestion avant de coder : retirer aussi le Batteur électrique
+  (10e objet, jugé aussi "schématique" par l'utilisateur) ; le contenu
+  de "Comprendre" doit être général/indépendant des objets (pas ancré
+  sur des pièces précises) ; la texture guide TOUTE l'app, pas
+  seulement l'accueil.
+- Ménage du `CATALOGUE` : retiré les 9 objets génériques (taille-crayon,
+  perceuse-manivelle, lève-vitre, store-vénitien, cric-voiture,
+  essuie-glace, scie-sauteuse, portail, batteur) — gardé les 5 objets
+  `DetailedObjects` (vélo, perceuse-colonne, ouvre-boîte, sécheuse,
+  perceuse-sans-fil). Le code `Mechanisms.*` sous-jacent N'A PAS été
+  supprimé : vérifié qu'il reste utilisé par l'onglet « Atelier —
+  générer » (constructeur de mécanisme personnalisé), une
+  fonctionnalité séparée du catalogue vitrine — décision prise après
+  avoir lu ce code, pas par supposition.
+- Nouvel écran d'accueil (`#homeScreen`) avec deux cartes ; l'app
+  originale (rail + scène 3D + fiche technique) déplacée dans
+  `#atelierScreen` et renommée « L'Atelier » (`<h2>` du rail) ; nouveau
+  contenu théorique dans `#comprendreScreen` (5 sujets : mécanismes,
+  liaisons et guidages, schématisation, matériaux et contraintes,
+  fonctions électriques — avec petits schémas SVG pour les guidages,
+  la torsion/le cisaillement/la flexion, et principe-vs-construction).
+- Piège de mise en page rencontré et corrigé : envelopper
+  `header.titleblock` + `.workspace` dans `#atelierScreen` a cassé le
+  flex-layout du `body` (qui comptait sur eux comme enfants directs) —
+  corrigé en donnant à `#atelierScreen` son propre
+  `display:flex;flex-direction:column`. Deuxième piège : le canvas
+  Three.js reste à taille 0 tant que l'écran est masqué
+  (`display:none`) — `showScreen()` appelle donc `resizeRenderer()` et
+  `resizeWorkshop()` explicitement à chaque passage vers l'atelier.
+- Nouveau thème : palette beige/crème chaude à partir de l'image
+  fournie, accent orange conservé (déjà harmonieux sur fond crème),
+  grain de papier ajouté en superposition sur le fond (bruit SVG en
+  data-URI, alpha faible). Mode sombre non retouché (aucune référence
+  fournie pour cette variante).
+- Vérifié par Playwright : navigation complète (accueil ↔ tester ↔
+  comprendre, les 5 sujets), banque affichant 5/30 avec exactement les
+  5 bons objets, aucune erreur JS, rendu testé aussi en largeur mobile
+  (390px). Diagrammes SVG (torsion, cisaillement, flexion) affinés
+  après une première passe jugée peu claire visuellement.
+- Commit poussé : `7f96e45` sur `colorjazz/sciences4_3d`.
+
 ## 2026-09-04 (suite 2) — Perceuse-visseuse sans fil : nouveau carter inspiré d'une référence testée
 
 - L'utilisateur a fourni un PDF contenant un visualiseur Three.js

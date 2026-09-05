@@ -6,9 +6,12 @@
 
 ## Tâche actuelle
 
-Choisir et commencer le prochain objet de la liste TODO.md, section
-"Prochains objets à créer" (premier non coché : robinet mélangeur ou
-ciseaux à cliquet).
+La restructuration demandée le 2026-09-04 (accueil Comprendre/Tester,
+ménage du catalogue, thème papier — voir "Structure de l'app"
+ci-dessous) est terminée et vérifiée. Prochaine étape : choisir et
+commencer le prochain objet de la liste TODO.md, section "Prochains
+objets à créer" (premier non coché : robinet mélangeur ou ciseaux à
+cliquet).
 
 ## État actuel
 
@@ -36,9 +39,62 @@ ciseaux à cliquet).
   batterie retravaillés le 2026-09-04 (LatheGeometry + ExtrudeGeometry,
   inspirés d'une référence Three.js testée séparément) — les 2
   mécanismes n'ont pas changé, seul l'habillage visuel statique.
-- 9 objets catalogue "mécanisme simple" existants et fonctionnels
-  (voir TODO.md).
-- Total banque actuelle : 14/30 objets.
+- Les 9 objets catalogue "mécanisme simple" ont été **retirés** de la
+  banque affichée le 2026-09-04 (ménage demandé par l'utilisateur —
+  voir section "Structure de l'app" ci-dessous et TODO.md). Leur code
+  `Mechanisms.*` sous-jacent existe toujours, utilisé par l'onglet
+  « Atelier — générer ».
+- Total banque actuelle : **5/30 objets** (les 5 `DetailedObjects`
+  ci-dessus).
+
+## Structure de l'app (2026-09-04 — restructuration majeure)
+
+L'app a maintenant 3 écrans, gérés par `showScreen(id)` (dans le script
+principal, juste avant la section "Boot") :
+
+- **`#homeScreen`** — écran d'accueil, affiché par défaut au chargement
+  (`showScreen('homeScreen')` en toute fin de boot). Deux cartes :
+  `#goComprendre` → écran Comprendre, `#goTester` → écran Tester.
+- **`#atelierScreen`** — l'app originale (rail d'objets + scène 3D +
+  fiche technique), inchangée fonctionnellement, mais désormais nommée
+  **« L'Atelier »** dans l'interface (le `<h2>` du rail, anciennement
+  « Banque d'objets »). Accès via la carte « Tester » de l'accueil, ou
+  retour à l'accueil via `#atelierHomeBtn`.
+  ⚠️ Piège de layout déjà rencontré et corrigé : `#atelierScreen` DOIT
+  avoir `display:flex;flex-direction:column;min-height:0` en CSS, sinon
+  le flex-layout du `body` (qui traitait `header.titleblock` et
+  `.workspace` comme enfants directs) casse dès qu'on les enveloppe
+  dans un conteneur.
+  ⚠️ Autre piège : le canvas Three.js est dimensionné à 0 tant que
+  l'écran est `[hidden]` (`display:none`). `showScreen()` appelle donc
+  `resizeRenderer()` et `resizeWorkshop()` explicitement à chaque
+  passage vers `'atelierScreen'`, sinon la scène resterait mal cadrée
+  après un premier affichage caché.
+- **`#comprendreScreen`** — nouveau contenu théorique général,
+  INDÉPENDANT des objets de la banque (décision explicite de
+  l'utilisateur : "contenu général, pas ancré sur les objets"). 5
+  sujets dans `.topic-nav` / `.topic-article`, bascule via classe JS
+  simple (pas de framework) : mécanismes (transmission/transformation/
+  combiné), liaisons et guidages (4 caractéristiques + 3 types de
+  guidage avec schémas SVG), schématisation (principe vs construction),
+  matériaux et contraintes (5 contraintes mécaniques + 5 propriétés de
+  matériaux, avec schémas SVG à flèches), fonctions électriques (6
+  fonctions). Si l'utilisateur demande un jour d'ancrer ce contenu sur
+  des pièces réelles des objets de L'Atelier (l'autre option qu'il
+  avait proposée), ce sera une réécriture, pas un ajustement mineur.
+
+**Thème visuel** : repeint le 2026-09-04 à partir d'une texture/couleur
+papier fournie par l'utilisateur — palette beige/crème chaude
+(`--bg:#f1e9d8`, `--surface:#fffcf5`, `--ink:#3a2f20`, etc.) au lieu du
+bleu-gris technique précédent, accent orange conservé (`--accent`,
+retouché légèrement vers `#e8622a`), léger grain de papier (bruit SVG
+en superposition sur le fond du `body`). Seul le thème CLAIR (`:root`)
+a été retouché — le mode sombre (`prefers-color-scheme` et
+`[data-theme="dark"]`) n'a pas été touché, faute de référence fournie
+pour cette variante : il reste bleu-nuit. Si l'utilisateur demande un
+jour un mode sombre cohérent avec le nouveau thème papier, il faudra
+concevoir une palette sombre chaude (brun foncé plutôt que bleu marine)
+plutôt que de réutiliser l'ancienne.
 
 ## Note technique importante pour les prochains objets détaillés
 
@@ -139,10 +195,9 @@ GROUPE qui reçoit la rotation dynamique — jamais l'inverse.
 
 ## Bugs connus / points de vigilance
 
-- Aucun bug connu actif sur le vélo ou la perceuse à ce jour.
-- Les 9 objets catalogue "mécanisme simple" n'ont pas été passés en
-  revue visuellement dans cette session — à vérifier si le temps le
-  permet.
+- Aucun bug connu actif sur les 5 objets détaillés à ce jour.
+- Les 9 objets catalogue "mécanisme simple" ont été retirés de la
+  banque affichée (2026-09-04) — plus à vérifier dans ce contexte.
 - Attention à la perte de contexte du scratchpad entre sessions : le
   fichier de travail à `/tmp/...` peut disparaître. **Toujours partir
   de `index.html` dans le dépôt GitHub comme source de vérité**, pas
