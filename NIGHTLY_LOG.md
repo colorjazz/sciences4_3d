@@ -5,6 +5,68 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-05 (suite 2) — Écran blanc : vraie cause trouvée et corrigée (rafale de contextes WebGL)
+
+- Après deux correctifs précédents insuffisants (contexte perdu non
+  restauré, puis réduction du nombre de contextes WebGL simultanés à
+  2 via le snapshot-and-dispose des mini-aperçus dans `93299fd`),
+  l'utilisateur a signalé que le bug persistait encore, puis a fourni
+  un indice décisif : **"sur firefox, nickel. sur telephone on a le
+  meme probleme que sur chrome."** — le bug est propre à Chrome
+  (bureau ET mobile), jamais Firefox. Ça oriente vers un comportement
+  Chrome plus strict sur les contextes WebGL, pas du matériel GPU
+  faible en général.
+- Deux corrections apportées (commit `2c573c5`) :
+  1. L'onglet « Atelier — générer » créait son `THREE.WebGLRenderer`
+     sans condition dès le chargement de la page, même si
+     l'utilisateur ne l'ouvrait jamais. Rendu paresseux via
+     `ensureWorkshopInit()`, appelé seulement au premier clic réel sur
+     l'onglet.
+  2. **Cause racine confirmée par reproduction directe** en
+     environnement de test headless (Playwright + Chromium + rendu
+     logiciel swiftshader) : à chaque clic sur un objet, `fillFiche()`
+     bouclait sur chaque mécanisme et appelait `createMiniViewer()`
+     pour CHACUN — et chaque appel créait PUIS DÉTRUISAIT aussitôt son
+     propre contexte WebGL. Pour un objet à plusieurs mécanismes, ça
+     fait plusieurs cycles création/destruction de contexte WebGL dans
+     la même trame synchrone. Chrome ne relâche pas un contexte détruit
+     instantanément côté GPU ; en créer un nouveau avant que le
+     précédent soit vraiment relâché peut lui faire retirer le
+     contexte le plus ancien pour faire de la place — potentiellement
+     celui de la scène PRINCIPALE. Corrigé en remplaçant les contextes
+     jetables des mini-aperçus par un seul contexte
+     (`miniRenderer`/`miniScene`/`miniCamera`), créé une seule fois
+     puis réutilisé pour toutes les vignettes de toutes les fiches
+     techniques, jamais détruit.
+- Résultat : en usage normal (sans jamais ouvrir l'onglet « générer »),
+  seulement 2 contextes WebGL vivent en permanence (scène principale +
+  vignettes), chacun créé UNE SEULE fois — exactement le principe que
+  l'utilisateur avait lui-même proposé dans un extrait de code fourni
+  plus tôt ("déclarer le renderer une seule fois, ne jamais le
+  recréer").
+- Vérifié par test Playwright headless : navigation vers L'Atelier,
+  clic séquentiel sur les 5 objets du catalogue, puis ouverture de
+  l'onglet « Atelier — générer » — scène principale intacte
+  (`children.length` stable) à chaque étape, zéro fermeture de page,
+  zéro erreur JS (seule "erreur" observée : chargement de police
+  Google Fonts bloqué par l'isolation réseau du test lui-même, sans
+  rapport avec l'app).
+- Piège de test rencontré et résolu : toute l'application est enveloppée
+  dans une seule IIFE (`(function(){...})()`), donc `showScreen`,
+  `loadObject`, etc. ne sont PAS des globales `window.*` — un premier
+  essai de test via `page.evaluate(() => showScreen(...))` échouait
+  silencieusement (no-op) sans lever d'erreur. Corrigé en cliquant les
+  vrais boutons de l'UI (`#goTester`, `.obj-item`, `.panel-tab`) au
+  lieu d'appeler les fonctions internes directement.
+- Commit poussé sur `colorjazz/sciences4_3d` (branche `main`) :
+  `2c573c5`.
+- **En attente de confirmation de l'utilisateur** sur son matériel
+  réel (Chrome bureau + téléphone) avant de considérer ce bug clos et
+  de commencer le point 6 des consignes (constructeur de circuit
+  électrique), comme demandé explicitement.
+
+---
+
 ## 2026-09-04 (suite 3) — Restructuration : accueil Comprendre/Tester, « L'Atelier », thème papier
 
 - L'utilisateur a demandé un ménage dans l'app (image des 9 objets à

@@ -51,9 +51,49 @@ consignes pour Claude »), en cours de traitement :
    à 2 maximum (scène principale + atelier générer) au lieu de ~7.
    Compromis assumé : les mini-aperçus n'ont plus leur légère rotation
    continue, juste une pose fixe.
-   **En attente de confirmation de l'utilisateur** sur son matériel
-   réel avant de considérer ce bug clos et de commencer le point 6
-   (constructeur de circuit), comme demandé.
+   Après ce correctif, l'utilisateur a signalé que le bug persistait
+   encore ("non toujours pareil. :("). Instruction reçue de ne pas
+   poursuivre à l'aveugle et d'attendre son signal (elle a fourni un
+   extrait de code illustrant le principe "déclarer le renderer UNE
+   SEULE FOIS au chargement, ne jamais le recréer, seulement changer
+   scène/caméra"). Reprise du travail sur son signal ("continuez là où
+   vous vous êtes arrêté"), avec un indice décisif fourni entre-temps :
+   **"sur firefox, nickel. sur telephone on a le meme probleme que sur
+   chrome."** — le bug est propre à Chrome (bureau ET mobile), PAS à
+   Firefox sur le même type de matériel. Ça oriente clairement vers un
+   comportement Chrome plus strict sur les contextes WebGL simultanés/
+   rafales de création-destruction, pas du matériel GPU générique faible.
+   Deux angles morts restants trouvés et corrigés (commit `2c573c5`) :
+   (a) l'onglet « Atelier — générer » créait son `THREE.WebGLRenderer`
+   sans condition au chargement de la page, même si l'utilisateur ne
+   l'ouvre jamais — rendu **paresseux** via `ensureWorkshopInit()`,
+   appelé seulement au premier clic réel sur cet onglet ; (b) **cause
+   racine confirmée par reproduction directe** en environnement de test
+   headless (Playwright + Chromium + rendu logiciel swiftshader) : à
+   chaque clic sur un objet, `fillFiche()` bouclait sur chaque mécanisme
+   et appelait `createMiniViewer()` pour CHACUN, et chaque appel créait
+   PUIS DÉTRUISAIT aussitôt son propre contexte WebGL (le correctif du
+   commit `93299fd` avait réduit le nombre de contextes SIMULTANÉS, mais
+   pas la RAFALE de créations/destructions à chaque clic). Pour un objet
+   à plusieurs mécanismes, ça fait plusieurs cycles création/destruction
+   de contexte WebGL dans la même trame — Chrome ne relâche pas un
+   contexte détruit instantanément côté GPU, et peut retirer le contexte
+   le plus ancien (potentiellement celui de la scène PRINCIPALE) pour
+   faire de la place à un nouveau créé trop tôt. Corrigé en remplaçant
+   les contextes jetables des mini-aperçus par UN SEUL contexte
+   (`miniRenderer`/`miniScene`/`miniCamera`) créé une seule fois puis
+   réutilisé pour toutes les vignettes de toutes les fiches techniques,
+   jamais détruit. Résultat : en usage normal (jamais l'onglet
+   « générer »), seulement 2 contextes WebGL vivent en permanence
+   (scène principale + vignettes), chacun créé UNE SEULE fois — exactement
+   le principe que l'utilisateur avait lui-même proposé. Vérifié par
+   test Playwright : clic séquentiel sur les 5 objets + ouverture de
+   l'onglet générer, scène principale intacte à chaque étape, zéro
+   fermeture de page, zéro erreur JS. Poussé sur `main` (`2c573c5`).
+   **En attente de confirmation de l'utilisateur sur son matériel réel
+   (Chrome bureau + téléphone)** avant de considérer ce bug clos et de
+   commencer le point 6 (constructeur de circuit), comme demandé
+   explicitement par l'utilisateur.
 2. [x] Nouveau lettrage/icône « atelier. » — même commit.
 3. [x] Animations pour chaque mécanisme (« Les mécanismes ») et chaque
    guidage (« Liaisons et guidages ») — commit `0038e71`.
