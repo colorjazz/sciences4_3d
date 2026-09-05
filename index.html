@@ -579,6 +579,21 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 .concept-card h3{font-size:13.5px;margin:0 0 6px;color:var(--ink);display:flex;align-items:center;gap:8px;}
 .concept-card p{font-size:12.5px;color:var(--ink-dim);margin:0;line-height:1.5;}
 .concept-card svg{flex:0 0 auto;color:var(--accent);}
+.mini-anim{width:100px;height:60px;margin:0 auto 8px;display:block;overflow:visible;}
+.fixed{fill:none;stroke:var(--ink);stroke-width:2;}
+.mark{stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;}
+.tooth{stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;}
+.thread{stroke:var(--accent);stroke-width:2.2;}
+@keyframes spinCW{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes spinCCW{from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
+@keyframes slideX{0%,100%{transform:translateX(-11px);}50%{transform:translateX(11px);}}
+@keyframes slideY{0%,100%{transform:translateY(9px);}50%{transform:translateY(-9px);}}
+.spin-a{animation:spinCW 3.6s linear infinite;}
+.spin-a-slow{animation:spinCW 9s linear infinite;}
+.spin-b-fast{animation:spinCCW 1.8s linear infinite;}
+.spin-b-same{animation:spinCW 3.6s linear infinite;}
+.slide-h{animation:slideX 2.2s ease-in-out infinite;}
+.slide-v{animation:slideY 2.2s ease-in-out infinite;}
 .topic-section{margin:26px 0;}
 .topic-section h3.section-title{
   font-family:var(--font-display);font-size:15px;text-transform:uppercase;letter-spacing:.5px;
@@ -842,10 +857,64 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
           <h3 class="section-title">Transmission du mouvement</h3>
           <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">Le mouvement de sortie est de même nature que celui d'entrée (une rotation reste une rotation) : seuls la vitesse, le couple ou l'axe peuvent changer.</p>
           <div class="concept-grid">
-            <div class="concept-card"><h3>⚙️ Engrenages</h3><p>Deux roues dentées qui engrènent : la vitesse change selon le rapport du nombre de dents.</p></div>
-            <div class="concept-card"><h3>🔗 Poulies et courroie</h3><p>Deux poulies reliées par une courroie : la vitesse dépend du rapport des diamètres.</p></div>
-            <div class="concept-card"><h3>⛓️ Chaîne et pignons</h3><p>Comme les poulies, mais la chaîne empêche tout glissement (vélo).</p></div>
-            <div class="concept-card"><h3>🌀 Vis sans fin</h3><p>Une vis entraîne une roue dentée à angle droit, avec une très grande réduction de vitesse.</p></div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <g class="spin-a" style="transform-origin:35px 30px;">
+                  <circle class="fixed" cx="35" cy="30" r="15"/>
+                  <g class="tooth">
+                    <line x1="35" y1="12" x2="35" y2="16"/><line x1="35" y1="44" x2="35" y2="48"/>
+                    <line x1="17" y1="30" x2="21" y2="30"/><line x1="49" y1="30" x2="53" y2="30"/>
+                    <line x1="23" y1="18" x2="26" y2="21"/><line x1="44" y1="39" x2="47" y2="42"/>
+                    <line x1="47" y1="18" x2="44" y2="21"/><line x1="26" y1="39" x2="23" y2="42"/>
+                  </g>
+                </g>
+                <g class="spin-b-fast" style="transform-origin:70px 34px;">
+                  <circle class="fixed" cx="70" cy="34" r="9"/>
+                  <g class="tooth">
+                    <line x1="70" y1="24" x2="70" y2="27"/><line x1="70" y1="41" x2="70" y2="44"/>
+                    <line x1="60" y1="34" x2="63" y2="34"/><line x1="77" y1="34" x2="80" y2="34"/>
+                  </g>
+                </g>
+              </svg>
+              <h3>⚙️ Engrenages</h3><p>Deux roues dentées qui engrènent : la vitesse change selon le rapport du nombre de dents (ici, sens opposés).</p>
+            </div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <line class="fixed" x1="30" y1="15" x2="70" y2="15"/>
+                <line class="fixed" x1="30" y1="45" x2="70" y2="45"/>
+                <circle class="fixed" cx="30" cy="30" r="15"/>
+                <circle class="fixed" cx="70" cy="30" r="15"/>
+                <g class="spin-a" style="transform-origin:30px 30px;"><line class="mark" x1="30" y1="30" x2="30" y2="17"/></g>
+                <g class="spin-b-same" style="transform-origin:70px 30px;"><line class="mark" x1="70" y1="30" x2="70" y2="17"/></g>
+              </svg>
+              <h3>🔗 Poulies et courroie</h3><p>Deux poulies reliées par une courroie : la vitesse dépend du rapport des diamètres (ici, même sens).</p>
+            </div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <line class="fixed" x1="30" y1="15" x2="70" y2="15" stroke-dasharray="4 3"/>
+                <line class="fixed" x1="30" y1="45" x2="70" y2="45" stroke-dasharray="4 3"/>
+                <circle class="fixed" cx="30" cy="30" r="15"/>
+                <circle class="fixed" cx="70" cy="30" r="15"/>
+                <g class="spin-a" style="transform-origin:30px 30px;"><line class="mark" x1="30" y1="30" x2="30" y2="17"/></g>
+                <g class="spin-b-same" style="transform-origin:70px 30px;"><line class="mark" x1="70" y1="30" x2="70" y2="17"/></g>
+              </svg>
+              <h3>⛓️ Chaîne et pignons</h3><p>Comme les poulies, mais la chaîne (traits pointillés) empêche tout glissement (vélo).</p>
+            </div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <defs>
+                  <pattern id="wormThread" width="9" height="9" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="9" x2="9" y2="0" class="thread"/>
+                    <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="9 0" dur="0.7s" repeatCount="indefinite"/>
+                  </pattern>
+                </defs>
+                <rect class="fixed" x="8" y="21" width="46" height="18" rx="9"/>
+                <rect x="8" y="21" width="46" height="18" rx="9" fill="url(#wormThread)"/>
+                <circle class="fixed" cx="78" cy="30" r="14"/>
+                <g class="spin-a-slow" style="transform-origin:78px 30px;"><line class="mark" x1="78" y1="30" x2="78" y2="18"/></g>
+              </svg>
+              <h3>🌀 Vis sans fin</h3><p>Une vis entraîne une roue dentée à angle droit, avec une très grande réduction de vitesse.</p>
+            </div>
           </div>
         </div>
 
@@ -853,10 +922,57 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
           <h3 class="section-title">Transformation du mouvement</h3>
           <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">Le mouvement de sortie change de nature : une rotation peut devenir une translation, une oscillation, etc.</p>
           <div class="concept-grid">
-            <div class="concept-card"><h3>🔩 Vis-écrou</h3><p>Rotation de la vis → translation de l'écrou (ou l'inverse). Utilisé pour soulever, serrer, régler.</p></div>
-            <div class="concept-card"><h3>⚡ Bielle-manivelle</h3><p>Rotation continue → translation ou oscillation alternative (piston, essuie-glace).</p></div>
-            <div class="concept-card"><h3>📏 Pignon-crémaillère</h3><p>Rotation d'un pignon → translation en ligne droite d'une barre dentée (portail, direction de voiture).</p></div>
-            <div class="concept-card"><h3>🔵 Came</h3><p>Une pièce de profil irrégulier qui tourne fait suivre un mouvement précis à un suiveur (souvent une translation).</p></div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <defs>
+                  <pattern id="screwThread" width="9" height="9" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="9" x2="9" y2="0" class="thread"/>
+                    <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="0 9" dur="0.7s" repeatCount="indefinite"/>
+                  </pattern>
+                </defs>
+                <rect class="fixed" x="43" y="6" width="14" height="48" rx="6"/>
+                <rect x="43" y="6" width="14" height="48" rx="6" fill="url(#screwThread)"/>
+                <g class="slide-v"><rect x="30" y="24" width="40" height="12" rx="2" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="2"/></g>
+              </svg>
+              <h3>🔩 Vis-écrou</h3><p>Rotation de la vis → translation de l'écrou (ou l'inverse). Utilisé pour soulever, serrer, régler.</p>
+            </div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <line class="fixed" x1="15" y1="46" x2="85" y2="46"/>
+                <g class="spin-a" style="transform-origin:25px 30px;">
+                  <circle class="fixed" cx="25" cy="30" r="10"/>
+                  <line class="mark" x1="25" y1="30" x2="25" y2="21"/>
+                </g>
+                <g class="slide-h"><rect x="58" y="24" width="18" height="14" rx="2" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="2"/></g>
+              </svg>
+              <h3>⚡ Bielle-manivelle</h3><p>Rotation continue → translation ou oscillation alternative (piston, essuie-glace).</p>
+            </div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <rect class="fixed" x="10" y="38" width="80" height="10"/>
+                <g class="slide-h">
+                  <g class="tooth">
+                    <line x1="20" y1="38" x2="20" y2="32"/><line x1="32" y1="38" x2="32" y2="32"/>
+                    <line x1="44" y1="38" x2="44" y2="32"/><line x1="56" y1="38" x2="56" y2="32"/>
+                    <line x1="68" y1="38" x2="68" y2="32"/><line x1="80" y1="38" x2="80" y2="32"/>
+                  </g>
+                </g>
+                <g class="spin-a" style="transform-origin:50px 22px;">
+                  <circle class="fixed" cx="50" cy="22" r="11"/>
+                  <line class="mark" x1="50" y1="22" x2="50" y2="13"/>
+                </g>
+              </svg>
+              <h3>📏 Pignon-crémaillère</h3><p>Rotation d'un pignon → translation en ligne droite d'une barre dentée (portail, direction de voiture).</p>
+            </div>
+            <div class="concept-card">
+              <svg class="mini-anim" viewBox="0 0 100 60">
+                <g class="spin-a" style="transform-origin:45px 38px;">
+                  <path class="fixed" d="M45 24c9 0 13 7 9 15 -3 6-16 6-19-2 -3-8 1-13 10-13z"/>
+                </g>
+                <g class="slide-v"><rect x="39" y="8" width="12" height="16" rx="2" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="2"/></g>
+              </svg>
+              <h3>🔵 Came</h3><p>Une pièce de profil irrégulier qui tourne fait suivre un mouvement précis à un suiveur (souvent une translation).</p>
+            </div>
           </div>
         </div>
 
@@ -885,26 +1001,32 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
           <div class="diagram-row">
             <div class="diagram-box">
               <svg viewBox="0 0 140 90" width="140" height="90">
-                <rect x="15" y="38" width="90" height="14" rx="3" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <rect x="8" y="30" width="16" height="30" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <path d="M108 45h18M120 39l6 6-6 6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+                <rect class="fixed" x="15" y="38" width="90" height="14" rx="3"/>
+                <g class="slide-h"><rect x="8" y="30" width="16" height="30" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="2"/></g>
               </svg>
               <span class="diagram-caption"><strong>Translation</strong><br>glissière — une pièce coulisse en ligne droite dans l'autre.</span>
             </div>
             <div class="diagram-box">
               <svg viewBox="0 0 140 90" width="140" height="90">
-                <circle cx="70" cy="45" r="24" fill="none" stroke="var(--ink)" stroke-width="2"/>
-                <circle cx="70" cy="45" r="4" fill="var(--ink)"/>
-                <path d="M92 30a30 30 0 010 14" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-                <path d="M92 44l4 3-1-5.5z" fill="var(--accent)"/>
+                <circle class="fixed" cx="70" cy="45" r="24"/>
+                <g class="spin-a" style="transform-origin:70px 45px;">
+                  <circle cx="70" cy="45" r="4" fill="var(--ink)"/>
+                  <line class="mark" x1="70" y1="45" x2="70" y2="24"/>
+                </g>
               </svg>
               <span class="diagram-caption"><strong>Rotation</strong><br>pivot — une pièce tourne autour d'un axe fixe par rapport à l'autre.</span>
             </div>
             <div class="diagram-box">
               <svg viewBox="0 0 140 90" width="140" height="90">
-                <path d="M55 20 q15 6 0 12 q15 6 0 12 q15 6 0 12 q15 6 0 12" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
-                <path d="M85 26h14M99 20l6 6-6 6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-                <path d="M85 62a26 26 0 0114-13" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+                <defs>
+                  <pattern id="helixThread" width="9" height="9" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="9" x2="9" y2="0" class="thread"/>
+                    <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="0 9" dur="0.7s" repeatCount="indefinite"/>
+                  </pattern>
+                </defs>
+                <rect class="fixed" x="63" y="14" width="14" height="62" rx="6"/>
+                <rect x="63" y="14" width="14" height="62" rx="6" fill="url(#helixThread)"/>
+                <g class="slide-v"><rect x="50" y="34" width="40" height="14" rx="2" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="2"/></g>
               </svg>
               <span class="diagram-caption"><strong>Hélicoïdal</strong><br>vis-écrou — rotation et translation combinées et liées (un pas par tour).</span>
             </div>
