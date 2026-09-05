@@ -8,8 +8,26 @@
 
 L'utilisateur a fourni le 2026-09-05 un PDF de consignes (« 5 sept
 consignes pour Claude »), en cours de traitement :
-1. [x] Corriger le bug d'écran blanc au changement d'objet (contexte
-   WebGL perdu) — voir NIGHTLY_LOG.md, commit `027adef`.
+1. [x] Corriger le bug d'écran blanc au changement d'objet. Premier
+   correctif (`027adef`, contexte WebGL perdu) jugé insuffisant par
+   l'utilisateur — bug encore présent. Creusé plus loin : le vrai trou
+   était que `render()` (boucle de rendu à chaque frame) n'était PAS
+   protégée par try/catch, seulement `loadObject()` (construction). Si
+   `animate()`/`kinematics()` lève une exception à une frame donnée
+   (même seulement dans certaines conditions), `renderer.render()`
+   n'est plus jamais appelé → canvas transparent (blanc) figé jusqu'au
+   rafraîchissement. Corrigé dans `e8203ed` : `render()`, `loop()`
+   (mini-aperçus) et `wrender()` (atelier générer) attrapent maintenant
+   les erreurs d'animation, gèlent l'objet sur sa dernière pose valide
+   au lieu de laisser un écran vide, et continuent à appeler
+   `renderer.render()`. Vérifié par injection contrôlée d'une erreur
+   dans la sécheuse (jamais committée) : confirme que le symptôme
+   exact disparaît. Cause originale précise toujours non identifiée
+   avec certitude (aucune reproduction directe obtenue malgré tests
+   étendus), mais toute la CLASSE de bug est maintenant couverte.
+   **En attente de confirmation de l'utilisateur** que le bug ne se
+   reproduit plus avant de commencer le point 6 (constructeur de
+   circuit électrique), comme demandé.
 2. [x] Nouveau lettrage/icône « atelier. » — même commit.
 3. [x] Animations pour chaque mécanisme (« Les mécanismes ») et chaque
    guidage (« Liaisons et guidages ») — commit `0038e71`.
