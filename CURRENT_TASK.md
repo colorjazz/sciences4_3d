@@ -6,12 +6,41 @@
 
 ## Tâche actuelle
 
-La restructuration demandée le 2026-09-04 (accueil Comprendre/Tester,
-ménage du catalogue, thème papier — voir "Structure de l'app"
-ci-dessous) est terminée et vérifiée. Prochaine étape : choisir et
-commencer le prochain objet de la liste TODO.md, section "Prochains
-objets à créer" (premier non coché : robinet mélangeur ou ciseaux à
-cliquet).
+L'utilisateur a fourni le 2026-09-05 un PDF de consignes (« 5 sept
+consignes pour Claude »), en cours de traitement :
+1. [x] Corriger le bug d'écran blanc au changement d'objet (contexte
+   WebGL perdu) — voir NIGHTLY_LOG.md, commit `027adef`.
+2. [x] Nouveau lettrage/icône « atelier. » — même commit.
+3. [x] Animations pour chaque mécanisme (« Les mécanismes ») et chaque
+   guidage (« Liaisons et guidages ») — commit `0038e71`.
+4. [x] Animations pour les 5 contraintes mécaniques — commit `bece323`.
+5. [ ] Simulations INTERACTIVES (glisser/relâcher) pour les 5
+   propriétés de matériaux (dureté, résilience, malléabilité,
+   élasticité, ductilité) — ex. donné par l'utilisateur : un élastique
+   qu'on étire à la souris et qui se rétracte au relâchement. Plus
+   gros morceau que le point 4 (interaction pointeur en temps réel,
+   pas juste une boucle CSS).
+6. [ ] Constructeur de circuit électrique interactif pour "Fonctions
+   électriques" : l'élève assemble batterie + fil + fusible + bouton +
+   lumière et les fait fonctionner. C'est une mini-application à part
+   entière (glisser-déposer de composants, détection de circuit
+   complet/fermé, logique d'état) — le plus gros morceau des consignes,
+   à traiter comme un développement séparé, pas un ajustement mineur.
+
+Une fois ces 6 points terminés, reprendre la liste TODO.md, section
+"Prochains objets à créer" (premier non coché : robinet mélangeur ou
+ciseaux à cliquet) pour continuer à peupler la banque vers 30 objets.
+
+## Décision technique importante : pas de nouveaux mini-viewers Three.js
+dans Comprendre
+
+Un bug (voir NIGHTLY_LOG.md, 2026-09-05) a montré que trop de contextes
+WebGL simultanés (un par mini-aperçu de fiche technique) peut faire
+perdre le contexte de la scène principale sur un GPU limité. En
+conséquence, TOUTES les animations/simulations de la section Comprendre
+(mécanismes, guidages, contraintes, matériaux) doivent être en CSS/SVG
+pur, jamais en Three.js/WebGL — sauf si un jour on retire ou mutualise
+les mini-viewers existants pour libérer de la marge.
 
 ## État actuel
 
