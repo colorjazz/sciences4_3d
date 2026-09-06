@@ -105,19 +105,31 @@ consignes pour Claude »), en cours de traitement :
    gros morceau que le point 4 (interaction pointeur en temps réel,
    pas juste une boucle CSS).
 6. [x] Constructeur de circuit électrique interactif pour "Fonctions
-   électriques" — commit `67b4cd9`. L'élève glisse pile/interrupteur/
-   fusible/ampoule dans 4 emplacements disposés en boucle (fil dessiné
-   en SVG statique), puis clique sur l'interrupteur placé pour fermer
-   le circuit. Détection déterministe : tous les emplacements remplis +
-   interrupteur fermé → ampoule allumée, sinon éteinte. Glisser-déposer
-   par événements pointer (même idiome que l'orbite 3D), HTML/SVG/CSS
-   pur — respecte la décision "pas de nouveaux mini-viewers Three.js
-   dans Comprendre". Bouton Recommencer pour réinitialiser. Ajouté sous
-   les six explications déjà présentes dans le même article
-   "topic-electrique". Vérifié par test Playwright (glisser les 4
-   pièces, fermer/rouvrir l'interrupteur, vérifier l'état "lit",
-   réinitialiser) + sweep de régression complet (5 objets, atelier
-   générer, 5 sujets Comprendre) — zéro erreur.
+   électriques". Première version à 4 emplacements fixes (commit
+   `67b4cd9`), puis REMPLACÉE par un vrai labo de circuits libre
+   (commit `3c2ac7c`) après que l'utilisateur a fourni un prototype
+   React (moteur de simulation par analyse de graphe — jamais utilisé
+   tel quel, stack incompatible, mais le moteur était du bon travail et
+   a été porté en JS/DOM/SVG pur) en disant explicitement que Gemini
+   « ne sait pas pédagogiquement comment le gérer ». Version actuelle :
+   11 composants (les 6 catégories de fonctions électriques), placement
+   libre par glisser-déposer + câblage à la main entre bornes, moteur
+   de simulation par graphe (détection d'alimentation/court-circuit,
+   jamais approximatif), et surtout CINQ MISSIONS PÉDAGOGIQUES
+   progressives avec vérification de l'état réel du montage (circuit
+   simple → protection → court-circuit provoqué en sécurité → isolant
+   qui bloque le courant → défi de synthèse libre) — c'est la structure
+   pédagogique qui manquait au prototype fourni. Glisser-déposer par
+   événements pointer (même idiome que l'orbite 3D), HTML/SVG/CSS pur —
+   respecte la décision "pas de nouveaux mini-viewers Three.js dans
+   Comprendre". Piège corrigé en cours de route : la palette de
+   composants avait un `max-height:420px;overflow-y:auto` qui coupait
+   les catégories Protection/Conduction/Isolation hors de vue —
+   supprimé. Vérifié par test Playwright de bout en bout (glisser 4
+   composants, les câbler en boucle, fermer l'interrupteur, valider la
+   mission 1, confirmer l'avancement automatique, ajouter un fusible,
+   valider la mission 2) + sweep de régression complet (5 objets,
+   atelier générer, 5 sujets Comprendre) — zéro erreur.
 
 Une fois ces 6 points terminés, reprendre la liste TODO.md, section
 "Prochains objets à créer" (premier non coché : robinet mélangeur ou

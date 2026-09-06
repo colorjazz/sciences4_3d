@@ -5,6 +5,42 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-06 (suite) — Labo de circuits libre + missions pédagogiques (remplace la v1)
+
+- L'utilisateur a fourni un prototype React fait par Gemini : un vrai
+  labo de circuit à composants libres avec un moteur de simulation par
+  analyse de graphe (adjacence, détection de court-circuit par cluster
+  sans charge, élagage des culs-de-sac) — du bon travail technique,
+  mais sans AUCUNE structure pédagogique (juste un bac à sable, aucun
+  objectif, aucune évaluation). Stack incompatible avec cette appli
+  (React/Tailwind/lucide-react vs vanilla JS ici), donc jamais utilisé
+  tel quel — mais le moteur de simulation a été porté en JS/DOM/SVG pur.
+- Remplace la v1 à 4 emplacements fixes (`67b4cd9`) par un vrai labo :
+  11 composants organisés par les 6 catégories de fonctions électriques,
+  placement libre par glisser-déposer, câblage à la main entre bornes,
+  et surtout CINQ MISSIONS progressives avec vérification de l'état
+  réel du montage (pas juste "as-tu cliqué sur un bouton") : circuit
+  simple, ajout d'un fusible (protection), court-circuit provoqué en
+  sécurité, isolant qui bloque volontairement le courant, défi de
+  synthèse libre. C'est cette couche de missions qui répond au
+  problème identifié par l'utilisateur ("il ne sait pas
+  pédagogiquement comment le gérer").
+- Piège trouvé et corrigé pendant les tests : la palette de composants
+  avait `max-height:420px;overflow-y:auto`, ce qui coupait les
+  catégories Protection/Conduction/Isolation hors de la zone visible
+  pendant un glissement (repéré via `document.elementFromPoint` dans
+  un test Playwright qui montrait un élément inattendu sous le point
+  de clic attendu) — supprimé, la palette prend maintenant toute la
+  hauteur nécessaire.
+- Commit `3c2ac7c`. Vérifié par test Playwright de bout en bout (vraies
+  interactions souris : glisser 4 composants, les câbler en boucle,
+  fermer l'interrupteur, valider la mission 1, confirmer l'avancement
+  automatique vers la mission 2, ajouter un fusible, valider la mission
+  2) + sweep de régression complet (5 objets, atelier générer, 5
+  sujets Comprendre) — zéro erreur.
+
+---
+
 ## 2026-09-06 — Constructeur de circuit électrique interactif + rondeur
 
 - Point 6 des consignes du 5 septembre implémenté : constructeur de
