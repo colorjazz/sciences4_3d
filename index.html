@@ -639,28 +639,29 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
    (inspiré d'un prototype fourni par l'utilisateur, porté ici en
    JS/DOM/SVG pur, sans aucun contexte WebGL — voir la décision "pas
    de nouveaux mini-viewers Three.js dans Comprendre"), habillé en
-   missions pédagogiques progressives plutôt qu'un bac à sable libre. */
-.circuit-lab-mission{
+   défis pédagogiques progressifs plutôt qu'un bac à sable libre. */
+.circuit-lab-defi{
   border:1.5px solid var(--ink);border-radius:var(--radius-m);
   background:var(--surface);padding:14px 16px;margin-bottom:14px;
 }
-.circuit-lab-mission-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
-.circuit-lab-mission-num{
+.circuit-lab-defi-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+.circuit-lab-defi-num{
   font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink-faint);
 }
-.circuit-lab-mission h4{font-family:var(--font-display);font-size:16px;margin:0 0 6px;color:var(--ink);}
-.circuit-lab-mission p{font-size:13px;color:var(--ink-dim);margin:0 0 10px;line-height:1.5;}
-.circuit-lab-mission-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.circuit-lab-mission-feedback{
+.circuit-lab-defi h4{font-family:var(--font-display);font-size:16px;margin:0 0 6px;color:var(--ink);}
+.circuit-lab-defi p{font-size:13px;color:var(--ink-dim);margin:0 0 10px;line-height:1.5;}
+.circuit-lab-defi-contexte{font-style:italic;color:var(--ink);background:var(--surface-2);border-left:3px solid var(--accent);padding:8px 10px;border-radius:var(--radius-s);margin:0 0 10px;}
+.circuit-lab-defi-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.circuit-lab-defi-feedback{
   margin-top:10px;padding:8px 11px;border-radius:var(--radius-s);font-size:12.5px;line-height:1.5;
 }
-.circuit-lab-mission-feedback.ok{background:#e9f5ec;color:var(--good);border:1px solid var(--good);}
-.circuit-lab-mission-feedback.retry{background:var(--surface-2);color:var(--ink-dim);border:1px solid var(--line-strong);}
-.circuit-lab-mission-dots{display:flex;gap:5px;}
-.circuit-lab-mission-dot{width:7px;height:7px;border-radius:50%;background:var(--line-strong);}
-.circuit-lab-mission-dot.done{background:var(--good);}
-.circuit-lab-mission-dot.active{background:var(--accent);}
+.circuit-lab-defi-feedback.ok{background:#e9f5ec;color:var(--good);border:1px solid var(--good);}
+.circuit-lab-defi-feedback.retry{background:var(--surface-2);color:var(--ink-dim);border:1px solid var(--line-strong);}
+.circuit-lab-defi-dots{display:flex;gap:5px;}
+.circuit-lab-defi-dot{width:7px;height:7px;border-radius:50%;background:var(--line-strong);}
+.circuit-lab-defi-dot.done{background:var(--good);}
+.circuit-lab-defi-dot.active{background:var(--accent);}
 
 .circuit-lab-main{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;}
 .circuit-lab-palette{
@@ -714,6 +715,16 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 .circuit-lab-item.powered .circuit-lab-item-icon-wrap{background:#fff6d8;box-shadow:0 0 8px #f2c955;}
 .circuit-lab-item[data-type="interrupteur"].closed .circuit-lab-item-icon-wrap,
 .circuit-lab-item[data-type="bouton"].closed .circuit-lab-item-icon-wrap{background:var(--accent-soft);}
+
+/* Retour visuel fort quand un composant fonctionne vraiment — pas
+   juste une lueur discrète : le moteur tourne, la DEL pulse et
+   irradie, le condensateur chargé se distingue visuellement. */
+@keyframes circuitSpin{ to{ transform:rotate(360deg); } }
+@keyframes circuitGlowPulse{ 0%,100%{ box-shadow:0 0 8px #f2c955; } 50%{ box-shadow:0 0 18px 4px #f2c955; } }
+.circuit-lab-item[data-type="moteur"].powered .circuit-lab-icon{ display:inline-block; animation:circuitSpin 0.9s linear infinite; }
+.circuit-lab-item[data-type="del"].powered .circuit-lab-item-icon-wrap,
+.circuit-lab-item[data-type="resistance"].powered .circuit-lab-item-icon-wrap{ animation:circuitGlowPulse 1.1s ease-in-out infinite; }
+.circuit-lab-item[data-type="condensateur"].charged .circuit-lab-item-icon-wrap{ background:#e3ecfb; box-shadow:0 0 8px #6f9ceb; }
 .circuit-lab-terminal{
   position:absolute;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;
   background:var(--surface);border:2px solid var(--accent);cursor:crosshair;z-index:5;
@@ -1297,10 +1308,10 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 
         <div class="topic-section">
           <h3 class="section-title">À toi de jouer : le labo de circuits</h3>
-          <p style="font-size:13px;color:var(--ink-dim);max-width:640px;margin:0 0 16px;">Glisse des composants sur la grille, relie leurs bornes (points bleus) avec des fils en tirant de l'une à l'autre, puis clique sur « Vérifier la mission ». Clic droit pour supprimer une pièce ou un fil.</p>
+          <p style="font-size:13px;color:var(--ink-dim);max-width:640px;margin:0 0 16px;">Glisse des composants sur la grille, relie leurs bornes (points bleus) avec des fils en tirant de l'une à l'autre, puis clique sur « Vérifier le défi ». Clic droit pour supprimer une pièce ou un fil.</p>
 
           <div class="circuit-lab" id="circuitLab">
-            <div class="circuit-lab-mission" id="circuitLabMission"></div>
+            <div class="circuit-lab-defi" id="circuitLabDefi"></div>
 
             <div class="circuit-lab-main">
               <div class="circuit-lab-palette" id="circuitLabPalette"></div>
@@ -4470,7 +4481,7 @@ document.querySelectorAll('.topic-btn').forEach(function(btn){
    simulation par analyse de graphe (adapté d'un prototype fourni par
    l'utilisateur, porté ici en JS/DOM/SVG pur — aucun contexte WebGL,
    ce module respecte la décision "pas de nouveaux mini-viewers
-   Three.js dans Comprendre"), habillé en missions pédagogiques
+   Three.js dans Comprendre"), habillé en défis pédagogiques
    progressives plutôt qu'un bac à sable sans but.
    ============================================================ */
 function initCircuitLab(){
@@ -4479,7 +4490,7 @@ function initCircuitLab(){
   var wiresSvg = document.getElementById('circuitLabWires');
   var palette = document.getElementById('circuitLabPalette');
   var emptyHint = document.getElementById('circuitLabEmpty');
-  var missionEl = document.getElementById('circuitLabMission');
+  var defiEl = document.getElementById('circuitLabDefi');
   var alertEl = document.getElementById('circuitLabAlert');
   var resetBtn = document.getElementById('circuitLabResetBtn');
 
@@ -4496,15 +4507,21 @@ function initCircuitLab(){
     resistance:   { cat:'transformation', nom:'Résistance',      icone:'🔥' },
     fusible:      { cat:'protection',     nom:'Fusible',         icone:'🧯' },
     fil:          { cat:'conduction',     nom:'Fil / piste',     icone:'➰' },
-    gaine:        { cat:'isolation',      nom:'Gaine isolante',  icone:'🛡️' }
+    gaine:        { cat:'isolation',      nom:'Gaine isolante',  icone:'🛡️' },
+    /* Catégorie à part (ni alimentation ni transformation) : le condensateur
+       emmagasine l'énergie électrique reçue puis la relâche plus tard —
+       il ne la convertit pas en une autre forme comme le fait un vrai
+       composant de transformation (moteur, résistance, DEL). */
+    condensateur: { cat:'stockage',       nom:'Condensateur',    icone:'🔲' }
   };
   var CATEGORIES = [
-    { titre:'Alimentation',   types:['pile','panneau','prise'] },
-    { titre:'Commande',       types:['interrupteur','bouton'] },
-    { titre:'Transformation', types:['del','moteur','resistance'] },
-    { titre:'Protection',     types:['fusible'] },
-    { titre:'Conduction',     types:['fil'] },
-    { titre:'Isolation',      types:['gaine'] }
+    { titre:'Alimentation',       types:['pile','panneau','prise'] },
+    { titre:'Commande',           types:['interrupteur','bouton'] },
+    { titre:'Transformation',     types:['del','moteur','resistance'] },
+    { titre:'Protection',         types:['fusible'] },
+    { titre:'Conduction',         types:['fil'] },
+    { titre:'Isolation',          types:['gaine'] },
+    { titre:'Stockage d’énergie', types:['condensateur'] }
   ];
 
   var state = { items: [], wires: [] };
@@ -4539,11 +4556,17 @@ function initCircuitLab(){
         if(item.state){ addEdge(adj,item.id+'_A',item.id+'_B'); addEdge(shortAdj,item.id+'_A',item.id+'_B'); }
         return;
       }
+      // Protection et conduction conduisent toujours comme un fil, y compris
+      // pour la détection de court-circuit. Le condensateur conduit dans le
+      // graphe principal (pour la propagation charge/décharge) mais PAS dans
+      // le graphe de court-circuit : une boucle pile + interrupteur +
+      // condensateur (sans autre charge) est justement la façon normale de
+      // le charger, pas un court-circuit.
       if(def.cat==='protection' || def.cat==='conduction'){
         addEdge(adj,item.id+'_A',item.id+'_B'); addEdge(shortAdj,item.id+'_A',item.id+'_B');
         return;
       }
-      addEdge(adj,item.id+'_A',item.id+'_B'); // transformation ou alimentation
+      addEdge(adj,item.id+'_A',item.id+'_B'); // transformation, alimentation ou condensateur
     });
 
     function trimLeaves(graph){
@@ -4577,16 +4600,53 @@ function initCircuitLab(){
     var mainClusters = trouverClusters(adj);
     var shortClusters = trouverClusters(shortAdj);
 
-    var isShort=false;
-    var poweredTerminals={};
-    state.items.forEach(function(source){
-      if(DEFS[source.type].cat!=='alimentation') return;
-      var a=source.id+'_A', b=source.id+'_B';
-      var estCourtCircuite = shortClusters.some(function(c){ return c[a] && c[b]; });
-      if(estCourtCircuite){ isShort=true; return; }
-      var cluster = mainClusters.filter(function(c){ return c[a] && c[b]; })[0];
-      if(cluster && !isShort){ for(var t in cluster) poweredTerminals[t]=true; }
+    function propagerDepuis(sources){
+      var isShort=false, terminals={};
+      sources.forEach(function(source){
+        var a=source.id+'_A', b=source.id+'_B';
+        var estCourtCircuite = shortClusters.some(function(c){ return c[a] && c[b]; });
+        if(estCourtCircuite){ isShort=true; return; }
+        var cluster = mainClusters.filter(function(c){ return c[a] && c[b]; })[0];
+        if(cluster && !isShort){ for(var t in cluster) terminals[t]=true; }
+      });
+      return { terminals:terminals, isShort:isShort };
+    }
+
+    var sourcesAlimentation = state.items.filter(function(it){ return DEFS[it.type].cat==='alimentation'; });
+    var passeAlimentation = propagerDepuis(sourcesAlimentation);
+
+    /* Condensateurs : se chargent quand leurs deux bornes sont reliées à
+       l'alimentation (le courant les traverse comme un fil) ; gardent
+       leur charge tant qu'ils restent isolés de l'alimentation ; se
+       déchargent (une fois) dès qu'ils se retrouvent reliés à une charge
+       qui fonctionne, sans être reliés à l'alimentation en même temps. */
+    state.items.forEach(function(item){
+      if(item.type!=='condensateur') return;
+      var relieAlim = passeAlimentation.terminals[item.id+'_A'] && passeAlimentation.terminals[item.id+'_B'];
+      if(relieAlim && !passeAlimentation.isShort) item.charged = true;
     });
+
+    var sourcesDecharge = state.items.filter(function(it){
+      if(it.type!=='condensateur' || !it.charged) return false;
+      var relieAlim = passeAlimentation.terminals[it.id+'_A'] && passeAlimentation.terminals[it.id+'_B'];
+      return !relieAlim;
+    });
+    var passeDecharge = sourcesDecharge.length ? propagerDepuis(sourcesDecharge) : { terminals:{}, isShort:false };
+
+    sourcesDecharge.forEach(function(it){
+      var a=it.id+'_A', b=it.id+'_B';
+      var cluster = mainClusters.filter(function(c){ return c[a] && c[b]; })[0];
+      if(!cluster) return;
+      var alimenteAutreChose = state.items.some(function(autre){
+        return autre.id!==it.id && DEFS[autre.type].cat==='transformation' && cluster[autre.id+'_A'] && cluster[autre.id+'_B'];
+      });
+      if(alimenteAutreChose) it.charged = false;
+    });
+
+    var poweredTerminals = {};
+    for(var t1 in passeAlimentation.terminals) poweredTerminals[t1]=true;
+    if(!passeAlimentation.isShort){ for(var t2 in passeDecharge.terminals) poweredTerminals[t2]=true; }
+    var isShort = passeAlimentation.isShort || passeDecharge.isShort;
 
     var poweredItemIds={};
     if(!isShort){
@@ -4606,13 +4666,17 @@ function initCircuitLab(){
   }
 
   /* ------------------------------------------------------------
-     Missions pédagogiques progressives — pas un bac à sable libre :
-     chaque mission cible une fonction électrique précise et vérifie
+     Défis pédagogiques progressifs — pas un bac à sable libre :
+     chaque défi cible une fonction électrique précise et vérifie
      l'état RÉEL du montage (jamais juste "as-tu cliqué sur Vérifier").
      ------------------------------------------------------------ */
-  var MISSIONS = [
+  var DEFIS = [
     {
       titre: 'Un circuit tout simple',
+      contextes: [
+        'Léa veut une petite veilleuse pour la nuit. Elle a besoin du circuit le plus simple qui existe : juste de quoi allumer une lumière, et l’éteindre quand elle veut dormir.',
+        'Pour tester une nouvelle DEL avant de l’installer dans un projet, il faut d’abord vérifier qu’elle s’allume correctement dans un circuit simple.'
+      ],
       objectif: 'Assemble une pile, un interrupteur et une DEL. Relie-les en boucle avec des fils, puis ferme l’interrupteur pour allumer la DEL.',
       verifier: function(res){
         var allume = state.items.some(function(it){ return it.type==='del' && res.poweredItemIds[it.id]; });
@@ -4623,6 +4687,10 @@ function initCircuitLab(){
     },
     {
       titre: 'Protège ton montage',
+      contextes: [
+        'Le fabricant de la veilleuse de Léa exige qu’un composant de protection soit ajouté à tout circuit vendu, au cas où quelque chose tournerait mal.',
+        'Un électricien inspecte ton montage et refuse de l’approuver tant qu’aucun composant de protection n’y figure.'
+      ],
       objectif: 'Reprends ton circuit, mais ajoute un fusible dans la boucle pour protéger la DEL.',
       verifier: function(res){
         var allume = state.items.some(function(it){ return it.type==='del' && res.poweredItemIds[it.id]; });
@@ -4638,6 +4706,10 @@ function initCircuitLab(){
     },
     {
       titre: 'Observe un court-circuit (en toute sécurité)',
+      contextes: [
+        'Ton enseignant te met au défi : peux-tu provoquer volontairement un court-circuit dans la simulation, pour voir à quoi ça ressemble sans aucun danger réel ?',
+        'Avant de comprendre pourquoi on protège les circuits, il faut d’abord observer ce qui arrive quand on ne le fait pas.'
+      ],
       objectif: 'Relie directement les deux bornes de la pile ensemble, sans passer par une DEL ni un autre composant, pour voir ce qu’est un court-circuit.',
       verifier: function(res){
         if(!res.isShortCircuit) return { ok:false, message:'Pas encore : relie un fil directement d’une borne de la pile à l’autre, sans passer par une charge.' };
@@ -4646,6 +4718,10 @@ function initCircuitLab(){
     },
     {
       titre: 'Un isolant bloque le courant',
+      contextes: [
+        'Un ami affirme qu’un isolant, c’est juste un fil « moins bon », qui laisse quand même passer un peu de courant. Prouve-lui le contraire.',
+        'Pour bien comprendre à quoi sert le plastique qui recouvre les fils électriques, rien de mieux que d’en placer un directement dans la boucle et d’observer.'
+      ],
       objectif: 'Assemble un circuit simple (pile + interrupteur fermé + DEL), mais places une gaine isolante dans la boucle, à la place d’un fil. Observe ce qui se passe.',
       verifier: function(res){
         var aGaine = state.items.some(function(it){ return it.type==='gaine'; });
@@ -4657,7 +4733,27 @@ function initCircuitLab(){
       }
     },
     {
+      titre: 'Le flash de l’appareil photo',
+      contextes: [
+        'Un appareil photo doit produire un éclair de lumière très bref mais très intense pour son flash — bien plus puissant que ce qu’une pile peut fournir directement en continu.',
+        'Pour illuminer une pièce sombre en une fraction de seconde, un appareil photo emmagasine d’abord de l’énergie électrique, puis la libère d’un coup au moment du déclenchement.'
+      ],
+      objectif: 'Un condensateur emmagasine de l’énergie électrique puis la relâche plus tard — c’est le principe du flash. Étape 1 (charge) : relie une pile, un premier interrupteur et un condensateur en boucle, puis ferme cet interrupteur. Étape 2 (décharge) : relie aussi le condensateur à un second interrupteur et à une DEL (le flash) ; ouvre le premier interrupteur, puis ferme le second pour déclencher le flash.',
+      verifier: function(res){
+        var condensateurs = state.items.filter(function(it){ return it.type==='condensateur'; });
+        var del = state.items.filter(function(it){ return it.type==='del'; });
+        var allume = del.some(function(it){ return res.poweredItemIds[it.id]; });
+        if(!condensateurs.length) return { ok:false, message:'Ajoute un condensateur à ton montage.' };
+        if(res.isShortCircuit) return { ok:false, message:'Ton montage est en court-circuit.' };
+        if(!allume) return { ok:false, message:'La DEL (le flash) n’est pas encore allumée. Charge d’abord le condensateur (premier interrupteur fermé), puis ouvre-le et ferme le second interrupteur pour le décharger dans la DEL.' };
+        return { ok:true, message:'Flash ! Le condensateur a emmagasiné l’énergie de la pile, puis l’a relâchée d’un coup dans la DEL — c’est exactement le principe utilisé dans le flash d’un appareil photo.' };
+      }
+    },
+    {
       titre: 'Défi libre',
+      contextes: [
+        'Tu as maintenant vu chacune des six fonctions électriques à l’œuvre. Prouve que tu peux toutes les combiner dans un seul montage fonctionnel.'
+      ],
       objectif: 'Assemble un circuit qui respecte TOUTES ces conditions : une source d’alimentation, un composant de commande, un composant de protection, et au moins une charge (DEL, moteur ou résistance) qui fonctionne — sans court-circuit.',
       verifier: function(res){
         if(res.isShortCircuit) return { ok:false, message:'Ton montage est en court-circuit.' };
@@ -4673,34 +4769,44 @@ function initCircuitLab(){
       }
     }
   ];
-  var missionIndex = 0;
-  var missionDone = MISSIONS.map(function(){ return false; });
+  var defiIndex = 0;
+  var defiDone = DEFIS.map(function(){ return false; });
+  var contextesChoisis = {};
+  function getContexte(defi, idx){
+    if(contextesChoisis[idx]===undefined){
+      contextesChoisis[idx] = defi.contextes ? defi.contextes[Math.floor(Math.random()*defi.contextes.length)] : '';
+    }
+    return contextesChoisis[idx];
+  }
 
-  function updateMission(evalResult){
-    var m = MISSIONS[missionIndex];
-    var html = '<div class="circuit-lab-mission-head">';
-    html += '<span class="circuit-lab-mission-num">'+(m ? 'Mission '+(missionIndex+1)+'/'+MISSIONS.length : 'Mode libre') +'</span>';
-    html += '<div class="circuit-lab-mission-dots">'+MISSIONS.map(function(_,i){
-      var cls = missionDone[i] ? 'done' : (i===missionIndex ? 'active' : '');
-      return '<span class="circuit-lab-mission-dot '+cls+'"></span>';
+  function updateDefi(evalResult){
+    var m = DEFIS[defiIndex];
+    var html = '<div class="circuit-lab-defi-head">';
+    html += '<span class="circuit-lab-defi-num">'+(m ? 'Défi '+(defiIndex+1)+'/'+DEFIS.length : 'Mode libre') +'</span>';
+    html += '<div class="circuit-lab-defi-dots">'+DEFIS.map(function(_,i){
+      var cls = defiDone[i] ? 'done' : (i===defiIndex ? 'active' : '');
+      return '<span class="circuit-lab-defi-dot '+cls+'"></span>';
     }).join('')+'</div></div>';
     if(m){
-      html += '<h4>'+m.titre+'</h4><p>'+m.objectif+'</p>';
-      html += '<div class="circuit-lab-mission-actions"><button type="button" class="btn primary" id="circuitLabVerifyBtn">Vérifier la mission</button></div>';
+      html += '<h4>'+m.titre+'</h4>';
+      var contexte = getContexte(m, defiIndex);
+      if(contexte) html += '<p class="circuit-lab-defi-contexte">'+contexte+'</p>';
+      html += '<p>'+m.objectif+'</p>';
+      html += '<div class="circuit-lab-defi-actions"><button type="button" class="btn primary" id="circuitLabVerifyBtn">Vérifier le défi</button></div>';
       html += '<div id="circuitLabFeedback"></div>';
     } else {
-      html += '<h4>Bravo, missions terminées 🎉</h4><p>Continue d’explorer librement le labo de circuits, ou clique sur « Tout effacer » pour repartir de zéro.</p>';
+      html += '<h4>Bravo, défis terminés 🎉</h4><p>Continue d’explorer librement le labo de circuits, ou clique sur « Tout effacer » pour repartir de zéro.</p>';
     }
-    missionEl.innerHTML = html;
+    defiEl.innerHTML = html;
     if(m){
       document.getElementById('circuitLabVerifyBtn').addEventListener('click', function(){
         var res = m.verifier(evalResult);
         var fb = document.getElementById('circuitLabFeedback');
-        fb.className = 'circuit-lab-mission-feedback ' + (res.ok ? 'ok' : 'retry');
+        fb.className = 'circuit-lab-defi-feedback ' + (res.ok ? 'ok' : 'retry');
         fb.textContent = res.message;
         if(res.ok){
-          missionDone[missionIndex] = true;
-          setTimeout(function(){ missionIndex = Math.min(missionIndex+1, MISSIONS.length); render(); }, 1400);
+          defiDone[defiIndex] = true;
+          setTimeout(function(){ defiIndex = Math.min(defiIndex+1, DEFIS.length); render(); }, 1400);
         }
       });
     }
@@ -4743,7 +4849,7 @@ function initCircuitLab(){
     state.items.forEach(function(item){
       var def = DEFS[item.type];
       var el = document.createElement('div');
-      el.className = 'circuit-lab-item' + (item.state ? ' closed' : '') + (evalResult.poweredItemIds[item.id] ? ' powered' : '');
+      el.className = 'circuit-lab-item' + (item.state ? ' closed' : '') + (evalResult.poweredItemIds[item.id] ? ' powered' : '') + (item.charged ? ' charged' : '');
       el.dataset.id = item.id;
       el.dataset.type = item.type;
       el.style.left = item.x+'px'; el.style.top = item.y+'px';
@@ -4766,7 +4872,7 @@ function initCircuitLab(){
       board.appendChild(el);
     });
 
-    updateMission(evalResult);
+    updateDefi(evalResult);
   }
 
   function redrawWiresLive(){
@@ -4841,7 +4947,7 @@ function initCircuitLab(){
       var boardRect = board.getBoundingClientRect();
       var x = Math.max(0, Math.min(e.clientX-boardRect.left-ITEM_W/2, boardRect.width-ITEM_W));
       var y = Math.max(0, Math.min(e.clientY-boardRect.top-ITEM_H/2, boardRect.height-ITEM_H));
-      var newItem = { id: nextId('it'), type: type, x:x, y:y, state:false };
+      var newItem = { id: nextId('it'), type: type, x:x, y:y, state:false, charged:false };
       state.items.push(newItem);
       render();
       var el = board.querySelector('.circuit-lab-item[data-id="'+newItem.id+'"]');
