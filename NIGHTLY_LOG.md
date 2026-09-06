@@ -5,6 +5,38 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-06 (suite 4) — Carte « Exercer » + pont postMessage vers sciences4
+
+- Demande explicite de l'utilisateur, à partir d'une capture d'écran
+  du nouvel accueil de L'Atelier (voir suite 3 ci-dessous) : renommer
+  le module Section C de sciences4 en « L'atelier. Analyse
+  technologique » (lettrage repris de la marque "atelier."), le faire
+  ouvrir DIRECTEMENT L'Atelier (iframe) au lieu de l'ancien écran
+  "Analyser un objet", et déplacer "Analyser un objet" derrière une
+  nouvelle carte "Exercer" sur l'accueil de L'Atelier lui-même.
+- Décision d'architecture clarifiée par question à l'utilisateur avant
+  de commencer : "Analyser un objet" utilise la génération IA (Gemini)
+  et des visionneuses React qui n'existent que dans sciences4 — hors
+  de question de les réécrire en JS pur ici (casserait la règle
+  "L'Atelier reste 100% statique/hors-ligne"). Réponse retenue : pont
+  postMessage. La carte "Exercer" ajoutée ici ne fait QUE envoyer
+  `window.parent.postMessage({type:'atelier:exercer'}, '*')` — c'est
+  sciences4 (voir son propre NIGHTLY_LOG, commit `7d8b678`) qui écoute
+  ce message, referme l'iframe et affiche son écran "Exercer" existant
+  à la place. Aucune fonctionnalité dupliquée ici.
+- 3e carte ajoutée à `.home-choices` (grille d'accueil élargie de
+  760px à 960px pour l'accueillir), même style que Comprendre/Tester
+  (pied de carte + flèche).
+- Vérifié par Playwright : les 3 cartes s'affichent et se répartissent
+  correctement ; le clic sur "Exercer" envoie bien le message
+  `{type:'atelier:exercer'}` (capturé en écoutant sur la fenêtre
+  elle-même) ; sweep de régression complet + défis condensateur
+  toujours fonctionnels après ce changement.
+- Commit poussé sur `colorjazz/sciences4_3d` (branche `main`) :
+  `1ae9397`.
+
+---
+
 ## 2026-09-06 (suite 3) — Makeover visuel harmonisé + génération sur bouton
 
 - Demande explicite de l'utilisateur, avec une capture d'écran de leur
