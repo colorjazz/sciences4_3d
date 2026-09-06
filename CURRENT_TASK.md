@@ -130,6 +130,36 @@ consignes pour Claude »), en cours de traitement :
    mission 1, confirmer l'avancement automatique, ajouter un fusible,
    valider la mission 2) + sweep de régression complet (5 objets,
    atelier générer, 5 sujets Comprendre) — zéro erreur.
+   **Suite (2026-09-06, commit `8980e90`)**, demandée explicitement par
+   l'utilisateur : « mission » renommé en **« défi »** partout ; le
+   moteur alimenté tourne réellement (animation CSS `circuitSpin`), les
+   DEL/résistances alimentées pulsent d'un halo plus marqué
+   (`circuitGlowPulse`) ; nouveau composant **Condensateur** (catégorie
+   « Stockage d'énergie ») avec un vrai modèle de charge/décharge
+   (`item.charged`, persistant sur l'objet) : `evaluerCircuit()` fait
+   maintenant DEUX passes — 1) depuis l'alimentation réelle, 2) depuis
+   les condensateurs chargés qui se retrouvent isolés de l'alimentation
+   (traités comme sources temporaires de décharge) — en réutilisant les
+   mêmes clusters précalculés (topologie identique entre les deux
+   passes). Piège rencontré et corrigé : un condensateur avait été rendu
+   équivalent à un fil nu dans le graphe de court-circuit (pour modéliser
+   un appel de courant réaliste), ce qui signalait à tort la boucle
+   normale de charge (pile + interrupteur + condensateur) comme un
+   court-circuit — corrigé en le retirant du graphe de court-circuit
+   tout en le gardant dans le graphe principal. Nouveau 5e défi
+   « Le flash de l'appareil photo » (charge via un 1er interrupteur,
+   décharge dans une DEL via un 2e) ; le « Défi libre » devient le 6e et
+   dernier. Chaque défi affiche désormais un court texte narratif de
+   mise en contexte pour l'élève (2 variantes tirées au hasard une
+   seule fois par défi, mises en cache pour ne pas changer à chaque
+   re-rendu). Délibérément PAS fait ce tour-ci : un défi "quels
+   matériaux conduisent l'électricité" — trop proche d'une question de
+   l'examen confidentiel de juin 2025 déjà étudié cette session ; l'idée
+   est conservée pour un futur défi avec des exemples non-confidentiels.
+   Vérifié par test Playwright dédié : cycle complet charge → décharge
+   → DEL allumée sur une topologie à deux boucles, inspection des règles
+   CSSOM pour les animations, texte narratif confirmé affiché, sweep de
+   régression complet sans nouvelle erreur JS.
 
 Une fois ces 6 points terminés, reprendre la liste TODO.md, section
 "Prochains objets à créer" (premier non coché : robinet mélangeur ou

@@ -5,6 +5,71 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-06 (suite 2) — Défis renommés, moteur qui tourne, condensateur charge/décharge
+
+- Demande explicite de l'utilisateur (avec 2 images à l'appui) : voir le
+  moteur tourner et les lumières s'allumer plus visiblement, renommer
+  « mission » en « défi », ajouter des composants liés au programme de
+  sciences 4e secondaire, et un défi concret « appareil photo /
+  condensateur » (flash) avec un texte narratif introductif pour l'élève.
+- Une des deux images montrait une question de circuits (Cuivre/Iodure
+  de potassium/Sucre/Dibromure de magnésium) **identique à une question
+  du PDF d'examen confidentiel de juin 2025** déjà étudié cette session
+  — reconnu et traité comme contenu à ne PAS reproduire. Décision :
+  construire uniquement le défi condensateur/flash ce tour-ci, et
+  garder l'idée d'un futur défi "conductivité" avec des exemples
+  non-confidentiels différents du PDF.
+- Renommage complet `mission`→`défi` (CSS, HTML, JS, `MISSIONS`→`DEFIS`).
+- Polish visuel : `@keyframes circuitSpin` (rotation continue de l'icône
+  du moteur alimenté), `@keyframes circuitGlowPulse` (halo lumineux
+  pulsé pour DEL/résistance alimentées, plus marqué que le simple
+  `.powered` existant).
+- Nouveau composant Condensateur (`cat:'stockage'`, nouvelle catégorie
+  de palette « Stockage d'énergie »). Modèle de charge/décharge dans
+  `evaluerCircuit()` : extraction d'un helper `propagerDepuis(sources)`
+  réutilisable, appelé une 1re fois depuis les vraies sources
+  d'alimentation, puis une 2e fois depuis les condensateurs chargés qui
+  se retrouvent isolés de l'alimentation (traités comme sources
+  temporaires de décharge) — même graphe/clusters précalculés pour les
+  deux passes (topologie identique à un instant donné). Un condensateur
+  chargé ne redevient déchargé QUE si sa passe de décharge alimente
+  réellement une autre charge (`transformation`) — pas juste ses propres
+  bornes, pour éviter un faux positif trivial.
+- Bug trouvé et corrigé en testant : un condensateur avait été rendu
+  équivalent à un fil nu dans le graphe de court-circuit (décision d'une
+  session antérieure, pour modéliser un appel de courant réaliste), ce
+  qui signalait à tort la boucle normale de charge (pile + interrupteur
+  + condensateur, sans autre charge en série) comme un court-circuit —
+  bloquant `charged` de devenir vrai. Corrigé en retirant le condensateur
+  du graphe de court-circuit tout en le gardant dans le graphe principal
+  (charge/propagation toujours correcte, plus de faux court-circuit).
+- Nouveau 5e défi « Le flash de l'appareil photo » : étape 1 (charge) —
+  pile + 1er interrupteur + condensateur en boucle, fermer l'interrupteur ;
+  étape 2 (décharge) — ouvrir le 1er interrupteur, fermer un 2e relié au
+  condensateur et à une DEL pour déclencher le « flash ». Le « Défi
+  libre » (synthèse) devient le 6e et dernier défi.
+- Texte narratif : chaque défi a maintenant un tableau `contextes` (2
+  variantes pour les défis existants, adaptées après coup ; 1 nouvelle
+  pour le condensateur) ; `getContexte(defi, idx)` tire une variante au
+  hasard UNE SEULE FOIS par défi et la met en cache (`contextesChoisis`)
+  pour qu'elle ne change pas à chaque re-rendu (fréquent : chaque
+  glisser-déposer, câblage, bascule d'interrupteur redessine le panneau).
+- Vérifié par test Playwright dédié construisant une topologie à deux
+  boucles (charge : pile+interrupteur+condensateur ; décharge :
+  condensateur+interrupteur+DEL) : fermeture du 1er interrupteur seul →
+  `condensateur.charged=true`, DEL éteinte ; ouverture du 1er +
+  fermeture du 2e → DEL allumée (décharge confirmée). Règles CSSOM
+  inspectées pour confirmer la présence des animations moteur/DEL et du
+  style condensateur chargé. Texte narratif confirmé affiché dans le
+  panneau de défi. Sweep de régression complet (5 objets, atelier
+  générer, 5 sujets Comprendre) : zéro nouvelle erreur JS (seule
+  erreur résiduelle : Google Fonts bloqué par le bac à sable réseau,
+  préexistant et sans rapport).
+- Commit poussé sur `colorjazz/sciences4_3d` (branche `main`) :
+  `8980e90`.
+
+---
+
 ## 2026-09-06 (suite) — Labo de circuits libre + missions pédagogiques (remplace la v1)
 
 - L'utilisateur a fourni un prototype React fait par Gemini : un vrai
