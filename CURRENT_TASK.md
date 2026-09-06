@@ -170,6 +170,17 @@ consignes pour Claude »), en cours de traitement :
    même temps : l'onglet « Atelier — générer » ne construit plus de
    mécanisme automatiquement à l'ouverture — nouveau bouton
    « Générer l'aperçu » avec état vide (placeholder).
+   **Suite (2026-09-06, commit `1ae9397`)** : 3e carte d'accueil
+   « Exercer » ajoutée à côté de Comprendre/Tester. Elle ne fait
+   qu'envoyer un `postMessage({type:'atelier:exercer'})` à la fenêtre
+   parente — la fonctionnalité réelle (génération IA + visionneuses,
+   ex-« Analyser un objet ») a été déplacée côté sciences4 (dépôt
+   `colorjazz/sciences4`, commit `7d8b678`), qui écoute ce message pour
+   refermer l'iframe de L'Atelier et afficher son écran « Exercer » à
+   la place. Le module Section C de sciences4 (renommé « L'atelier.
+   Analyse technologique ») ouvre maintenant CET Atelier directement
+   au clic, sans plus passer par un écran intermédiaire. Voir
+   NIGHTLY_LOG.md (suite 4) pour le détail.
 
 Une fois ces 6 points terminés, reprendre la liste TODO.md, section
 "Prochains objets à créer" (premier non coché : robinet mélangeur ou
