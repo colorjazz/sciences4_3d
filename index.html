@@ -450,6 +450,11 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
   background:var(--bg);height:150px;position:relative;overflow:hidden;margin-bottom:14px;
 }
 .workshop-preview canvas{width:100%;height:100%;display:block;}
+.workshop-placeholder{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:12px;background:var(--bg);
+}
+.workshop-placeholder p{margin:0;font-size:11.5px;color:var(--ink-faint);max-width:24ch;line-height:1.5;}
 .mech-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
 .mech-opt{
   border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface-2);
@@ -524,25 +529,50 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 
 /* ---------- home screen ---------- */
 #homeScreen{
-  flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:28px;padding:32px 20px;text-align:center;overflow-y:auto;
+  flex:1 1 auto;display:flex;flex-direction:column;align-items:center;
+  gap:24px;padding:36px 20px 44px;overflow-y:auto;
 }
+.home-topbar{display:flex;align-items:center;gap:12px;width:100%;max-width:760px;}
 .home-mark{display:flex;flex-direction:column;align-items:center;gap:10px;}
-.home-gear{width:64px;height:64px;}
-.home-brand{font-family:var(--font-logo);font-weight:800;font-size:32px;color:var(--ink);}
-.home-brand span{display:block;font-family:var(--font-body);font-weight:500;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-top:6px;}
-.home-title{font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--ink);margin:0;}
-.home-choices{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;max-width:900px;}
+.home-gear{width:38px;height:38px;flex-shrink:0;}
+.home-brand{font-family:var(--font-logo);font-weight:800;font-size:20px;color:var(--ink);line-height:1.2;}
+.home-brand span{display:block;font-family:var(--font-mono);font-weight:500;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;}
+
+/* Bandeau d'accueil (hero) — même langage visuel que la plateforme
+   sœur « Corrige-moi » (sciences4) : carte encre foncée fixe, badge,
+   titre, sous-titre. Couleurs codées en dur (pas --ink) car --ink
+   s'inverse en mode sombre — cette carte doit rester sombre dans les
+   deux thèmes. */
+.home-hero{
+  width:100%;max-width:760px;background:var(--badge-bg);color:#fdf6ea;
+  border-radius:var(--radius-m);padding:28px 30px 30px;box-shadow:var(--shadow);text-align:left;
+}
+.home-hero-badge{
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;background:rgba(253,246,234,.14);color:#fdf6ea;
+  border-radius:999px;padding:5px 12px;margin-bottom:14px;
+}
+.home-hero h1{font-family:var(--font-display);font-size:30px;font-weight:700;color:#fdf6ea;margin:0 0 8px;}
+.home-hero p{color:rgba(253,246,234,.72);font-size:14px;line-height:1.5;margin:0;max-width:52ch;}
+
+.home-choices{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:760px;}
 .home-card{
-  width:320px;max-width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
-  padding:24px;cursor:pointer;font-family:inherit;color:inherit;
+  flex:1 1 320px;max-width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;
+  background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius-m);
+  padding:22px 22px 20px;cursor:pointer;font-family:inherit;color:inherit;min-height:194px;
   box-shadow:var(--shadow);transition:transform .15s,border-color .15s,background .15s;
 }
 .home-card:hover{border-color:var(--accent);transform:translateY(-3px);background:var(--surface-2);}
-.home-card-icon{width:40px;height:40px;color:var(--accent);}
-.home-card-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.5px;}
-.home-card-desc{font-size:13px;color:var(--ink-dim);line-height:1.5;}
+.home-card-icon{width:34px;height:34px;color:var(--accent);}
+.home-card-title{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.5px;}
+.home-card-desc{font-size:13px;color:var(--ink-dim);line-height:1.5;flex:1;}
+.home-card-foot{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  margin-top:10px;padding-top:10px;border-top:1px solid var(--line);
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);
+}
+.home-card-arrow{display:inline-flex;transition:transform .18s ease;color:var(--ink-faint);}
+.home-card:hover .home-card-arrow{transform:translateX(3px);color:var(--accent);}
 .home-foot{font-size:11.5px;color:var(--ink-faint);}
 
 /* ---------- back nav (comprendre / atelier) ---------- */
@@ -763,7 +793,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 </style>
 
 <div id="homeScreen">
-  <div class="home-mark">
+  <div class="home-topbar">
     <svg class="home-gear" viewBox="0 0 100 100">
       <rect x="4" y="4" width="92" height="92" rx="24" fill="var(--badge-bg)" stroke="var(--accent)" stroke-width="6"/>
       <g fill="none" stroke="var(--accent)" stroke-width="6.5" stroke-linecap="round">
@@ -776,7 +806,13 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
     </svg>
     <div class="home-brand">atelier.<span>Sciences 4 · analyse technique</span></div>
   </div>
-  <h1 class="home-title">Que veux-tu faire ?</h1>
+
+  <div class="home-hero">
+    <span class="home-hero-badge"><span aria-hidden="true">●</span> Sciences 4 · analyse technique</span>
+    <h1>Que veux-tu faire ?</h1>
+    <p>Explore les notions d'analyse technique, ou plonge dans L'Atelier pour observer des objets 3D animés et démontables.</p>
+  </div>
+
   <div class="home-choices">
     <button class="home-card" id="goComprendre" type="button">
       <svg class="home-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -785,6 +821,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
       </svg>
       <span class="home-card-title">Comprendre</span>
       <span class="home-card-desc">Les mécanismes, les liaisons et guidages, la schématisation, les matériaux et contraintes, les fonctions électriques — les notions d'analyse technique expliquées.</span>
+      <span class="home-card-foot"><span>5 sujets</span><span class="home-card-arrow" aria-hidden="true">→</span></span>
     </button>
     <button class="home-card" id="goTester" type="button">
       <svg class="home-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -793,6 +830,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
       </svg>
       <span class="home-card-title">Tester</span>
       <span class="home-card-desc">L'Atelier — une banque d'objets techniques en 3D, animés et démontables, pour observer leurs mécanismes réels en action.</span>
+      <span class="home-card-foot"><span>Banque 3D</span><span class="home-card-arrow" aria-hidden="true">→</span></span>
     </button>
   </div>
   <div class="home-foot">Cours de sciences 4 · secondaire — analyse d'objets techniques</div>
@@ -940,7 +978,13 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
       <p class="desc-text" style="margin-bottom:12px;">
         Choisissez un mécanisme, ajustez ses paramètres et ajoutez le résultat à votre banque. Aperçu en direct ci-dessous.
       </p>
-      <div class="workshop-preview"><canvas id="wc"></canvas></div>
+      <div class="workshop-preview">
+        <canvas id="wc"></canvas>
+        <div class="workshop-placeholder" id="wPlaceholder">
+          <p>Choisis un mécanisme ci-dessous, puis clique sur « Générer l'aperçu ».</p>
+        </div>
+      </div>
+      <button class="btn primary" id="wGenerateBtn" type="button" style="width:100%;margin-bottom:14px;">Générer l'aperçu</button>
       <div class="field">
         <label>Type de mécanisme</label>
         <div class="mech-grid" id="mechGrid"></div>
@@ -4255,7 +4299,7 @@ window.addEventListener('resize', resizeWorkshop);
 
 var wInstance=null, wMechKey='gear', wParams={}, wAngle=0;
 var wClock=new THREE.Clock();
-var workshopReady=false;
+var workshopReady=false, workshopStarted=false;
 function ensureWorkshopInit(){
   if(workshopReady) return;
   workshopReady=true;
@@ -4286,8 +4330,15 @@ function ensureWorkshopInit(){
   wParams=schemaDefaults(wMechKey);
   buildParamFields();
   resizeWorkshop();
-  rebuildWorkshop();
-  wrender();
+  /* Contrairement à avant, on ne construit PAS de mécanisme et on ne
+     démarre PAS la boucle de rendu tout de suite : arriver sur cet
+     onglet ne doit pas générer quelque chose automatiquement — l'élève
+     choisit un mécanisme puis clique sur « Générer l'aperçu ». */
+  document.getElementById('wGenerateBtn').addEventListener('click', function(){
+    document.getElementById('wPlaceholder').hidden = true;
+    rebuildWorkshop();
+    if(!workshopStarted){ workshopStarted=true; wrender(); }
+  });
 }
 function frameWCamera(group){
   var box=new THREE.Box3().setFromObject(group);
