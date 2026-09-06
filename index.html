@@ -633,6 +633,45 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
   font-family:var(--font-display);font-size:15px;text-transform:uppercase;letter-spacing:.5px;
   color:var(--ink-faint);border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 14px;
 }
+
+/* Constructeur de circuit électrique interactif (glisser-déposer, pas de Three.js
+   ici — voir la décision "pas de nouveaux mini-viewers WebGL dans Comprendre") */
+.circuit-builder{max-width:340px;}
+.circuit-board{
+  position:relative;width:320px;height:180px;max-width:100%;margin:0 auto 18px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+}
+.circuit-wires{position:absolute;inset:0;width:100%;height:100%;}
+.circuit-wires path{fill:none;stroke:var(--line-strong);stroke-width:2.5;}
+.circuit-slot{
+  position:absolute;width:56px;height:40px;box-sizing:border-box;
+  border:2px dashed var(--line-strong);border-radius:var(--radius-s);
+  background:var(--surface-2);transition:border-color .2s ease,background-color .2s ease;
+}
+.circuit-slot[data-filled="1"]{border-style:solid;border-color:var(--line);background:var(--surface);}
+.circuit-palette{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:78px;
+  padding:10px;border:1px dashed var(--line);border-radius:var(--radius-m);margin-bottom:14px;
+}
+.circuit-piece{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  width:56px;height:56px;box-sizing:border-box;
+  font-family:var(--font-mono);font-size:10px;color:var(--ink-dim);text-align:center;line-height:1.2;
+  padding:6px 4px;border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface);
+  cursor:grab;touch-action:none;user-select:none;
+}
+.circuit-slot .circuit-piece{
+  position:static;width:100%;height:100%;border:none;background:none;box-shadow:none;
+}
+.circuit-piece.dragging{cursor:grabbing;box-shadow:var(--shadow);opacity:.92;}
+.circuit-piece-icon{font-size:20px;line-height:1;}
+.circuit-piece[data-type="interrupteur"][data-placed="1"]{cursor:pointer;}
+.circuit-piece[data-type="interrupteur"].closed{color:var(--good);}
+.circuit-piece[data-type="ampoule"].lit{background:#fff6d8;}
+.circuit-piece[data-type="ampoule"].lit .circuit-piece-icon{filter:drop-shadow(0 0 6px #f2c955);}
+.circuit-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.circuit-status{font-size:12.5px;color:var(--ink-dim);margin:0;max-width:70%;}
+.circuit-status.ok{color:var(--good);font-weight:600;}
 .diagram-row{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0;}
 .diagram-box{
   flex:1 1 220px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
@@ -1193,6 +1232,38 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
           <div class="concept-card"><h3>🔄 Transformation d'énergie</h3><p>Convertit l'énergie électrique en une autre forme utile (moteur → mouvement, résistance → chaleur, DEL → lumière).</p></div>
         </div>
         <p style="font-size:13px;color:var(--ink-dim);max-width:640px;">Plusieurs objets de <strong>L'Atelier</strong> (perceuse, sécheuse, ouvre-boîte) sont entraînés par un moteur électrique : c'est la fonction de transformation d'énergie qui produit le mouvement d'entrée de leur mécanisme.</p>
+
+        <div class="topic-section">
+          <h3 class="section-title">À toi de jouer : assemble le circuit</h3>
+          <p style="font-size:13px;color:var(--ink-dim);max-width:640px;margin:0 0 16px;">Glisse chaque composant dans l'emplacement qui lui correspond, puis clique sur l'interrupteur pour fermer le circuit. Si tout est bien assemblé, l'ampoule s'allume.</p>
+
+          <div class="circuit-builder">
+            <div class="circuit-board" id="circuitBoard">
+              <svg class="circuit-wires" width="320" height="180" viewBox="0 0 320 180" aria-hidden="true">
+                <path d="M40 150 L40 30"/>
+                <path d="M40 30 L280 30"/>
+                <path d="M280 30 L280 150"/>
+                <path d="M280 150 L40 150"/>
+              </svg>
+              <div class="circuit-slot" data-type="pile" style="left:12px;top:130px;"></div>
+              <div class="circuit-slot" data-type="interrupteur" style="left:12px;top:10px;"></div>
+              <div class="circuit-slot" data-type="fusible" style="left:252px;top:10px;"></div>
+              <div class="circuit-slot" data-type="ampoule" style="left:252px;top:130px;"></div>
+            </div>
+
+            <div class="circuit-palette" id="circuitPalette">
+              <div class="circuit-piece" data-type="pile" data-placed="0"><span class="circuit-piece-icon">🔋</span>Pile</div>
+              <div class="circuit-piece" data-type="interrupteur" data-placed="0"><span class="circuit-piece-icon">🎚️</span>Interrupteur</div>
+              <div class="circuit-piece" data-type="fusible" data-placed="0"><span class="circuit-piece-icon">🧯</span>Fusible</div>
+              <div class="circuit-piece" data-type="ampoule" data-placed="0"><span class="circuit-piece-icon">💡</span>Ampoule</div>
+            </div>
+
+            <div class="circuit-footer">
+              <p class="circuit-status" id="circuitStatus">Circuit incomplet — glisse les composants manquants dans leur emplacement.</p>
+              <button type="button" class="btn ghost" id="circuitResetBtn">Recommencer</button>
+            </div>
+          </div>
+        </div>
       </article>
 
     </div>
@@ -4342,6 +4413,138 @@ document.querySelectorAll('.topic-btn').forEach(function(btn){
 });
 
 /* ============================================================
+   Constructeur de circuit électrique interactif ("Fonctions
+   électriques", Comprendre). Glisser-déposer par événements
+   pointer (même idiome que l'orbite de la scène 3D) — CSS/SVG/DOM
+   pur, aucun contexte WebGL : ce module respecte la décision "pas
+   de nouveaux mini-viewers Three.js dans Comprendre".
+   ============================================================ */
+function initCircuitBuilder(){
+  var board = document.getElementById('circuitBoard');
+  if(!board) return;
+  var slots = Array.prototype.slice.call(board.querySelectorAll('.circuit-slot'));
+  var palette = document.getElementById('circuitPalette');
+  var pieces = Array.prototype.slice.call(palette.querySelectorAll('.circuit-piece'));
+  var statusEl = document.getElementById('circuitStatus');
+  var resetBtn = document.getElementById('circuitResetBtn');
+  var dragging = null;
+
+  function slotFor(type){
+    for(var i=0;i<slots.length;i++){ if(slots[i].dataset.type===type) return slots[i]; }
+    return null;
+  }
+
+  function updateStatus(){
+    var toutesRemplies = slots.every(function(s){ return s.dataset.filled==='1'; });
+    var interrupteur = slotFor('interrupteur').querySelector('.circuit-piece');
+    var ampouleSlot = slotFor('ampoule');
+    var ampoule = ampouleSlot.querySelector('.circuit-piece');
+    var ferme = !!(interrupteur && interrupteur.classList.contains('closed'));
+
+    if(!toutesRemplies){
+      statusEl.textContent = 'Circuit incomplet — glisse les composants manquants dans leur emplacement.';
+      statusEl.className = 'circuit-status';
+      if(ampoule) ampoule.classList.remove('lit');
+      return;
+    }
+    if(!ferme){
+      statusEl.textContent = 'Circuit complet, mais ouvert — clique sur l’interrupteur pour fermer le circuit.';
+      statusEl.className = 'circuit-status';
+      if(ampoule) ampoule.classList.remove('lit');
+      return;
+    }
+    statusEl.textContent = 'Circuit fermé : le courant circule, l’ampoule s’allume !';
+    statusEl.className = 'circuit-status ok';
+    if(ampoule) ampoule.classList.add('lit');
+  }
+
+  function movePieceTo(piece,x,y){
+    piece.style.left = x + 'px';
+    piece.style.top = y + 'px';
+  }
+
+  function attachDrag(piece){
+    var downX=0, downY=0, moved=false;
+    piece.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      downX=e.clientX; downY=e.clientY; moved=false;
+      var rect = piece.getBoundingClientRect();
+      dragging = {
+        piece: piece,
+        offsetX: e.clientX-rect.left,
+        offsetY: e.clientY-rect.top,
+        originSlot: piece.parentElement.classList.contains('circuit-slot') ? piece.parentElement : null
+      };
+      piece.setPointerCapture(e.pointerId);
+    });
+    piece.addEventListener('pointermove', function(e){
+      if(!dragging || dragging.piece!==piece) return;
+      if(!moved && (Math.abs(e.clientX-downX)>4 || Math.abs(e.clientY-downY)>4)){
+        moved = true;
+        piece.classList.add('dragging');
+        document.body.appendChild(piece);
+        piece.style.position = 'fixed';
+        piece.style.zIndex = 500;
+        piece.style.width = '56px';
+        piece.style.height = '56px';
+      }
+      if(moved) movePieceTo(piece, e.clientX-dragging.offsetX, e.clientY-dragging.offsetY);
+    });
+    piece.addEventListener('pointerup', function(e){
+      if(!dragging || dragging.piece!==piece) return;
+      if(!moved){
+        dragging = null;
+        if(piece.dataset.type==='interrupteur' && piece.dataset.placed==='1'){
+          piece.classList.toggle('closed');
+          updateStatus();
+        }
+        return;
+      }
+      piece.classList.remove('dragging');
+      piece.style.position = '';
+      piece.style.zIndex = '';
+      piece.style.left = '';
+      piece.style.top = '';
+      piece.style.width = '';
+      piece.style.height = '';
+
+      var cible = null;
+      for(var i=0;i<slots.length;i++){
+        var r = slots[i].getBoundingClientRect();
+        if(e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom){ cible = slots[i]; break; }
+      }
+      if(cible && cible.dataset.type===piece.dataset.type && cible.dataset.filled!=='1'){
+        if(dragging.originSlot) dragging.originSlot.dataset.filled = '';
+        cible.appendChild(piece);
+        cible.dataset.filled = '1';
+        piece.dataset.placed = '1';
+      } else if(dragging.originSlot){
+        dragging.originSlot.appendChild(piece);
+      } else {
+        palette.appendChild(piece);
+        piece.dataset.placed = '0';
+      }
+      dragging = null;
+      updateStatus();
+    });
+  }
+
+  pieces.forEach(attachDrag);
+
+  resetBtn.addEventListener('click', function(){
+    pieces.forEach(function(piece){
+      piece.classList.remove('closed','lit');
+      piece.dataset.placed = '0';
+      palette.appendChild(piece);
+    });
+    slots.forEach(function(s){ s.dataset.filled=''; });
+    updateStatus();
+  });
+
+  updateStatus();
+}
+
+/* ============================================================
    Boot
    ============================================================ */
 renderRail('');
@@ -4349,6 +4552,7 @@ resizeRenderer();
 render();
 initPersistence();
 loadObject(CATALOGUE[0]);
+initCircuitBuilder();
 showScreen('homeScreen');
 
 })();
