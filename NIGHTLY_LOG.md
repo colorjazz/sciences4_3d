@@ -5,6 +5,31 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-06 — Constructeur de circuit électrique interactif + rondeur
+
+- Point 6 des consignes du 5 septembre implémenté : constructeur de
+  circuit électrique interactif dans Comprendre → Fonctions
+  électriques. L'élève glisse pile/interrupteur/fusible/ampoule dans 4
+  emplacements en boucle (glisser-déposer par événements pointer,
+  même idiome que l'orbite 3D), puis clique sur l'interrupteur placé
+  pour fermer le circuit — l'ampoule s'allume seulement si tout est en
+  place et le circuit fermé. Entièrement HTML/SVG/CSS/JS, aucun
+  contexte WebGL (respecte la décision technique "pas de nouveaux
+  mini-viewers Three.js dans Comprendre" prise après le bug d'écran
+  blanc). Commit `67b4cd9`. Vérifié par test Playwright complet +
+  sweep de régression (5 objets, atelier générer, 5 sujets Comprendre)
+  sans erreur.
+- En amont, à la demande de l'utilisateur en marge d'une refonte
+  visuelle de sciences4 (dépôt séparé) qui s'inspire du style de
+  L'Atelier : les tokens de rayon de L'Atelier (--radius-s/--radius-m)
+  sont passés de 3px/6px à 10px/16px pour "un peu plus de rondeur",
+  sans toucher à la palette crème/orange/marine. Commit `421c3a7`.
+- Reste ouvert : point 5 des consignes (simulations interactives
+  glisser/relâcher pour les 5 propriétés de matériaux) — seul point
+  encore incomplet des 6 consignes du 5 septembre.
+
+---
+
 ## 2026-09-05 (suite 2) — Écran blanc : vraie cause trouvée et corrigée (rafale de contextes WebGL)
 
 - Après deux correctifs précédents insuffisants (contexte perdu non

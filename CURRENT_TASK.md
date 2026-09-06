@@ -104,16 +104,29 @@ consignes pour Claude »), en cours de traitement :
    qu'on étire à la souris et qui se rétracte au relâchement. Plus
    gros morceau que le point 4 (interaction pointeur en temps réel,
    pas juste une boucle CSS).
-6. [ ] Constructeur de circuit électrique interactif pour "Fonctions
-   électriques" : l'élève assemble batterie + fil + fusible + bouton +
-   lumière et les fait fonctionner. C'est une mini-application à part
-   entière (glisser-déposer de composants, détection de circuit
-   complet/fermé, logique d'état) — le plus gros morceau des consignes,
-   à traiter comme un développement séparé, pas un ajustement mineur.
+6. [x] Constructeur de circuit électrique interactif pour "Fonctions
+   électriques" — commit `67b4cd9`. L'élève glisse pile/interrupteur/
+   fusible/ampoule dans 4 emplacements disposés en boucle (fil dessiné
+   en SVG statique), puis clique sur l'interrupteur placé pour fermer
+   le circuit. Détection déterministe : tous les emplacements remplis +
+   interrupteur fermé → ampoule allumée, sinon éteinte. Glisser-déposer
+   par événements pointer (même idiome que l'orbite 3D), HTML/SVG/CSS
+   pur — respecte la décision "pas de nouveaux mini-viewers Three.js
+   dans Comprendre". Bouton Recommencer pour réinitialiser. Ajouté sous
+   les six explications déjà présentes dans le même article
+   "topic-electrique". Vérifié par test Playwright (glisser les 4
+   pièces, fermer/rouvrir l'interrupteur, vérifier l'état "lit",
+   réinitialiser) + sweep de régression complet (5 objets, atelier
+   générer, 5 sujets Comprendre) — zéro erreur.
 
 Une fois ces 6 points terminés, reprendre la liste TODO.md, section
 "Prochains objets à créer" (premier non coché : robinet mélangeur ou
 ciseaux à cliquet) pour continuer à peupler la banque vers 30 objets.
+
+Reste ouvert dans les consignes du 5 septembre : le point 5
+(simulations interactives glisser/relâcher pour les 5 propriétés de
+matériaux) n'est PAS encore fait — c'est le seul point des 6 consignes
+encore incomplet.
 
 ## Décision technique importante : pas de nouveaux mini-viewers Three.js
 dans Comprendre
