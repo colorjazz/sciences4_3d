@@ -532,7 +532,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
   flex:1 1 auto;display:flex;flex-direction:column;align-items:center;
   gap:24px;padding:36px 20px 44px;overflow-y:auto;
 }
-.home-topbar{display:flex;align-items:center;gap:12px;width:100%;max-width:760px;}
+.home-topbar{display:flex;align-items:center;gap:12px;width:100%;max-width:960px;}
 .home-mark{display:flex;flex-direction:column;align-items:center;gap:10px;}
 .home-gear{width:38px;height:38px;flex-shrink:0;}
 .home-brand{font-family:var(--font-logo);font-weight:800;font-size:20px;color:var(--ink);line-height:1.2;}
@@ -544,7 +544,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
    s'inverse en mode sombre — cette carte doit rester sombre dans les
    deux thèmes. */
 .home-hero{
-  width:100%;max-width:760px;background:var(--badge-bg);color:#fdf6ea;
+  width:100%;max-width:960px;background:var(--badge-bg);color:#fdf6ea;
   border-radius:var(--radius-m);padding:28px 30px 30px;box-shadow:var(--shadow);text-align:left;
 }
 .home-hero-badge{
@@ -555,9 +555,9 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 .home-hero h1{font-family:var(--font-display);font-size:30px;font-weight:700;color:#fdf6ea;margin:0 0 8px;}
 .home-hero p{color:rgba(253,246,234,.72);font-size:14px;line-height:1.5;margin:0;max-width:52ch;}
 
-.home-choices{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:760px;}
+.home-choices{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:960px;}
 .home-card{
-  flex:1 1 320px;max-width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;
+  flex:1 1 270px;max-width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;
   background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius-m);
   padding:22px 22px 20px;cursor:pointer;font-family:inherit;color:inherit;min-height:194px;
   box-shadow:var(--shadow);transition:transform .15s,border-color .15s,background .15s;
@@ -831,6 +831,15 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
       <span class="home-card-title">Tester</span>
       <span class="home-card-desc">L'Atelier — une banque d'objets techniques en 3D, animés et démontables, pour observer leurs mécanismes réels en action.</span>
       <span class="home-card-foot"><span>Banque 3D</span><span class="home-card-arrow" aria-hidden="true">→</span></span>
+    </button>
+    <button class="home-card" id="goExercer" type="button">
+      <svg class="home-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M9 3h6a2 2 0 0 1 2 2v14l-5-3-5 3V5a2 2 0 0 1 2-2Z"/>
+        <path d="M9.5 9.5h5M9.5 12.5h5"/>
+      </svg>
+      <span class="home-card-title">Exercer</span>
+      <span class="home-card-desc">Étudie un objet technique généré et réponds à des questions notées — la section « Analyse technologique » de l'épreuve.</span>
+      <span class="home-card-foot"><span>Généré · noté</span><span class="home-card-arrow" aria-hidden="true">→</span></span>
     </button>
   </div>
   <div class="home-foot">Cours de sciences 4 · secondaire — analyse d'objets techniques</div>
@@ -4514,6 +4523,15 @@ function showScreen(id){
 }
 document.getElementById('goComprendre').addEventListener('click', function(){ showScreen('comprendreScreen'); });
 document.getElementById('goTester').addEventListener('click', function(){ showScreen('atelierScreen'); });
+/* "Exercer" vit dans sciences4 (génération IA + visionneuses React) —
+   L'Atelier est une appli statique sans accès réseau. Quand embarqué
+   en iframe, on avertit la page parente par postMessage ; elle
+   referme l'iframe et affiche son propre écran "Exercer" à la place.
+   Sans parent à l'écoute (visite directe de ce site), le clic ne fait
+   simplement rien de plus. */
+document.getElementById('goExercer').addEventListener('click', function(){
+  try{ window.parent.postMessage({type:'atelier:exercer'}, '*'); }catch(e){}
+});
 document.getElementById('atelierHomeBtn').addEventListener('click', function(){ showScreen('homeScreen'); });
 document.getElementById('comprendreHomeBtn').addEventListener('click', function(){ showScreen('homeScreen'); });
 
