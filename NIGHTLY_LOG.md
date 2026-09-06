@@ -5,6 +5,57 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-09-06 (suite 3) — Makeover visuel harmonisé + génération sur bouton
+
+- Demande explicite de l'utilisateur, avec une capture d'écran de leur
+  AUTRE site (« Corrige-moi », version histoire) comme référence de
+  style : harmoniser sciences4 (React) ET L'Atelier (ce dépôt) sur ce
+  même langage visuel — bandeau d'accueil sombre avec badge, titre,
+  sous-titre ; cartes avec pied de carte (méta + flèche) ; nav du bas
+  flottante — mais recoloré en palette crème/encre déjà en place
+  plutôt qu'en noir et blanc pur comme dans l'exemple.
+- Clarifié par question à l'utilisateur avant de commencer (côté
+  sciences4) : PAS de vrai suivi de progression sauvegardé pour
+  l'instant (juste visuel), et la nav du bas ne doit avoir QUE des
+  destinations réelles (pas de fausses pages "Progression"/
+  "Paramètres" inventées pour remplir la barre comme l'exemple).
+- Côté L'Atelier (ce dépôt) : nouveau `.home-hero` (carte `--badge-bg`
+  fixe, PAS `--ink` qui s'inverse en mode sombre — cette carte doit
+  rester sombre dans les deux thèmes) avec badge + titre + sous-titre,
+  au-dessus des cartes Comprendre/Tester existantes, elles-mêmes
+  restylées avec un pied de carte (`.home-card-foot` + flèche
+  `.home-card-arrow` qui glisse au survol) — même vocabulaire visuel
+  que le nouveau `.card-foot`/`.card-arrow` de sciences4. Pas de nav
+  du bas ajoutée ici : L'Atelier a 3 écrans avec des UX très
+  différentes (accueil, canvas 3D plein écran avec son propre HUD,
+  Comprendre avec sa barre latérale de sujets) — retrofitter une barre
+  flottante persistante aurait été risqué sans bénéfice clair ; le
+  bouton « ← Accueil » existant suffit pour la navigation entre écrans.
+- Corrigé en même temps (dernier point de la demande) : l'onglet
+  « Atelier — générer » construisait et affichait un mécanisme
+  (engrenage) automatiquement dès l'ouverture de l'onglet, avant même
+  que l'élève ait choisi un type de mécanisme. `ensureWorkshopInit()`
+  configure maintenant le canvas/renderer et les contrôles (grille de
+  mécanismes, champs, sliders) mais NE construit PLUS l'instance et NE
+  démarre PLUS la boucle `wrender()` — un nouveau bouton « Générer
+  l'aperçu » (avec un état vide `.workshop-placeholder`) déclenche les
+  deux, une seule fois, au premier clic.
+- Vérifié par Playwright : accueil restylé sans erreur JS (mobile +
+  desktop) ; onglet générer confirme le placeholder visible avant clic
+  puis masqué après, mécanisme (vélo par défaut sélectionné dans la
+  banque, aperçu = engrenages droits) rendu correctement après clic
+  sur « Générer l'aperçu » ; défis du labo de circuits (charge/décharge
+  du condensateur, ajoutés dans la session précédente) toujours
+  fonctionnels après ces changements ; sweep de régression complet (5
+  objets, 5 sujets Comprendre) sans nouvelle erreur JS.
+- Commit poussé sur `colorjazz/sciences4_3d` (branche `main`) :
+  `f8b6f4d`. Le même makeover côté sciences4 (React) est documenté
+  dans le NIGHTLY_LOG/CURRENT_TASK de CE dépôt-là (`colorjazz/sciences4`),
+  commits `a933b7a` (refonte visuelle) et `364f7c5` (génération sur
+  bouton, Section C).
+
+---
+
 ## 2026-09-06 (suite 2) — Défis renommés, moteur qui tourne, condensateur charge/décharge
 
 - Demande explicite de l'utilisateur (avec 2 images à l'appui) : voir le

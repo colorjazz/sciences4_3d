@@ -161,6 +161,16 @@ consignes pour Claude »), en cours de traitement :
    CSSOM pour les animations, texte narratif confirmé affiché, sweep de
    régression complet sans nouvelle erreur JS.
 
+7. [x] Makeover visuel harmonisé avec la plateforme sœur sciences4
+   (elle-même harmonisée avec « Corrige-moi », capture de leur site
+   d'histoire) : bandeau d'accueil (carte encre sombre fixe, badge,
+   titre, sous-titre) + cartes Comprendre/Tester restylées avec pied
+   de carte (méta + flèche au survol) — commit `f8b6f4d`. Voir
+   NIGHTLY_LOG.md (2026-09-06, suite 3) pour le détail. Corrigé en
+   même temps : l'onglet « Atelier — générer » ne construit plus de
+   mécanisme automatiquement à l'ouverture — nouveau bouton
+   « Générer l'aperçu » avec état vide (placeholder).
+
 Une fois ces 6 points terminés, reprendre la liste TODO.md, section
 "Prochains objets à créer" (premier non coché : robinet mélangeur ou
 ciseaux à cliquet) pour continuer à peupler la banque vers 30 objets.
