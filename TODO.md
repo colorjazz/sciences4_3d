@@ -41,6 +41,13 @@ fonctionnalité distincte de la banque vitrine).
       couplés (réducteur planétaire soleil/satellites/couronne,
       mandrin auto-serrant). Premier réducteur épicycloïdal de la
       banque, avec vrai calcul de rapport.
+- [x] Piano à queue (`piano`) — 5 mécanismes couplés (touche-levier,
+      pilote et bascule, échappement et marteau, levier d'étouffoir,
+      pédale forte). Portage fidèle du modèle Blender du dépôt
+      colorjazz/bombe (`piano/piano_a_queue.py`) : mêmes cotes et mêmes
+      rapports de leviers, 88 notes. Géométrie générée par le code (pas
+      de fichier 3D) ; pièces répétées en InstancedMesh (~70 commandes
+      de dessin au lieu de ~1 300).
 
 ## Objets catalogue génériques — RETIRÉS de la banque (2026-09-04)
 

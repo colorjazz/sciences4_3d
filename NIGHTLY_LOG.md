@@ -5,6 +5,37 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-12 — Piano à queue (6e objet détaillé)
+
+- Demande de l'utilisateur : ajouter à la banque le piano à queue
+  modélisé dans Blender (dépôt colorjazz/bombe, `piano/`), recodé dans
+  le format de L'Atelier, « simplifié pour réduire la taille si et
+  seulement si la qualité n'est pas affectée ».
+- `DetailedObjects.piano` : portage JS du générateur Python (mêmes
+  cotes, mêmes pièces, mêmes rapports : bascule ×2,13, marteau ×6,4,
+  étouffoir par la queue de la touche, échappement qui bascule en fin
+  de course, pas d'étouffoirs sur les 19 notes aiguës). Ajout d'une
+  pédale forte (tringle + barre de levée) pour un 5e mécanisme couplé.
+- Simplifications sans perte visible : aucune ressource 3D à charger
+  (tout est généré) ; les pièces répétées 88 fois sont des
+  InstancedMesh (`frustumCulled=false`, car en r128 la sphère
+  englobante ignore les instances) ; les touches blanches sont
+  regroupées en 4 formes (selon les touches noires voisines), les
+  touches noires sont centrées sur la jonction des blanches (décalage
+  réel de ±2,5 mm abandonné). Rien de neuf côté contextes WebGL :
+  le piano passe par la scène principale et le contexte unique des
+  vignettes.
+- Animation : « Au clair de la lune » en boucle (main droite + basses),
+  pédale forte sur la dernière phrase. Vignettes : une note agrandie
+  ×2,5 et tournée pour être vue de profil.
+- Éclaté : décalages du modèle Blender réduits à 75 % pour rester dans
+  le cadrage ; « Recentrer la vue » cadre la vue éclatée entière.
+- Vérifié par Playwright (Chromium + swiftshader) : construction en
+  ~0,5 s, 5 vignettes générées, éclaté à 100 %, aller-retour
+  vélo → piano sans bandeau de diagnostic ni erreur JS.
+- Poussé sur la branche `claude/piano-a-queue` (pas sur `main`) pour
+  relecture par l'utilisatrice avant fusion.
+
 ## 2026-09-06 (suite 4) — Carte « Exercer » + pont postMessage vers sciences4
 
 - Demande explicite de l'utilisateur, à partir d'une capture d'écran
