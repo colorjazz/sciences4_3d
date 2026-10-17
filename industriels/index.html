@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Objets industriels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Section « Objets industriels » : chaque objet est le fichier HTML
+   d'origine fourni, affiché tel quel (non modifié) dans le cadre.
+   Pour ajouter un objet : déposer son fichier dans ce dossier et
+   ajouter une ligne dans OBJETS ci-dessous. */
+:root{
+  --bg:#f1e9d8; --panel:#fbf6ea; --ink:#3a2f20; --ink-dim:#6c5a41; --ink-faint:#9c8a6c;
+  --line:#d9c8a0; --accent:#e8622a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#122841; --panel:#183252; --ink:#e9f2fb; --ink-dim:#a9c3da; --ink-faint:#7996b0;
+    --line:#345676; --accent:#ff7c42;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#122841; --panel:#183252; --ink:#e9f2fb; --ink-dim:#a9c3da; --ink-faint:#7996b0;
+  --line:#345676; --accent:#ff7c42;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Barlow',system-ui,sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+h1{margin:0;font:700 20px 'Barlow Condensed',sans-serif;letter-spacing:.02em}
+.section-tabs{display:flex;gap:4px;padding:3px;border:1px solid var(--line);border-radius:8px}
+.section-tabs a{padding:6px 10px;border-radius:6px;font-size:13px;font-weight:600;color:var(--ink-dim);text-decoration:none}
+.section-tabs a.active{background:var(--accent);color:#fff}
+.section-tabs a:not(.active):hover{color:var(--ink);background:var(--line)}
+.objnav{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
+.objnav button{font:600 13px 'Barlow',sans-serif;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+.objnav button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.objnav button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.objnav button:disabled{color:var(--ink-faint);cursor:not-allowed;border-style:dashed}
+.objnav .count{font-size:12px;color:var(--ink-faint);min-width:3em;text-align:center}
+main{flex:1;min-height:0;position:relative}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+@media (max-width:640px){
+  header{padding:8px 12px}
+  .objnav{margin-left:0;width:100%}
+  .objnav .items{display:flex;gap:6px;overflow-x:auto;flex:1}
+  .objnav .items button{white-space:nowrap}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>L'Atelier</h1>
+  <nav class="section-tabs" aria-label="Sections">
+    <a href="../">Objets quotidiens</a>
+    <a class="active" href="./" aria-current="page">Objets industriels</a>
+  </nav>
+  <div class="objnav" aria-label="Objets industriels">
+    <button id="prev" type="button" title="Objet précédent">◀</button>
+    <div class="items" id="items"></div>
+    <button id="next" type="button" title="Objet suivant">▶</button>
+    <span class="count" id="count"></span>
+  </div>
+</header>
+<main><iframe id="view" title="Objet industriel"></iframe></main>
+<script>
+var OBJETS = [
+  {id:'roadster', nom:'Roadster volant (Tesla / SpaceX)', fichier:'roadster.html'},
+  {id:'main-optimus', nom:'Main d’Optimus', fichier:null},
+  {id:'pince-fusee', nom:'Pince pour fusée', fichier:null}
+];
+var prets = OBJETS.filter(function(o){ return o.fichier; });
+var items = document.getElementById('items'), view = document.getElementById('view');
+OBJETS.forEach(function(o){
+  var b = document.createElement('button');
+  b.type = 'button'; b.dataset.id = o.id;
+  b.textContent = o.nom + (o.fichier ? '' : ' (à venir)');
+  b.disabled = !o.fichier;
+  b.addEventListener('click', function(){ location.hash = o.id; });
+  items.appendChild(b);
+});
+function courant(){
+  var id = location.hash.slice(1);
+  for (var i = 0; i < prets.length; i++) if (prets[i].id === id) return i;
+  return 0;
+}
+function afficher(){
+  var i = courant(), o = prets[i];
+  if (view.getAttribute('src') !== o.fichier) view.setAttribute('src', o.fichier);
+  document.title = o.nom + ' — Objets industriels';
+  items.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.id === o.id); });
+  document.getElementById('count').textContent = (i + 1) + ' / ' + prets.length;
+  document.getElementById('prev').disabled = document.getElementById('next').disabled = prets.length < 2;
+}
+function aller(d){ location.hash = prets[(courant() + d + prets.length) % prets.length].id; }
+document.getElementById('prev').addEventListener('click', function(){ aller(-1); });
+document.getElementById('next').addEventListener('click', function(){ aller(1); });
+window.addEventListener('hashchange', afficher);
+afficher();
+</script>
+</body>
+</html>

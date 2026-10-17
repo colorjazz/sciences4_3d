@@ -5,6 +5,21 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-17 (suite 4) — Deux sections : quotidiens / industriels
+
+- Demande : section « Objets quotidiens » (la banque existante, inchangée)
+  et section « Objets industriels » où les modèles Tesla / SpaceX restent
+  EXACTEMENT comme fournis, avec un menu pour passer de l'un à l'autre.
+- `industriels/roadster.html` = tesla.html d'origine, octet pour octet.
+  `industriels/index.html` l'affiche dans un cadre, avec onglets de
+  section, ◀ ▶ et liste des objets (Main d'Optimus et Pince pour fusée
+  annoncées « à venir »). Ajouter un objet = déposer son fichier + une
+  ligne dans `OBJETS`.
+- Le Roadster harmonisé (PR #4) est abandonné à la demande de
+  l'utilisatrice ; la banque quotidienne garde ses 6 objets.
+- Vérifié par Playwright (1440 et 390 px) : aller-retour entre sections,
+  le modèle d'origine se charge (THREE présent), aucune erreur JS.
+
 ## 2026-10-17 (suite 2) — Harmonisation et précision physique
 
 - Demande de l'utilisatrice : « le piano est super coloré et stylé, la
