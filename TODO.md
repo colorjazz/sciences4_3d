@@ -43,6 +43,13 @@ fonctionnalité distincte de la banque vitrine).
       cahier d'examen MEQ) : 13 pièces numérotées avec nomenclature,
       4 mécanismes couplés (circuit électrique, engrenage droit Z10→Z30,
       arbre + roulements, mandrin à liaison hélicoïdale).
+- [x] Piano à queue (`piano`) — 5 mécanismes couplés (touche-levier,
+      pilote et bascule, échappement et marteau, levier d'étouffoir,
+      pédale forte). Portage fidèle du modèle Blender du dépôt
+      colorjazz/bombe (`piano/piano_a_queue.py`) : mêmes cotes et mêmes
+      rapports de leviers, 88 notes. Géométrie générée par le code (pas
+      de fichier 3D) ; pièces répétées en InstancedMesh (~70 commandes
+      de dessin au lieu de ~1 300).
 
 ## Objets catalogue génériques — RETIRÉS de la banque (2026-09-04)
 

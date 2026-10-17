@@ -3776,6 +3776,807 @@ function schemaDefaults(mechKey){
   Mechanisms[mechKey].schema.forEach(function(s){ d[s.key]=s.def; });
   return d;
 }
+/* ============================================================
+   Piano à queue (objet détaillé)
+   ------------------------------------------------------------
+   Portage fidèle du modèle Blender `piano_a_queue.py` (dépôt
+   colorjazz/bombe) : mêmes cotes, mêmes pièces, mêmes rapports de
+   leviers. La géométrie est GÉNÉRÉE ici par le code (aucun fichier 3D
+   à télécharger) et les pièces répétées 88 fois (touches, bascules,
+   échappements, marteaux, étouffoirs) sont dessinées en
+   InstancedMesh : une seule commande de dessin par type de pièce au
+   lieu de 88, pour rester fluide sur un ordinateur d'école.
+
+   Repère des cotes (comme dans Blender) : x = largeur du clavier,
+   y = profondeur (le pianiste est du côté -y), z = hauteur. Chaque
+   point est converti vers le repère three.js par B(), (x,y,z) ->
+   (x, z, -y). Les cotes « mécanique » sont relatives au dessus du
+   fond de clavier (KB).
+   ============================================================ */
+DetailedObjects.piano = (function(){
+  var KB=0.67, NK=88, NW=52, WW=0.02345, KBW=NW*WW, PITCH=KBW/NK, X0=-KBW/2;
+  var KEY_LEN=0.47, BAL_Y=0.24, KZ0=0.012, KZ1=0.035, WTOP=0.046, BTOP=0.058;
+  var WLEN=0.150, BY0=0.050, BY1=0.148, BW=0.0125;
+  var TH=Math.atan(0.010/BAL_Y);                 /* enfoncement : 10 mm */
+  var CAP_Y=0.40, CAP_TOP=0.050;
+  var P_KEY=[BAL_Y,KZ0], P_WIP=[0.325,0.072], P_JACK=[0.415,0.066], P_HAM=[0.385,0.127];
+  var KN=[0.415,0.116,0.006], P_DL=[0.62,0.060], PAD_Y=0.461, DW_Y=0.54, LIFT_Y=0.58;
+  var R_WIP=(CAP_Y-BAL_Y)/(CAP_Y-P_WIP[0]);                  /* bascule / touche ≈ 2,13 */
+  var R_HAM=R_WIP*(P_JACK[0]-P_WIP[0])/(KN[0]-P_HAM[0]);     /* marteau / touche ≈ 6,4 */
+  var R_DL=(PAD_Y-BAL_Y)/(P_DL[0]-PAD_Y);                     /* levier d'étouffoir / touche */
+  var R_DW=R_DL*(P_DL[0]-DW_Y);                               /* levée de l'étouffoir / touche */
+  var JACK_TILT=11*Math.PI/180, LETOFF=0.85;
+  var DAMPER_LAST=68;                                          /* pas d'étouffoir dans l'aigu */
+  var FELT=[[0.483,0.140],[0.507,0.140],[0.506,0.163],[0.502,0.173],[0.495,0.178],[0.488,0.173],[0.484,0.163]];
+  var Z_STRIKE=(function(){
+    var a=R_HAM*TH, zmax=0;
+    FELT.forEach(function(p){
+      var dy=p[0]-P_HAM[0], dz=p[1]-P_HAM[1];
+      zmax=Math.max(zmax, P_HAM[1]+dy*Math.sin(a)+dz*Math.cos(a));
+    });
+    return zmax;
+  })();
+  var ZS=KB+Z_STRIKE;                                          /* dessous des cordes */
+  var RIM_X=0.74, RIM_FRONT=0.16, RIM_Z0=0.60, RIM_Z1=0.95, RIM_T=0.04, SB_Y0=0.665;
+  var LID_OPEN=32*Math.PI/180;
+  var PEDAL_PIVOT=[0.06,0.40,0.093], PEDAL_MAX=0.10;           /* pédale forte (droite) */
+
+  function Z(z){ return KB+z; }
+  function xa(n){ return X0+(n+0.5)*PITCH; }
+  function stringCount(n){ return n<20?1:(n<28?2:3); }
+  function stringRadius(n){
+    if(n<20) return 0.0024-n*0.00003;
+    if(n<28) return 0.0016;
+    return Math.max(0.0007, 0.00095-(n-28)*0.000004);
+  }
+  function stringXs(n){
+    var c=stringCount(n), x=xa(n);
+    return c===1?[x]:(c===2?[x-0.0022,x+0.0022]:[x-0.0036,x,x+0.0036]);
+  }
+  var BLACK={1:1,3:1,6:1,8:1,10:1};
+  var NOTES=(function(){
+    var out=[], wi=0;
+    for(var n=0;n<NK;n++){
+      var pc=(21+n)%12, d={n:n, black:!!BLACK[pc]};
+      if(d.black){ d.cx=X0+wi*WW; }
+      else { d.cx=X0+(wi+0.5)*WW; wi++; }
+      out.push(d);
+    }
+    out.forEach(function(d,n){
+      if(d.black) d.type='B';
+      else {
+        var l=n>0&&out[n-1].black, r=n<NK-1&&out[n+1].black;
+        d.type=(l?'L':'')+(r?'R':'')||'N';
+      }
+    });
+    return out;
+  })();
+
+  /* ---------- matériaux (partagés par le cache de stdMat) ---------- */
+  var M={
+    laque:stdMat(0x121216,{metalness:.25,roughness:.22}),
+    ivoire:stdMat(0xf1ece0,{metalness:0,roughness:.38}),
+    ebene:stdMat(0x161616,{metalness:.05,roughness:.35}),
+    bois:stdMat(0xc49563,{metalness:0,roughness:.65}),
+    tilleul:stdMat(0xe2cda2,{metalness:0,roughness:.65}),
+    epicea:stdMat(0xe3bf82,{metalness:0,roughness:.55}),
+    erable:stdMat(0x6e4524,{metalness:0,roughness:.5}),
+    feutre:stdMat(0xf2eee4,{metalness:0,roughness:1}),
+    feutreRouge:stdMat(0xa3232c,{metalness:0,roughness:1}),
+    feutreGris:stdMat(0x5a5c62,{metalness:0,roughness:1}),
+    cuir:stdMat(0xc4a07a,{metalness:0,roughness:.85}),
+    fonte:stdMat(0xc9a04a,{metalness:.75,roughness:.35}),
+    acier:stdMat(0xc9ced4,{metalness:.85,roughness:.25}),
+    cuivre:stdMat(0xc87a45,{metalness:.8,roughness:.3}),
+    laiton:stdMat(0xe0b860,{metalness:.85,roughness:.22})
+  };
+
+  /* ---------- petite géométrie vectorielle ---------- */
+  function sub(a,b){ return [a[0]-b[0],a[1]-b[1],a[2]-b[2]]; }
+  function add(a,b){ return [a[0]+b[0],a[1]+b[1],a[2]+b[2]]; }
+  function mul(a,s){ return [a[0]*s,a[1]*s,a[2]*s]; }
+  function dot(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+  function cross(a,b){ return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+  function nrm(a){ var l=Math.sqrt(dot(a,a))||1; return [a[0]/l,a[1]/l,a[2]/l]; }
+  function B(v){ return [v[0], v[2], -v[1]]; }                 /* Blender -> three */
+  function bv(v){ return new THREE.Vector3(v[0], v[2], -v[1]); }
+
+  /* Constructeur de maillage : accumule des triangles par matériau.
+     Chaque face reçoit une normale « extérieure » ; l'ordre des sommets
+     est corrigé si besoin pour que les faces soient vues du bon côté. */
+  function MB(){ this.parts=[]; }
+  MB.prototype._part=function(m){
+    for(var i=0;i<this.parts.length;i++) if(this.parts[i].m===m) return this.parts[i];
+    var p={m:m, pos:[], nor:[]}; this.parts.push(p); return p;
+  };
+  MB.prototype.tri=function(m,a,b,c,na,nb,nc){
+    var p=this._part(m);
+    var f=cross(sub(b,a),sub(c,a));
+    if(dot(f, add(add(na,nb),nc))<0){ var t=b; b=c; c=t; t=nb; nb=nc; nc=t; }
+    [a,b,c].forEach(function(v){ var w=B(v); p.pos.push(w[0],w[1],w[2]); });
+    [na,nb,nc].forEach(function(v){ var w=B(v); p.nor.push(w[0],w[1],w[2]); });
+  };
+  MB.prototype.poly=function(m,pts,n,tris){
+    if(!tris){ tris=[]; for(var i=1;i<pts.length-1;i++) tris.push([0,i,i+1]); }
+    var self=this;
+    tris.forEach(function(t){ self.tri(m,pts[t[0]],pts[t[1]],pts[t[2]],n,n,n); });
+  };
+  MB.prototype.quadSmooth=function(m,a,b,c,d,na,nb,nc,nd){
+    this.tri(m,a,b,c,na,nb,nc); this.tri(m,a,c,d,na,nc,nd);
+  };
+  MB.prototype.hexa=function(v,m){
+    var F=[[0,3,2,1],[4,5,6,7],[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7]], self=this;
+    F.forEach(function(f){
+      var p=f.map(function(i){ return v[i]; });
+      var n=nrm(add(cross(sub(p[1],p[0]),sub(p[2],p[0])), cross(sub(p[2],p[0]),sub(p[3],p[0]))));
+      self.poly(m,p,n);
+    });
+    return this;
+  };
+  MB.prototype.box=function(x0,x1,y0,y1,z0,z1,m){
+    return this.hexa([[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]],m);
+  };
+  /* extrusion d'un polygone 2D : axis 'z' -> pts en (x,y) ; 'x' -> pts en (y,z) */
+  MB.prototype.prism=function(pts,a0,a1,m,axis,smooth){
+    pts=cleanPoly(pts);
+    var area=0, n=pts.length, i;
+    for(i=0;i<n;i++){ var p=pts[i], q=pts[(i+1)%n]; area+=p[0]*q[1]-q[0]*p[1]; }
+    if(area<0) pts=pts.slice().reverse();
+    function P(p,a){ return axis==='x'?[a,p[0],p[1]]:[p[0],p[1],a]; }
+    function D(d){ return axis==='x'?[0,d[0],d[1]]:[d[0],d[1],0]; }
+    var ax=axis==='x'?[1,0,0]:[0,0,1];
+    var tris=THREE.ShapeUtils.triangulateShape(pts.map(function(p){ return new THREE.Vector2(p[0],p[1]); }),[]);
+    this.poly(m,pts.map(function(p){ return P(p,a1); }),ax,tris);
+    this.poly(m,pts.map(function(p){ return P(p,a0); }),mul(ax,-1),tris);
+    var en=[];
+    for(i=0;i<n;i++){ var a=pts[i], b=pts[(i+1)%n]; en.push(nrm(D([b[1]-a[1], a[0]-b[0]]))); }
+    for(i=0;i<n;i++){
+      var j=(i+1)%n, A=pts[i], Bp=pts[j];
+      var na=smooth?nrm(add(en[(i+n-1)%n],en[i])):en[i], nb=smooth?nrm(add(en[i],en[j])):en[i];
+      this.quadSmooth(m,P(A,a0),P(Bp,a0),P(Bp,a1),P(A,a1),na,nb,nb,na);
+    }
+    return this;
+  };
+  MB.prototype.cyl=function(p0,p1,r,m,seg,r1,caps){
+    seg=seg||16; r1=(r1===undefined||r1===null)?r:r1;
+    var ax=nrm(sub(p1,p0));
+    var u=nrm(Math.abs(ax[0])<0.9?cross(ax,[1,0,0]):cross(ax,[0,1,0])), w=cross(ax,u);
+    var A=[], Bv=[], N=[];
+    for(var i=0;i<seg;i++){
+      var t=2*Math.PI*i/seg, d=add(mul(u,Math.cos(t)),mul(w,Math.sin(t)));
+      A.push(add(p0,mul(d,r))); Bv.push(add(p1,mul(d,r1))); N.push(d);
+    }
+    for(i=0;i<seg;i++){
+      var j=(i+1)%seg;
+      this.quadSmooth(m,A[i],A[j],Bv[j],Bv[i],N[i],N[j],N[j],N[i]);
+    }
+    if(caps!==false){ this.poly(m,Bv,ax); this.poly(m,A,mul(ax,-1)); }
+    return this;
+  };
+  /* bande de section rectangulaire le long d'une polyligne (vers la gauche) */
+  MB.prototype.sweep=function(pts,width,z0,z1,m,closed){
+    var inner=offsetPath(pts,width,closed), n=pts.length, self=this;
+    var lefts=pts.map(function(p,i){ return nrm([inner[i][0]-p[0], inner[i][1]-p[1], 0]); });
+    var segs=closed?n:n-1;
+    for(var i=0;i<segs;i++){
+      var j=(i+1)%n;
+      var o0=[pts[i][0],pts[i][1]], o1=[pts[j][0],pts[j][1]], i0=inner[i], i1=inner[j];
+      var L0=lefts[i], L1=lefts[j];
+      self.poly(m,[[o0[0],o0[1],z0],[o1[0],o1[1],z0],[i1[0],i1[1],z0],[i0[0],i0[1],z0]],[0,0,-1]);
+      self.poly(m,[[o0[0],o0[1],z1],[o1[0],o1[1],z1],[i1[0],i1[1],z1],[i0[0],i0[1],z1]],[0,0,1]);
+      self.quadSmooth(m,[o0[0],o0[1],z0],[o1[0],o1[1],z0],[o1[0],o1[1],z1],[o0[0],o0[1],z1],mul(L0,-1),mul(L1,-1),mul(L1,-1),mul(L0,-1));
+      self.quadSmooth(m,[i0[0],i0[1],z0],[i1[0],i1[1],z0],[i1[0],i1[1],z1],[i0[0],i0[1],z1],L0,L1,L1,L0);
+    }
+    if(!closed){
+      [[0,1],[n-1,-1]].forEach(function(e){
+        var k=e[0], o=pts[k], q=inner[k], t=nrm([pts[k+e[1]][0]-o[0], pts[k+e[1]][1]-o[1], 0]);
+        self.poly(m,[[o[0],o[1],z0],[q[0],q[1],z0],[q[0],q[1],z1],[o[0],o[1],z1]],mul(t,-1));
+      });
+    }
+    return this;
+  };
+  /* géométries finales, ramenées à une origine (pivot) exprimée en cotes Blender */
+  MB.prototype.geos=function(origin){
+    var o=B(origin||[0,0,0]);
+    return this.parts.map(function(p){
+      var pos=new Float32Array(p.pos.length);
+      for(var i=0;i<p.pos.length;i+=3){ pos[i]=p.pos[i]-o[0]; pos[i+1]=p.pos[i+1]-o[1]; pos[i+2]=p.pos[i+2]-o[2]; }
+      var g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+      g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(p.nor),3));
+      g.computeBoundingSphere();
+      return {geo:g, m:p.m};
+    });
+  };
+  MB.prototype.group=function(origin){
+    var g=new THREE.Group();
+    this.geos(origin).forEach(function(e){ g.add(new THREE.Mesh(e.geo,e.m)); });
+    return g;
+  };
+
+  /* ---------- polygones (contour de la caisse, découpes) ---------- */
+  function cleanPoly(pts){
+    var out=[];
+    pts.forEach(function(p){
+      var l=out[out.length-1];
+      if(!l||Math.abs(p[0]-l[0])>1e-7||Math.abs(p[1]-l[1])>1e-7) out.push([p[0],p[1]]);
+    });
+    if(out.length>1){ var a=out[0], b=out[out.length-1]; if(Math.abs(a[0]-b[0])<1e-7&&Math.abs(a[1]-b[1])<1e-7) out.pop(); }
+    return out;
+  }
+  function offsetPath(pts,d,closed){
+    var n=pts.length, out=[];
+    function left(a,b){ var t=nrm([b[0]-a[0],b[1]-a[1],0]); return [-t[1],t[0]]; }
+    for(var i=0;i<n;i++){
+      var n1,n2;
+      if(closed){ n1=left(pts[(i+n-1)%n],pts[i]); n2=left(pts[i],pts[(i+1)%n]); }
+      else {
+        n1=i>0?left(pts[i-1],pts[i]):left(pts[0],pts[1]);
+        n2=i<n-1?left(pts[i],pts[i+1]):left(pts[n-2],pts[n-1]);
+      }
+      var k=Math.max(0.2,1+n1[0]*n2[0]+n1[1]*n2[1]);
+      out.push([pts[i][0]+(n1[0]+n2[0])/k*d, pts[i][1]+(n1[1]+n2[1])/k*d]);
+    }
+    return out;
+  }
+  function clipPolyY(pts,y0){
+    var out=[], n=pts.length;
+    for(var i=0;i<n;i++){
+      var a=pts[i], b=pts[(i+1)%n], ia=a[1]>=y0, ib=b[1]>=y0;
+      if(ia) out.push(a);
+      if(ia!==ib){ var t=(y0-a[1])/(b[1]-a[1]); out.push([a[0]+t*(b[0]-a[0]), y0]); }
+    }
+    return out;
+  }
+  function inPoly(p,poly){
+    var c=false, n=poly.length;
+    for(var i=0;i<n;i++){
+      var a=poly[i], b=poly[(i+1)%n];
+      if((a[1]>p[1])!==(b[1]>p[1]) && p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0]) c=!c;
+    }
+    return c;
+  }
+  function maxYAt(poly,x){
+    var best=null, n=poly.length;
+    for(var i=0;i<n;i++){
+      var a=poly[i], b=poly[(i+1)%n];
+      if((a[0]-x)*(b[0]-x)<=0 && a[0]!==b[0]){
+        var y=a[1]+(x-a[0])*(b[1]-a[1])/(b[0]-a[0]);
+        if(best===null||y>best) best=y;
+      }
+    }
+    return best===null?1.0:best;
+  }
+  function rayToEdge(poly,start,dir){
+    var d=nrm([dir[0],dir[1],0]), p=[start[0],start[1]], last=p.slice();
+    for(var i=0;i<2000;i++){
+      p=[p[0]+d[0]*0.005, p[1]+d[1]*0.005];
+      if(!inPoly(p,poly)) return last;
+      last=p.slice();
+    }
+    return last;
+  }
+  function clipSegment(poly,a,b){
+    var first=null, lastIn=null;
+    for(var s=0;s<=400;s++){
+      var t=s/400, p=[a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t];
+      if(inPoly(p,poly)){ if(!first) first=p; lastIn=p; }
+    }
+    return first?[first,lastIn]:null;
+  }
+  function bezier(p0,p1,p2,p3,n){
+    var out=[];
+    for(var i=0;i<=n;i++){
+      var t=i/n, u=1-t;
+      out.push([u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],
+                u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]]);
+    }
+    return out;
+  }
+  function rimPath(){
+    var pts=[[RIM_X,RIM_FRONT],[RIM_X,0.45],[RIM_X,0.55]];
+    pts=pts.concat(bezier([RIM_X,0.95],[RIM_X,1.30],[0.0,1.25],[-0.12,1.70],30));
+    pts=pts.concat(bezier([-0.12,1.70],[-0.18,1.95],[-RIM_X,1.97],[-RIM_X,1.65],20).slice(1));
+    pts=pts.concat([[-RIM_X,1.1],[-RIM_X,0.45],[-RIM_X,RIM_FRONT]]);
+    return cleanPoly(pts);
+  }
+  function slab(mb,p,q,half,z0,z1,m){
+    var d=nrm([q[0]-p[0],q[1]-p[1],0]), nn=[-d[1]*half, d[0]*half];
+    var v=[[p[0]-nn[0],p[1]-nn[1]],[p[0]+nn[0],p[1]+nn[1]],[q[0]+nn[0],q[1]+nn[1]],[q[0]-nn[0],q[1]-nn[1]]];
+    mb.hexa(v.map(function(u){ return [u[0],u[1],z0]; }).concat(v.map(function(u){ return [u[0],u[1],z1]; })),m);
+  }
+
+  /* ---------- pièces d'une note (cotes centrées en x = 0) ---------- */
+  function keyFront(type){
+    var mb=new MB(), g=0.0005;
+    if(type==='B'){
+      mb.box(-0.0045,0.0045,BY0,WLEN,Z(KZ0),Z(KZ1),M.tilleul);
+      var h0=BW/2, h1=0.0048;
+      mb.hexa([[-h0,BY0,Z(KZ1)],[h0,BY0,Z(KZ1)],[h0,BY1,Z(KZ1)],[-h0,BY1,Z(KZ1)],
+               [-h1,BY0+0.008,Z(BTOP)],[h1,BY0+0.008,Z(BTOP)],[h1,BY1-0.002,Z(BTOP)],[-h1,BY1-0.002,Z(BTOP)]],M.ebene);
+      mb.cyl([-0.0045,0.09,Z(0.022)],[0.0045,0.09,Z(0.022)],0.005,M.acier,10);
+    } else {
+      var xl=-WW/2+g, xr=WW/2-g, tl=xl, tr=xr;
+      if(type.indexOf('L')>=0) tl=-WW/2+BW/2+0.0012;
+      if(type.indexOf('R')>=0) tr=WW/2-BW/2-0.0012;
+      var foot=[[xl,0],[xr,0],[xr,BY0],[tr,BY0],[tr,WLEN],[tl,WLEN],[tl,BY0],[xl,BY0]];
+      mb.prism(foot,Z(KZ0),Z(KZ1),M.tilleul,'z');
+      mb.prism(foot,Z(KZ1),Z(WTOP),M.ivoire,'z');
+      mb.box(xl,xr,-0.002,0,Z(0.022),Z(WTOP),M.ivoire);
+      mb.cyl([-0.0058,0.07,Z(0.022)],[0.0058,0.07,Z(0.022)],0.005,M.acier,10);
+    }
+    return mb;
+  }
+  function keyStick(withCapstan){
+    var mb=new MB();
+    mb.box(-0.0057,0.0057,WLEN-0.006,KEY_LEN,Z(KZ0),Z(KZ1),M.tilleul);
+    if(withCapstan!==false) mb.cyl([0,CAP_Y,Z(KZ1)],[0,CAP_Y,Z(CAP_TOP)],0.0045,M.laiton,12);
+    return mb;
+  }
+  function wippen(){
+    var mb=new MB();
+    var poly=[[0.312,0.062],[0.335,0.055],[0.375,0.050],[0.448,0.050],[0.448,0.064],[0.335,0.068],[0.318,0.079],[0.312,0.074]];
+    mb.prism(poly.map(function(p){ return [p[0],Z(p[1])]; }),-0.0052,0.0052,M.bois,'x');
+    mb.cyl([-0.0053,P_WIP[0],Z(P_WIP[1])],[0.0053,P_WIP[0],Z(P_WIP[1])],0.0045,M.bois,12);
+    mb.box(-0.0045,0.0045,CAP_Y-0.008,CAP_Y+0.008,Z(0.0485),Z(0.0505),M.feutreRouge);
+    return mb;
+  }
+  function jack(){
+    var mb=new MB();
+    var poly=[[0.402,0.064],[0.420,0.064],[0.420,0.1095],[0.411,0.1095],[0.411,0.072],[0.402,0.072]];
+    mb.prism(poly.map(function(p){ return [p[0],Z(p[1])]; }),-0.0035,0.0035,M.bois,'x');
+    return mb;
+  }
+  function repetition(){
+    var mb=new MB();
+    mb.box(-0.0052,0.0052,0.379,0.391,Z(0.064),Z(0.096),M.bois);
+    mb.box(-0.0052,0.0052,0.360,0.404,Z(0.096),Z(0.1045),M.bois);
+    [-1,1].forEach(function(s){
+      mb.box(Math.min(s*0.0037,s*0.0052),Math.max(s*0.0037,s*0.0052),0.404,0.452,Z(0.096),Z(0.1045),M.bois);
+    });
+    mb.box(-0.0052,0.0052,0.440,0.452,Z(0.096),Z(0.1045),M.bois);
+    mb.cyl([-0.0053,0.385,Z(0.0975)],[0.0053,0.385,Z(0.0975)],0.004,M.bois,10);
+    return mb;
+  }
+  function hammer(head,shank){
+    var mb=new MB();
+    if(shank!==false){
+      mb.cyl([0,P_HAM[0]-0.002,Z(P_HAM[1])],[0,0.488,Z(P_HAM[1])],0.0035,M.bois,10);
+      mb.cyl([-0.0045,P_HAM[0],Z(P_HAM[1])],[0.0045,P_HAM[0],Z(P_HAM[1])],0.0062,M.bois,14);
+      mb.cyl([-0.004,KN[0],Z(KN[1])],[0.004,KN[0],Z(KN[1])],KN[2],M.cuir,16);
+    }
+    if(head!==false){
+      mb.box(-0.0055,0.0055,0.484,0.506,Z(P_HAM[1]-0.004),Z(0.141),M.bois);
+      mb.prism(FELT.map(function(p){ return [p[0],Z(p[1])]; }),-0.006,0.006,M.feutre,'x',true);
+      mb.prism([[0.486,0.141],[0.504,0.141],[0.503,0.160],[0.495,0.168],[0.487,0.160]].map(function(p){ return [p[0],Z(p[1])]; }),-0.0062,0.0062,M.feutreRouge,'x');
+    }
+    return mb;
+  }
+  function damperLever(){
+    var mb=new MB();
+    var poly=[[0.452,0.045],[0.625,0.050],[0.632,0.058],[0.625,0.066],[0.540,0.0605],[0.452,0.055]];
+    mb.prism(poly.map(function(p){ return [p[0],Z(p[1])]; }),-0.0047,0.0047,M.bois,'x');
+    mb.box(-0.0047,0.0047,0.452,0.470,Z(KZ1),Z(0.045),M.feutreRouge);
+    mb.cyl([-0.0048,P_DL[0],Z(P_DL[1])],[0.0048,P_DL[0],Z(P_DL[1])],0.004,M.bois,10);
+    return mb;
+  }
+  function damperRestZ(n){ return ZS+2*stringRadius(n); }
+  function damper(z0){            /* tige + tête + feutre ; origine = dessous du feutre */
+    var mb=new MB();
+    mb.cyl([0,DW_Y,Z(0.0605)],[0,DW_Y,z0+0.012],0.0012,M.acier,8);
+    mb.box(-0.0058,0.0058,DW_Y-0.012,DW_Y+0.012,z0+0.008,z0+0.030,M.bois);
+    mb.box(-0.006,0.006,DW_Y-0.010,DW_Y+0.010,z0,z0+0.008,M.feutreGris);
+    return mb;
+  }
+  function stringsOf(mb,n,y0,y1,xoff){
+    var r=stringRadius(n), m=n<28?M.cuivre:M.acier;
+    stringXs(n).forEach(function(sx){
+      var x=sx-(xoff||0);
+      mb.cyl([x,y0,ZS+r],[x,y1,ZS+r],r,m,6,null,false);
+    });
+  }
+  function keyFrame(mb,x0,x1){
+    mb.box(x0,x1,0.004,0.022,Z(0),Z(0.008),M.bois);
+    mb.box(x0,x1,0.004,0.022,Z(0.008),Z(0.010),M.feutreRouge);
+    mb.box(x0,x1,BAL_Y-0.009,BAL_Y+0.009,Z(0),Z(KZ0-0.002),M.bois);
+    mb.box(x0,x1,BAL_Y-0.006,BAL_Y+0.006,Z(KZ0-0.002),Z(KZ0),M.feutreRouge);
+    mb.box(x0,x1,0.430,0.470,Z(0),Z(0.006),M.bois);
+    mb.box(x0,x1,0.430,0.470,Z(0.006),Z(KZ0),M.feutreRouge);
+    mb.box(x0,x1,0,0.47,Z(-0.004),Z(0),M.bois);
+    return mb;
+  }
+  function actionFrame(mb,x0,x1,brackets){
+    mb.box(x0,x1,0.305,0.335,Z(0.080),Z(0.098),M.bois);          /* barre des bascules */
+    mb.box(x0,x1,0.368,0.402,Z(0.137),Z(0.157),M.bois);          /* barre des fourches */
+    mb.box(x0,x1,0.455,0.472,Z(0.100),Z(0.119),M.bois);          /* barre d'appui des marteaux */
+    mb.box(x0,x1,0.455,0.472,Z(0.119),Z(0.1215),M.feutreRouge);
+    mb.box(x0,x1,0.300,0.480,Z(0),Z(0.010),M.bois);
+    var br=[[0.300,0.010],[0.480,0.010],[0.480,0.100],[0.430,0.157],[0.360,0.157],[0.300,0.100]].map(function(p){ return [p[0],Z(p[1])]; });
+    brackets.forEach(function(bx){ mb.prism(br,bx-0.001,bx+0.001,M.fonte,'x'); });
+    return mb;
+  }
+  function flanges(mb,x){
+    mb.box(x-0.003,x+0.003,0.318,0.332,Z(P_WIP[1]),Z(0.080),M.bois);
+    mb.box(x-0.003,x+0.003,0.379,0.391,Z(P_HAM[1]),Z(0.137),M.bois);
+    mb.cyl([x,0.418,Z(0.098)],[x,0.418,Z(0.120)],0.0018,M.acier,6);
+  }
+  function damperRails(mb,x0,x1){
+    mb.box(x0,x1,0.600,0.640,Z(0),Z(0.038),M.bois);
+    mb.box(x0,x1,DW_Y-0.014,DW_Y+0.014,Z(Z_STRIKE-0.055),Z(Z_STRIKE-0.043),M.bois);
+  }
+  function damperFlange(mb,x){ mb.box(x-0.003,x+0.003,0.612,0.628,Z(0.038),Z(P_DL[1]),M.bois); }
+  function liftRail(x0,x1){      /* barre de levée des étouffoirs (pédale forte) */
+    var mb=new MB();
+    mb.box(x0,x1,LIFT_Y-0.010,LIFT_Y+0.010,Z(0.036),Z(0.044),M.bois);
+    mb.box(x0,x1,LIFT_Y-0.008,LIFT_Y+0.008,Z(0.044),Z(0.0468),M.feutreRouge);
+    return mb;
+  }
+  function pedal(){
+    var mb=new MB(), x=PEDAL_PIVOT[0];
+    mb.box(x-0.016,x+0.016,0.22,0.40,0.088,0.098,M.laiton);
+    mb.box(x-0.021,x+0.021,0.20,0.24,0.086,0.100,M.laiton);
+    return mb;
+  }
+  function trapRod(){
+    var mb=new MB();
+    mb.cyl([0.03,0.42,0.14],[0.03,0.42,KB-0.03],0.004,M.acier,8);
+    mb.box(0.015,0.045,0.405,0.435,0.125,0.14,M.laiton);
+    return mb;
+  }
+
+  /* ---------- cinématique ---------- */
+  var PEDAL_DL=R_DL*TH;                         /* la pédale lève autant qu'une touche au fond */
+  function sm(t){ t=clamp(t,0,1); return t*t*(3-2*t); }
+  function envelope(b,start,len){
+    if(b<start||b>start+len+0.2) return 0;
+    var up=sm((b-start)/0.12), down=1-sm((b-start-len)/0.2);
+    return Math.min(up,down);
+  }
+  /* « Au clair de la lune » (main droite) + basses ; [midi, temps, durée] */
+  var SONG=[[60,0,0.8],[60,1,0.8],[60,2,0.8],[62,3,0.8],[64,4,1.8],[62,6,1.8],
+            [60,8,0.8],[64,9,0.8],[62,10,0.8],[62,11,0.8],[60,12,3.4],
+            [48,0,3.6],[43,4,3.6],[48,8,1.8],[43,10,1.8],[36,12,3.4]];
+  var LOOP=18;
+
+  function kinematics(t, iso){
+    var press=new Float32Array(NK), pedal=0;
+    if(iso){
+      var c=(t*0.5)%1, a=sm((c-0.05)/0.08)*(1-sm((c-0.62)/0.1));
+      press[39]=a; pedal=a;
+      return {press:press, pedal:pedal};
+    }
+    var b=(t*0.75)%LOOP;
+    SONG.forEach(function(e){
+      var v=envelope(b,e[1],e[2]);
+      if(v>press[e[0]-21]) press[e[0]-21]=v;
+    });
+    pedal=envelope(b,11.6,4.2);                  /* pédale forte sur la dernière phrase */
+    return {press:press, pedal:pedal};
+  }
+
+  /* Matrices (repère three.js) de toutes les pièces mobiles d'une note,
+     d'après l'enfoncement a ∈ [0,1] de sa touche et la pédale p ∈ [0,1]. */
+  var _r=new THREE.Matrix4(), _t=new THREE.Matrix4();
+  function TR(m,v,ang){ m.makeTranslation(v.x,v.y,v.z); if(ang){ _r.makeRotationX(ang); m.multiply(_r); } return m; }
+  function noteMatrices(n,a,p,out,xc,xs){
+    var th=a*TH;
+    TR(out.front, bv([xc,P_KEY[0],Z(P_KEY[1])]), th);
+    TR(out.stick, bv([xs,P_KEY[0],Z(P_KEY[1])]), th);
+    var phi=th*R_WIP;
+    TR(out.wip, bv([xs,P_WIP[0],Z(P_WIP[1])]), phi);
+    out.rep.copy(out.wip);
+    var tilt=Math.max(0,th-LETOFF*TH)*JACK_TILT/((1-LETOFF)*TH);
+    _t.makeTranslation(0,P_JACK[1]-P_WIP[1],-(P_JACK[0]-P_WIP[0]));
+    out.jack.copy(out.wip).multiply(_t);
+    if(tilt){ _r.makeRotationX(tilt); out.jack.multiply(_r); }
+    TR(out.ham, bv([xs,P_HAM[0],Z(P_HAM[1])]), th*R_HAM);
+    var dl=Math.max(th*R_DL, p*PEDAL_DL);
+    TR(out.dl, bv([xs,P_DL[0],Z(P_DL[1])]), -dl);
+    var z0=damperRestZ(n), lift=dl*(P_DL[0]-DW_Y);
+    TR(out.dmp, bv([xs,DW_Y,z0+lift]), 0);
+    return out;
+  }
+  function newMats(){
+    var o={}; ['front','stick','wip','rep','jack','ham','dl','dmp'].forEach(function(k){ o[k]=new THREE.Matrix4(); });
+    return o;
+  }
+
+  /* ---------- structure fixe (caisse, cadre, cordes...) ---------- */
+  function buildStatic(){
+    var parts={};
+    var rimOut=rimPath(), inner=offsetPath(rimOut,RIM_T,true);
+    var hitch=offsetPath(rimOut,RIM_T+0.075,true), strutPoly=offsetPath(rimOut,RIM_T+0.06,true);
+
+    var mb=new MB();
+    mb.sweep(rimOut,RIM_T,RIM_Z0,RIM_Z1,M.laque,false);
+    mb.box(-RIM_X,RIM_X,-0.022,SB_Y0-0.005,KB-0.03,KB,M.laque);
+    mb.box(-RIM_X,RIM_X,SB_Y0-0.01,0.70,RIM_Z0,ZS-0.045,M.laque);
+    [-1,1].forEach(function(s){
+      mb.box(Math.min(s*RIM_X,s*0.6115),Math.max(s*RIM_X,s*0.6115),-0.022,RIM_FRONT,RIM_Z0,KB+0.10,M.laque);
+    });
+    mb.box(-0.6115,0.6115,-0.022,-0.003,KB-0.025,KB+0.03,M.laque);
+    mb.prism([[0.150,KB+0.056],[0.168,KB+0.056],[0.208,KB+0.14],[0.190,KB+0.14]],-0.6115,0.6115,M.laque,'x');
+    [[[-0.55,0.70],[-0.55,1.9]],[[0.0,0.70],[-0.45,1.9]],[[0.5,0.70],[0.0,1.4]]].forEach(function(s){
+      var seg=clipSegment(inner,s[0],s[1]);
+      if(seg) slab(mb,seg[0],seg[1],0.03,RIM_Z0,RIM_Z0+0.07,M.laque);
+    });
+    parts.caisse=mb.group();
+
+    /* couvercle ouvert (charnières du côté des graves) et béquille */
+    var lid=new MB();
+    var lp=clipPolyY(rimOut,0.45).map(function(p){ return [p[0]+RIM_X,p[1]]; });
+    lid.prism(lp,0,0.02,M.laque,'z');
+    lid.box(0,2*RIM_X,0.45,0.74,0.02,0.038,M.laque);
+    [0.6,1.1,1.5].forEach(function(y){ lid.cyl([-0.006,y-0.04,0.01],[-0.006,y+0.04,0.01],0.008,M.laiton,10); });
+    var lidG=new THREE.Group();
+    var lidMesh=lid.group(); lidMesh.rotation.z=LID_OPEN;
+    lidMesh.position.copy(bv([-RIM_X,0,RIM_Z1]));
+    lidG.add(lidMesh);
+    var prop=new MB();
+    prop.cyl([RIM_X-0.022,0.82,RIM_Z1],[-RIM_X+1.40*Math.cos(LID_OPEN),0.82,RIM_Z1+1.40*Math.sin(LID_OPEN)],0.011,M.laque,12,0.008);
+    lidG.add(prop.group());
+    parts.couvercle=lidG;
+
+    var desk=new MB();
+    desk.prism([[0.300,RIM_Z1+0.012],[0.318,RIM_Z1+0.012],[0.388,RIM_Z1+0.30],[0.370,RIM_Z1+0.30]],-0.36,0.36,M.laque,'x');
+    desk.box(-0.36,0.36,0.275,0.318,RIM_Z1+0.002,RIM_Z1+0.016,M.laque);
+    desk.box(-0.36,0.36,0.275,0.283,RIM_Z1+0.016,RIM_Z1+0.04,M.laque);
+    [-0.3,0.3].forEach(function(x){ desk.box(x-0.02,x+0.02,0.28,0.33,ZS+0.026,RIM_Z1+0.002,M.laque); });
+    parts.pupitre=desk.group();
+
+    /* cadre en fonte, chevilles, pointes d'accroche */
+    var PL0=ZS+0.010, PL1=ZS+0.026, pl=new MB();
+    pl.box(-RIM_X+RIM_T,RIM_X-RIM_T,0.18,0.45,PL0,PL1,M.fonte);
+    pl.sweep(offsetPath(rimOut,RIM_T,false).filter(function(p){ return p[1]>=0.40; }),0.11,PL0,PL1,M.fonte,false);
+    pl.box(-RIM_X+RIM_T,RIM_X-RIM_T,0.625,0.665,PL0,PL1,M.fonte);
+    [[-0.45,[-0.62,1.75]],[-0.15,[-0.42,1.95]],[0.18,[-0.05,1.6]],[0.48,[0.40,1.4]]].forEach(function(s){
+      var p=[s[0],0.645], q=rayToEdge(strutPoly,[p[0],p[1]+0.03],[s[1][0]-p[0],s[1][1]-p[1]]);
+      slab(pl,p,q,0.018,PL0,PL1,M.fonte);
+    });
+    [-0.48,-0.16,0.16,0.48].forEach(function(x){ pl.cyl([x,0.315,PL1],[x,0.315,PL1+0.004],0.03,M.fonte,24); });
+    for(var n=0;n<NK;n++){
+      stringXs(n).forEach(function(sx,k){
+        var py=0.225+0.045*k+0.022*(n%2);
+        pl.cyl([sx,py,ZS-0.030],[sx,py,PL1+0.047],0.0032,M.acier,8);
+        pl.cyl([sx,maxYAt(hitch,sx),ZS-0.003],[sx,maxYAt(hitch,sx),PL0],0.0018,M.acier,6,null,false);
+      });
+    }
+    parts.cadre=pl.group();
+    parts.sommier=new MB().box(-RIM_X+RIM_T,RIM_X-RIM_T,0.18,0.45,ZS-0.034,ZS-0.004,M.erable).group();
+
+    var st=new MB();
+    for(n=0;n<NK;n++){
+      (function(n){
+        var r=stringRadius(n);
+        stringXs(n).forEach(function(sx,k){
+          var py=0.225+0.045*k+0.022*(n%2), hy=maxYAt(hitch,sx);
+          st.cyl([sx,py,ZS+r],[sx,hy,ZS+r],r,n<28?M.cuivre:M.acier,6,null,false);
+        });
+      })(n);
+    }
+    parts.cordes=st.group();
+
+    var sbPoly=clipPolyY(inner,SB_Y0), zsb1=ZS-0.031, tb=new MB();
+    tb.prism(sbPoly,zsb1-0.009,zsb1,M.epicea,'z');
+    var bridge=[];
+    for(n=0;n<NK;n++){
+      var hy=maxYAt(hitch,xa(n)), speak=0.055*Math.pow(2,(87-n)/12*0.92);
+      bridge.push([xa(n),Math.max(0.73,Math.min(hy-0.075,0.49+speak))]);
+    }
+    bridge=[[bridge[0][0]-0.01,bridge[0][1]]].concat(bridge,[[bridge[NK-1][0]+0.01,bridge[NK-1][1]]]);
+    tb.sweep(bridge.reverse(),0.026,zsb1,ZS-0.0003,M.erable,false);
+    for(var i=0;i<11;i++){
+      var a=[-0.95+i*0.22,0.4], seg=clipSegment(sbPoly,a,[a[0]+0.9,a[1]+1.4]);
+      if(seg) slab(tb,seg[0],seg[1],0.011,zsb1-0.026,zsb1-0.009,M.epicea);
+    }
+    parts.table=tb.group();
+
+    parts.pieds=[[-0.63,0.30],[0.63,0.30],[-0.42,1.55]].map(function(p){
+      var x=p[0], y=p[1], lg=new MB();
+      lg.box(x-0.075,x+0.075,y-0.075,y+0.075,RIM_Z0-0.06,RIM_Z0,M.laque);
+      lg.cyl([x,y,0.075],[x,y,RIM_Z0-0.06],0.045,M.laque,24,0.062);
+      lg.cyl([x,y,0.06],[x,y,0.08],0.05,M.laiton,24);
+      lg.cyl([x-0.015,y+0.02,0.032],[x+0.015,y+0.02,0.032],0.032,M.laiton,20);
+      return lg.group();
+    });
+
+    var ly=new MB();
+    [-0.10,0.10].forEach(function(x){ ly.cyl([x,0.42,0.13],[x,0.42,KB-0.03],0.022,M.laque,16,0.03); });
+    ly.box(-0.15,0.15,0.36,0.48,0.07,0.14,M.laque);
+    ly.box(-0.08,0.08,0.40,0.44,0.20,KB-0.05,M.laque);
+    [-0.06,0].forEach(function(x){
+      ly.box(x-0.016,x+0.016,0.22,0.37,0.088,0.098,M.laiton);
+      ly.box(x-0.021,x+0.021,0.20,0.24,0.086,0.100,M.laiton);
+    });
+    [-1,1].forEach(function(s){ ly.cyl([s*0.12,0.47,0.12],[s*0.12,0.66,KB-0.03],0.009,M.laiton,8); });
+    parts.lyre=ly.group();
+
+    var x0=xa(0)-PITCH/2, x1=xa(NK-1)+PITCH/2;
+    parts.cadreClavier=keyFrame(new MB(),x0,x1).group();
+    var af=actionFrame(new MB(),x0+0.004,x1-0.004,[x0+0.001,xa(21)+PITCH/2,xa(43)+PITCH/2,xa(65)+PITCH/2,x1-0.001]);
+    for(n=0;n<NK;n++) flanges(af,xa(n));
+    parts.cadreMecanique=af.group();
+    var dr=new MB(); damperRails(dr,x0,xa(DAMPER_LAST)+PITCH/2);
+    for(n=0;n<=DAMPER_LAST;n++) damperFlange(dr,xa(n));
+    parts.barresEtouffoirs=dr.group();
+    return parts;
+  }
+
+  /* ---------- InstancedMesh : une pièce × N notes ---------- */
+  function instanced(mb,origin,count){
+    var g=new THREE.Group(), list=[];
+    mb.geos(origin).forEach(function(e){
+      var im=new THREE.InstancedMesh(e.geo,e.m,count);
+      im.frustumCulled=false;      /* r128 : la sphère englobante ignore les instances */
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      g.add(im); list.push(im);
+    });
+    return {group:g, set:function(i,m){ for(var k=0;k<list.length;k++) list[k].setMatrixAt(i,m); },
+            done:function(){ for(var k=0;k<list.length;k++) list[k].instanceMatrix.needsUpdate=true; }};
+  }
+
+  /* ---------- mécanismes (fiche technique + mini-aperçus) ---------- */
+  var DEMO=39;    /* Do4 */
+  function isoNote(opts){
+    /* une seule note de la mécanique, en Mesh ordinaires, centrée en x */
+    var g=new THREE.Group(), objs={}, n=DEMO;
+    function add(key,mb,origin){
+      var o=mb.group(origin); o.matrixAutoUpdate=false; g.add(o); objs[key]=o;
+    }
+    if(opts.front) add('front',keyFront(NOTES[n].type),[0,P_KEY[0],Z(P_KEY[1])]);
+    if(opts.stick) add('stick',keyStick(opts.capstan),[0,P_KEY[0],Z(P_KEY[1])]);
+    if(opts.wip) add('wip',wippen(),[0,P_WIP[0],Z(P_WIP[1])]);
+    if(opts.jack){ add('jack',jack(),[0,P_JACK[0],Z(P_JACK[1])]); add('rep',repetition(),[0,P_WIP[0],Z(P_WIP[1])]); }
+    if(opts.ham) add('ham',hammer(),[0,P_HAM[0],Z(P_HAM[1])]);
+    if(opts.dl) add('dl',damperLever(),[0,P_DL[0],Z(P_DL[1])]);
+    if(opts.dmp) add('dmp',damper(damperRestZ(n)),[0,DW_Y,damperRestZ(n)]);
+    var fixed=new MB();
+    if(opts.frame) keyFrame(fixed,-0.013,0.013);
+    if(opts.strings) stringsOf(fixed,n,opts.stringY0||0.30,0.86,xa(n));
+    if(opts.rails){ damperRails(fixed,-0.013,0.013); damperFlange(fixed,0); }
+    if(fixed.parts.length) g.add(fixed.group());
+    var mats=newMats();
+    function update(s){
+      noteMatrices(n,s.press[n],s.pedal,mats,0,0);
+      for(var k in objs) objs[k].matrix.copy(mats[k]);
+    }
+    /* pose initiale AVANT tout calcul de boîte englobante (cadrage des vignettes) */
+    update(kinematics(0.6,true));
+    return {group:g, update:update};
+  }
+  function buildPedalIso(){
+    var it=isoNote({dl:true, dmp:true, strings:true, rails:true});
+    var lr=liftRail(-0.013,0.013).group(); lr.matrixAutoUpdate=false;
+    var off=new THREE.Group(); off.position.x=-PEDAL_PIVOT[0];
+    var pd=pedal().group(PEDAL_PIVOT); pd.position.copy(bv(PEDAL_PIVOT));
+    var rod=trapRod().group();
+    off.add(pd); off.add(rod); it.group.add(off);
+    it.group.add(lr);
+    var base=it.update;
+    function update(s){
+      var p=s.pedal;
+      base({press:new Float32Array(NK), pedal:p});
+      pd.rotation.x=p*PEDAL_MAX; rod.position.y=p*0.012;
+      lr.matrix.makeTranslation(0,p*PEDAL_DL*(P_DL[0]-LIFT_Y),0);
+    }
+    update(kinematics(0.6,true));
+    return {group:it.group, update:update};
+  }
+
+  var MECHS={
+    touche:{
+      label:'Touche (levier sur la barre d’équilibre)', movementIn:'rotation (appui du doigt)', movementOut:'rotation (la queue de la touche monte)',
+      roleDesc:'La touche est un levier qui pivote sur la barre d’équilibre, à peu près en son milieu : quand le doigt enfonce l’avant de 10 mm, l’arrière de la touche monte d’environ 9 mm et soulève le pilote.',
+      build:function(){ return isoNote({front:true, stick:true, capstan:true, frame:true}); }
+    },
+    bascule:{
+      label:'Pilote et bascule (levier amplificateur)', movementIn:'rotation de la touche', movementOut:'rotation de la bascule (×2,1)',
+      roleDesc:'Le pilote, vis réglable plantée sur la touche, pousse la bascule par-dessous. Comme il appuie près de l’axe de la bascule, celle-ci tourne environ 2,1 fois plus que la touche et soulève l’échappement.',
+      build:function(){ return isoNote({front:true, stick:true, capstan:true, wip:true, jack:true}); }
+    },
+    marteau:{
+      label:'Échappement et marteau (frappe de la corde)', movementIn:'rotation de la bascule', movementOut:'rotation rapide du marteau (×6,4 par rapport à la touche)',
+      roleDesc:'L’échappement, porté par la bascule, pousse le rouleau placé tout près de l’axe du marteau : le marteau tourne environ 6,4 fois plus vite que la touche et frappe la corde par-dessous. En fin de course, l’échappement bascule (il « échappe ») pour que le marteau rebondisse librement ; le levier de répétition le retient à mi-hauteur pour permettre de rejouer vite la même note.',
+      build:function(){ return isoNote({wip:true, jack:true, ham:true, strings:true}); }
+    },
+    etouffoir:{
+      label:'Levier d’étouffoir (rotation → translation)', movementIn:'rotation de la queue de la touche', movementOut:'translation verticale de l’étouffoir',
+      roleDesc:'La queue de la touche soulève le levier d’étouffoir, qui pousse une tige guidée verticalement : le feutre quitte la corde, qui peut vibrer. Au relâchement, l’étouffoir retombe par son poids et arrête le son. Les 19 notes les plus aiguës n’en ont pas : leurs cordes courtes s’éteignent seules.',
+      build:function(){ return isoNote({stick:true, capstan:false, dl:true, dmp:true, strings:true, rails:true, stringY0:0.42}); }
+    },
+    pedale:{
+      label:'Pédale forte (levée de tous les étouffoirs)', movementIn:'rotation de la pédale', movementOut:'translation de la barre de levée',
+      roleDesc:'La pédale de droite est un levier : en l’enfonçant, une tringle monte dans la lyre et soulève la barre de levée placée sous tous les leviers d’étouffoirs. Tous les étouffoirs quittent leurs cordes en même temps, et les notes continuent de sonner après qu’on a relâché les touches.',
+      build:buildPedalIso
+    }
+  };
+  var ORDER=['touche','bascule','marteau','etouffoir','pedale'];
+
+  return {
+    label:'Piano à queue', order:ORDER, mechs:MECHS, kinematics:kinematics,
+    buildFull:function(){
+      var group=new THREE.Group();
+      var S=buildStatic();
+      function wrap(objs,dir){
+        var w=new THREE.Group();
+        (Array.isArray(objs)?objs:[objs]).forEach(function(o){ w.add(o); });
+        /* applyExplode() multiplie par 0,9 ; 0,75 garde l'éclaté dans le cadrage */
+        if(dir) w.userData.explodeDir=new THREE.Vector3(dir[0],dir[1],dir[2]).multiplyScalar(0.75/0.9);
+        group.add(w);
+        return w;
+      }
+      /* décalages de la vue éclatée : ceux du modèle Blender (en m), réduits à 75 % */
+      wrap(S.caisse,null);
+      wrap(S.couvercle,[0,1.0,-0.25]);
+      wrap(S.pupitre,[0,0.5,0.35]);
+      wrap(S.cadre,[0,0.8,0]);
+      wrap(S.sommier,[0,0.62,0]);
+      wrap(S.cordes,[0,0.45,0]);
+      wrap(S.table,[0,0.20,0]);
+      wrap(S.pieds[0],[-0.30,0,0.15]);
+      wrap(S.pieds[1],[0.30,0,0.15]);
+      wrap(S.pieds[2],[-0.15,0,-0.35]);
+
+      var whites={}, idx={}, i, n;
+      NOTES.forEach(function(d){ whites[d.type]=(whites[d.type]||0)+1; });
+      var fronts={};
+      Object.keys(whites).forEach(function(t){ fronts[t]=instanced(keyFront(t),[0,P_KEY[0],Z(P_KEY[1])],whites[t]); idx[t]=0; });
+      NOTES.forEach(function(d){ d.slot=idx[d.type]++; });
+      var nd=DAMPER_LAST+1;
+      var I={
+        stick:instanced(keyStick(),[0,P_KEY[0],Z(P_KEY[1])],NK),
+        wip:instanced(wippen(),[0,P_WIP[0],Z(P_WIP[1])],NK),
+        jack:instanced(jack(),[0,P_JACK[0],Z(P_JACK[1])],NK),
+        rep:instanced(repetition(),[0,P_WIP[0],Z(P_WIP[1])],NK),
+        ham:instanced(hammer(),[0,P_HAM[0],Z(P_HAM[1])],NK),
+        dl:instanced(damperLever(),[0,P_DL[0],Z(P_DL[1])],nd),
+        dmp:instanced(damper(damperRestZ(40)),[0,DW_Y,damperRestZ(40)],nd)
+      };
+      var x0=xa(0)-PITCH/2;
+      var lift=liftRail(x0,xa(DAMPER_LAST)+PITCH/2).group();
+      var pd=pedal().group(PEDAL_PIVOT); pd.position.copy(bv(PEDAL_PIVOT));
+      var rod=trapRod().group();
+
+      wrap([S.cadreClavier].concat(Object.keys(fronts).map(function(t){ return fronts[t].group; }),[I.stick.group]),[0,-0.08,1.15]);
+      wrap([S.cadreMecanique,I.wip.group,I.jack.group,I.rep.group],[0,0.1,0.75]);
+      wrap(I.ham.group,[0,0.3,0.75]);
+      wrap([S.barresEtouffoirs,I.dl.group,I.dmp.group,lift],[0,0.5,0.75]);
+      wrap([S.lyre,pd,rod],[0,0,0.55]);
+
+      var mats=newMats(), last=null;
+      function update(s){
+        for(n=0;n<NK;n++){
+          var d=NOTES[n], a=s.press[n];
+          if(last && last.press[n]===a && last.pedal===s.pedal) continue;
+          noteMatrices(n,a,s.pedal,mats,d.cx,xa(n));
+          fronts[d.type].set(d.slot,mats.front);
+          I.stick.set(n,mats.stick); I.wip.set(n,mats.wip); I.jack.set(n,mats.jack);
+          I.rep.set(n,mats.rep); I.ham.set(n,mats.ham);
+          if(n<nd){ I.dl.set(n,mats.dl); I.dmp.set(n,mats.dmp); }
+        }
+        Object.keys(fronts).forEach(function(t){ fronts[t].done(); });
+        for(var k in I) I[k].done();
+        pd.rotation.x=s.pedal*PEDAL_MAX;
+        rod.position.y=s.pedal*0.012;
+        lift.position.y=s.pedal*PEDAL_DL*(P_DL[0]-LIFT_Y);
+        last={press:s.press, pedal:s.pedal};
+      }
+      update({press:new Float32Array(NK), pedal:0});
+      return {group:group, update:update};
+    },
+    buildIsolated:function(key){
+      var inst=MECHS[key].build();
+      /* une seule note fait ~0,5 m : on l'agrandit et on la tourne pour que
+         la vignette montre la mécanique de profil, comme sur un schéma */
+      var view=new THREE.Group();
+      view.scale.set(2.5,2.5,2.5);
+      view.rotation.y=-0.75;
+      view.add(inst.group);
+      return { group:view, animate:function(t){ inst.update(kinematics(t,true)); } };
+    }
+  };
+})();
+
 var CATALOGUE = [
   {
     id:'velo', name:'Vélo', detailed:'velo',
@@ -3810,6 +4611,13 @@ var CATALOGUE = [
     category:'Système combiné',
     movementIn:'translation de la gâchette (commande du circuit)', movementOut:'rotation lente du foret (couple ×3)',
     desc:'Perceuse électrique sans fil modélisée comme sur un cahier d’examen ST/ATS (MEQ) : 13 pièces numérotées, demi-coque translucide pour voir l’intérieur. La gâchette ferme le circuit : le bloc-piles alimente le moteur par les fils conducteurs, et le moteur transforme l’énergie électrique en rotation. Le pignon moteur (10 dents) entraîne la roue dentée de sortie (30 dents) : la vitesse est divisée par 3, le couple multiplié par 3, et le sens de rotation s’inverse. L’arbre de sortie, guidé par deux roulements, entraîne le mandrin, dont la bague filetée serre les trois mâchoires sur le foret par une liaison hélicoïdale. Le bouton « Repères » affiche les numéros des pièces ; la nomenclature est dans la fiche technique.',
+    builtin:true
+  },
+  {
+    id:'piano', name:'Piano à queue', detailed:'piano',
+    category:'Système combiné',
+    movementIn:'rotation de la touche (appui du doigt)', movementOut:'rotation du marteau (frappe) + translation des étouffoirs',
+    desc:'Piano à queue complet (88 notes) modélisé avec sa mécanique à double échappement. La touche est un levier qui pivote sur la barre d’équilibre ; à l’arrière, le pilote soulève la bascule, qui amplifie le mouvement ; l’échappement pousse le rouleau du marteau, qui tourne environ 6,4 fois plus que la touche et frappe la corde par-dessous, puis échappe pour la laisser vibrer. La queue de la touche soulève aussi le levier d’étouffoir, qui retire le feutre de la corde. La pédale forte soulève tous les étouffoirs à la fois par une tringle et une barre de levée. La vue éclatée sépare le couvercle, le cadre en fonte, le sommier, les cordes, la table d’harmonie, le clavier, la mécanique, les marteaux, les étouffoirs, la lyre et les pieds.',
     builtin:true
   }
 ];
