@@ -5,6 +5,49 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-17 (suite 2) — Harmonisation et précision physique
+
+- Demande de l'utilisatrice : « le piano est super coloré et stylé, la
+  perceuse l'inverse. La perceuse manuelle a des détails inutiles et
+  n'est pas juste au niveau physique. La sécheuse manque de sérieux dans
+  les détails physiques et techniques. Harmoniser et préciser. »
+  « Perceuse manuelle » interprétée comme la perceuse à colonne (avance
+  manuelle par leviers), seule autre perceuse de la banque.
+- Éclairage commun : `studioEnvironment()` (sphère dégradée + 2
+  panneaux, PMREM) en `scene.environment`, un par contexte WebGL (scène,
+  vignettes, atelier), régénéré après perte de contexte. `stdMat()` règle
+  `envMapIntensity` selon la métallicité : métaux brillants, peintures
+  intactes.
+- Perceuse sans fil : matériaux PBR colorés (corps jaune, poignée
+  caoutchouc, rotor cuivre, engrenages acier, foret titane) au lieu du
+  gris à arêtes noires ; poignée galbée et bloc-piles arrondi ;
+  demi-coque coupée en plastique clair translucide.
+- Perceuse à colonne, corrections physiques : la colonne traversait la
+  courroie (sommet abaissé dans la tête) ; moteur remonté derrière la
+  tête, arbre vers le haut ; capot ouvert flottant et ailettes
+  remplacés par un carter de poulies fermé translucide ; courroie sur
+  l'étage lent (≈ 850 tr/min) ; vis de table au pas réel (~3 mm/tour,
+  filet trapézoïdal) au lieu d'une hélice dorée de 12 cm de pas ;
+  ressort spiral qui ne « rétrécit » plus.
+- Sécheuse réécrite (cotes réelles, tambour Ø 60 cm) : trajet de
+  courroie calculé par tangentes (tambour, poulie motrice 13 mm, galet
+  tendeur à ressort sur le dos de la courroie), repères qui avancent à
+  la vitesse de la courroie, carter moteur fixe (il tournait), moteur à
+  double arbre avec turbine centrifuge en prise directe, élément
+  chauffant qui rougeoie, galets porteurs arrière et patins avant,
+  porte + loquet à bille + interrupteur de sécurité qui coupe
+  réellement le moteur (vitesse intégrée exactement sur le cycle).
+  Rapport 13/300 ≈ 1/23 → 1 725 → ≈ 75 tr/min.
+- Repères numérotés + nomenclature ajoutés au piano (12 pièces), à la
+  perceuse à colonne (15) et à la sécheuse (14). Les repères évitent le
+  cartouche du nom et la barre de commandes ; sur téléphone, numéros
+  seuls.
+- Non traités : vélo et ouvre-boîte (pas de repères ni de nomenclature
+  pour l'instant).
+- Vérifié par Playwright : les 6 objets se chargent deux fois de suite
+  sans erreur, vignettes et nomenclatures présentes, repères corrects
+  sur bureau et téléphone.
+
 ## 2026-10-17 (suite) — Sources Blender du piano rapatriées ici
 
 - Demande de l'utilisatrice : « tout mettre dans sciences4_3d et non

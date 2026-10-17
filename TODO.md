@@ -104,6 +104,8 @@ plus fortes si une meilleure illustre mieux un mécanisme du programme.
 
 ## Tâches transverses
 
+- [ ] Ajouter repères numérotés + nomenclature au vélo et à l'ouvre-boîte
+      (déjà faits : piano, perceuse à colonne, perceuse sans fil, sécheuse)
 - [ ] Vérifier la vue éclatée sur tous les objets `DetailedObjects`
 - [ ] Vérifier la fiche technique / mini-aperçus sur tous les objets
 - [ ] Optimiser les performances si le nombre d'objets détaillés
