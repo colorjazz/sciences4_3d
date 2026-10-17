@@ -47,7 +47,8 @@ fonctionnalité distincte de la banque vitrine).
       d'examen fourni (« tesla.html »), 4 mécanismes (propulsion par
       engrenage Z12→Z36, direction pignon-crémaillère + biellettes,
       compresseur bielle-manivelle, électrovanne + tuyères), physique
-      corrigée (voir NIGHTLY_LOG).
+      corrigée (voir NIGHTLY_LOG) ; route, piste et panneau d'examen
+      interactif repris de l'original.
 - [x] Piano à queue (`piano`) — 5 mécanismes couplés (touche-levier,
       pilote et bascule, échappement et marteau, levier d'étouffoir,
       pédale forte). Portage fidèle du modèle Blender du dépôt

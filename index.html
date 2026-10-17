@@ -472,6 +472,37 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 .nomen-name{font-weight:600;font-size:12.5px;color:var(--ink);margin-bottom:2px;}
 .nomen-text{font-size:11.5px;color:var(--ink-dim);line-height:1.5;}
 .nomen-link{font-style:italic;}
+.nomen-list li.pickable{cursor:pointer;border-radius:6px;padding-left:4px;padding-right:4px;}
+.nomen-list li.pickable:hover{background:var(--surface-2,rgba(0,0,0,.03));}
+.nomen-list li.sel{background:var(--accent-soft);}
+/* mode examen : on garde les numéros, on masque noms, fonctions et liaisons */
+#ficheNomen.exam .nomen-name, #ficheNomen.exam .nomen-text{filter:blur(5px);user-select:none;}
+.obj-panel{display:flex;flex-direction:column;gap:8px;margin:6px 0 18px;padding:12px;border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface);}
+.obj-panel h4{font-family:var(--font-display);font-size:13px;margin:4px 0 0;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.obj-panel .row{display:flex;flex-wrap:wrap;gap:6px;}
+.obj-panel button{font-family:var(--font-mono);font-size:10.5px;padding:5px 9px;border:1px solid var(--line-strong);border-radius:20px;background:var(--bg);color:var(--ink);cursor:pointer;}
+.obj-panel button:hover{border-color:var(--accent);}
+.obj-panel button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.obj-panel .kv{display:grid;grid-template-columns:1fr auto;gap:3px 10px;margin:0;font-size:12px;color:var(--ink-dim);}
+.obj-panel .kv dd{margin:0;font-family:var(--font-mono);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;}
+.obj-msg{margin:0;min-height:1em;font-size:11.5px;color:var(--warn);}
+.obj-badge{font-family:var(--font-mono);font-size:9.5px;font-weight:500;color:var(--accent);}
+.obj-circuit{width:100%;height:auto;display:block;background:var(--bg);border:1px solid var(--line);border-radius:6px;}
+.obj-circuit .w{fill:none;stroke:var(--ink);stroke-width:2;}
+.obj-circuit .w .thick{stroke-width:3.4;}
+.obj-circuit .box{fill:var(--surface);stroke:var(--ink);stroke-width:2;}
+.obj-circuit .c{fill:var(--surface);stroke:var(--ink);stroke-width:1.6;}
+.obj-circuit .sw{stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;}
+.obj-circuit .sw.closed{stroke:var(--accent);}
+.obj-circuit text{font-family:var(--font-mono);font-size:9px;fill:var(--ink);text-anchor:middle;}
+.obj-circuit text.m{font-size:12px;font-weight:700;}
+.obj-circuit text.s{font-size:8px;fill:var(--ink-dim);}
+.obj-circuit text.e{text-anchor:end;}
+.obj-circuit .cur{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-dasharray:5 8;opacity:0;}
+.obj-circuit .cur.on{opacity:.9;animation:objCurrent .8s linear infinite;}
+@keyframes objCurrent{to{stroke-dashoffset:-13;}}
+@media (prefers-reduced-motion:reduce){.obj-circuit .cur.on{animation:none;}}
+.obj-formula{font-family:var(--font-mono);font-size:10.5px;line-height:1.6;color:var(--ink-dim);background:var(--bg);border-left:3px solid var(--accent);padding:6px 9px;border-radius:4px;}
 .stage-row-desc{font-size:11.5px;color:var(--ink-dim);line-height:1.5;}
 .workshop-preview{
   border:1px solid var(--line);border-radius:var(--radius-m);
@@ -1003,6 +1034,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
           <tr><td>Origine</td><td id="ficheOrigin">—</td></tr>
         </table>
         <hr class="sep">
+        <div id="fichePanel" hidden></div>
         <h3 id="ficheStagesTitle" style="font-size:14px;">Chaîne cinématique</h3>
         <div id="ficheStages"></div>
         <div id="ficheNomen" hidden>
@@ -4812,7 +4844,9 @@ DetailedObjects.roadster = (function(){
     tire:[0x1b1c1e,.05,.9], packBox:[0x2d3a47,.4,.45], cell:[0x3c7dbf,.25,.4], hv:[0xf0782d,.1,.55],
     fuse:[0xc0392b,.15,.45], stator:[0x6b737b,.6,.4], lam:[0xb7bec6,.8,.3], copper:[0xc8763d,.85,.3],
     compressor:[0x4a5057,.5,.4], brass:[0xc9a24b,.85,.28], nozzle:[0x3a3f45,.6,.4], spring:[0xe0b030,.6,.35],
-    gauge:[0xf2f0eb,.1,.4], needle:[0xd9432f,.2,.5]
+    gauge:[0xf2f0eb,.1,.4], needle:[0xd9432f,.2,.5],
+    concrete:[0xc9c4b8,.05,.95], asphalt:[0x3a3d42,.05,.9], lineWhite:[0xf2f0eb,.05,.6], lineYellow:[0xe8b23a,.05,.6],
+    gantry:[0x8a949e,.6,.4], accent:[0xe8622a,.3,.45]
   };
   var cache={};
   function mat(key,opts){
@@ -4853,7 +4887,8 @@ DetailedObjects.roadster = (function(){
 
   /* ---------- les 13 pièces ---------- */
   var BUILD={
-    1:function(g){
+    1:function(g,P){
+      P.cut=[];
       var prof=new THREE.Shape();
       [[-3.65,-0.55],[3.65,-0.55],[3.82,-0.2],[3.45,0.22],[1.85,0.42],[0.55,1.12],[-1.15,1.08],[-2.75,0.58],[-3.72,0.45],[-3.82,-0.2]]
         .forEach(function(p,i){ if(i===0) prof.moveTo(p[0],p[1]); else prof.lineTo(p[0],p[1]); });
@@ -4863,7 +4898,8 @@ DetailedObjects.roadster = (function(){
         var pos=geo.attributes.position;
         for(var i=0;i<pos.count;i++){ var x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i); pos.setXYZ(i,h[0]*z,y,x); }
         geo.computeVertexNormals();
-        add(geo,'paint',g,{ds:true,cut:h[1]});
+        var body=add(geo,'paint',g,{ds:true,cut:h[1]});
+        if(h[1]){ body.userData.key='paint'; P.cut.push(body); }
       });
       var wing=new THREE.BoxGeometry(2.85,0.08,0.48); wing.rotateX(0.15); wing.translate(0,0.72,-3.55); add(wing,'carbon',g);
       [-0.95,0.95].forEach(function(x){ var s=new THREE.BoxGeometry(0.08,0.28,0.22); s.translate(x,0.55,-3.52); add(s,'carbon',g); });
@@ -4998,6 +5034,7 @@ DetailedObjects.roadster = (function(){
   function compOn(u){ return (u>=9&&u<13)||(u>=23&&u<29.5); }
   function compInt(u){ return clamp(u-9,0,4)+clamp(u-23,0,6.5); }
   function kinematics(t, iso){
+    if(!iso) return {t:t};                    /* l'objet complet simule lui-même (voir step) */
     var n=Math.floor(t/CYC), u=t-n*CYC;
     var motor=WM*(n*8+driveInt(u));
     var lift=sm((u-13)/2)*(1-sm((u-21)/2));
@@ -5096,18 +5133,200 @@ DetailedObjects.roadster = (function(){
   };
   var ORDER=['propulsion','direction','compresseur','vol'];
 
+  /* ======================================================================
+     Simulation interactive (comme le modèle d'origine) : boutons
+     Propulsion, Vol, Braquer, Démo auto, Vue en coupe, Piste, Examen /
+     Correction ; mesures en temps réel ; schéma électrique animé.
+     Une seule instance « pleine » à la fois : l'état est dans ST.
+     ====================================================================== */
+  var ST=null, PANEL=null, LIVE=null;
+  function freshState(){
+    return {auto:true, drive:false, flight:false, steer:false, cut:true, pad:true, exam:false,
+            rpm:0, motor:0, steerAmp:0, steerPhase:0, alt:0, valve:0, pressure:0.75, comp:false, crank:0,
+            road:0, lastT:null, sel:0, msg:''};
+  }
+  var RPM_MAX=3600, P_MAX_BAR=300;
+
+  function step(st,t){
+    var dt=st.lastT===null?0:clamp(t-st.lastT,0,0.25); st.lastT=t;
+    if(st.auto){                              /* même scénario que la démo de la fiche */
+      var u=t%CYC;
+      st.drive=u<8; st.steer=u>=1&&u<8; st.flight=u>=13&&u<21;
+    }
+    st.rpm+=((st.drive?RPM_MAX:0)-st.rpm)*Math.min(1,dt*1.5);
+    st.motor+=st.rpm/RPM_MAX*WM*dt;
+    st.steerAmp+=((st.steer?1:0)-st.steerAmp)*Math.min(1,dt*2);
+    st.steerPhase+=dt*0.9;
+    /* vol : possible tant qu'il reste de la pression ; sinon la vanne se ferme et on se pose */
+    var canFly=st.flight&&st.pressure>0.06;
+    st.msg = st.flight&&!canFly ? 'Réservoir vide : atterrissage, recharge nécessaire' : '';
+    st.valve+=((canFly?1:0)-st.valve)*Math.min(1,dt*6);
+    if(st.valve>0.5) st.pressure=Math.max(0,st.pressure-dt*0.05);
+    st.alt+=(HOVER*(st.valve>0.5?1:0)-st.alt)*Math.min(1,dt*1.2);
+    /* pressostat : au sol, le compresseur M₂ démarre seul si le réservoir n'est pas plein */
+    st.comp = st.alt<0.03 && st.valve<0.1 && st.pressure<0.99;
+    if(st.comp){ st.crank+=9*dt; st.pressure=Math.min(1,st.pressure+dt*0.04); }
+    /* la route ne défile que si les roues touchent le sol */
+    if(st.alt<0.05) st.road+=st.rpm/RPM_MAX*WM/3*WHEEL_R*dt;
+    return dt;
+  }
+
+  function buildEnvironment(){
+    var g=new THREE.Group(), y=GROUND_Y, dashes=[];
+    function flat(w,d,key,x,z,dy){ var m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat(key)); m.rotation.x=-Math.PI/2; m.position.set(x||0,y+(dy||0),z||0); g.add(m); return m; }
+    var pad=new THREE.Mesh(new THREE.BoxGeometry(28,0.12,54),mat('concrete')); pad.position.y=y-0.07; g.add(pad);
+    flat(8.4,54,'asphalt',0,0,0.002);
+    [-4.0,4.0].forEach(function(x){ flat(0.16,54,'lineWhite',x,0,0.004); });
+    for(var z=-22;z<=22;z+=4){ dashes.push(flat(0.18,1.8,'lineWhite',0,z,0.004)); }
+    /* aire de sustentation : cercles peints (comme le modèle d'origine) */
+    [[4.6,4.8],[3.2,3.32]].forEach(function(r){
+      var ring=new THREE.Mesh(new THREE.RingGeometry(r[0],r[1],64),mat('lineYellow')); ring.rotation.x=-Math.PI/2; ring.position.y=y+0.006; g.add(ring);
+    });
+    /* portique télémétrique */
+    [-7.5,7.5].forEach(function(x){
+      var tw=new THREE.Mesh(new THREE.BoxGeometry(0.45,5.5,0.45),mat('gantry')); tw.position.set(x,y+2.75,-12.5); g.add(tw);
+      for(var k=0;k<5;k++){ var br=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.06,0.5),mat('steelDark')); br.position.set(x,y+0.6+k*1.1,-12.5); g.add(br); }
+    });
+    var beam=new THREE.Mesh(new THREE.BoxGeometry(15.5,0.4,0.45),mat('accent')); beam.position.set(0,y+5.3,-12.5); g.add(beam);
+    var sign=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.8,0.08),mat('black')); sign.position.set(0,y+4.6,-12.3); g.add(sign);
+    return {group:g, update:function(st){
+      g.visible=st.pad;
+      dashes.forEach(function(d,i){ var z=-22+i*4-(st.road%4); if(z<-24) z+=48; d.position.z=z; });
+    }};
+  }
+
+  function selectPart(P,id){
+    if(!P) return;
+    Object.keys(P.groups).forEach(function(k){
+      P.groups[k].traverse(function(o){
+        if(!o.isMesh) return;
+        if(o.userData.origMat){ o.material=o.userData.origMat; delete o.userData.origMat; }
+        if(+k===id && o.material!==plumeMat){ o.userData.origMat=o.material; o.material=selMat; }
+      });
+    });
+  }
+  var selMat=new THREE.MeshStandardMaterial({color:0x2f6fd6,emissive:0x0b3a8c,emissiveIntensity:.6,metalness:.2,roughness:.4});
+
+  /* ---------- pupitre de commandes (dans la fiche technique) ---------- */
+  function circuitSVG(){
+    return '<svg viewBox="0 0 360 170" class="obj-circuit" role="img" aria-label="Schéma électrique : batterie, fusible et trois branches en parallèle">'+
+      '<g class="w"><path d="M40 30H330M40 30V66M40 96V140H330M120 30V44M120 76V88M120 122V140M225 30V44M225 76V88M225 122V140M330 30V44M330 76V88M330 122V140"/></g>'+
+      '<rect x="66" y="24" width="26" height="12" class="box"/>'+
+      '<g class="w"><path d="M26 66H54M26 82H54" /><path d="M32 74H48M32 90H48" class="thick"/></g>'+
+      '<text x="14" y="64">+</text><text x="14" y="98">−</text>'+
+      '<circle cx="120" cy="46" r="2.6" class="c"/><circle cx="120" cy="74" r="2.6" class="c"/><line id="swDrive" x1="120" y1="48" x2="106" y2="70" class="sw"/>'+
+      '<circle cx="225" cy="46" r="2.6" class="c"/><circle cx="225" cy="74" r="2.6" class="c"/><line id="swComp" x1="225" y1="48" x2="211" y2="70" class="sw"/>'+
+      '<circle cx="330" cy="46" r="2.6" class="c"/><circle cx="330" cy="74" r="2.6" class="c"/><line id="swValve" x1="330" y1="48" x2="316" y2="70" class="sw"/>'+
+      '<circle cx="120" cy="105" r="16" class="box"/><text x="120" y="110" class="m">M₁</text>'+
+      '<circle cx="225" cy="105" r="16" class="box"/><text x="225" y="110" class="m">M₂</text>'+
+      '<rect x="318" y="90" width="24" height="30" class="box"/><path d="M318 96L342 114" class="w"/><text x="352" y="110" class="s">EV</text>'+
+      '<path id="iDrive" d="M40 140H120V30H40Z" class="cur"/><path id="iComp" d="M40 140H225V30H40Z" class="cur"/><path id="iValve" d="M40 140H330V30H40Z" class="cur"/>'+
+      '<text x="79" y="19" class="s">Fusible (5)</text><text x="6" y="158" class="s">(4) Batterie</text>'+
+      '<text x="102" y="62" class="s e">(2) Pédale</text><text x="207" y="62" class="s e">Pressostat</text><text x="312" y="62" class="s e">(12) Vol</text>'+
+      '<text x="120" y="158" class="s">(6) Propulsion</text><text x="225" y="158" class="s">(10) Compresseur</text><text x="318" y="158" class="s">(12) Vanne</text>'+
+      '</svg>';
+  }
+  function panel(el){
+    PANEL=el;
+    el.innerHTML=
+      '<div class="obj-panel">'+
+      '<h4>Commandes</h4>'+
+      '<div class="row"><button data-k="drive">Propulsion (pédale 2)</button><button data-k="flight">Vol (électrovanne 12)</button><button data-k="steer">Braquer (direction 3)</button><button data-k="auto">Démo auto</button></div>'+
+      '<div class="row"><button data-k="cut">Vue en coupe</button><button data-k="pad">Piste d’essai</button><button data-k="exam">Mode examen</button></div>'+
+      '<p class="obj-msg" data-live="msg"></p>'+
+      '<h4>Mesures en temps réel</h4>'+
+      '<dl class="kv">'+
+      '<dt>Moteur (6) ω₁</dt><dd><span data-live="w1">0</span> tr/min</dd>'+
+      '<dt>Roues (9) ω₂ = ω₁ × 12/36</dt><dd><span data-live="w2">0</span> tr/min</dd>'+
+      '<dt>Braquage des roues (3)</dt><dd><span data-live="steer">0</span>°</dd>'+
+      '<dt>Garde au sol</dt><dd>+<span data-live="alt">0</span> mm</dd>'+
+      '<dt>Pression d’azote (11)</dt><dd><span data-live="p">0</span> bar</dd>'+
+      '</dl>'+
+      '<h4>Schéma de principe <span class="obj-badge" data-live="badge">CIRCUITS OUVERTS</span></h4>'+
+      circuitSVG()+
+      '<div class="obj-formula">ω_essieu = ω_moteur × 12/36 = ω_moteur / 3 (couple × 3)<br>course de la crémaillère = r_pignon × θ_volant<br>piston : y = r·sin θ + √(L² − (r·cos θ)²)</div>'+
+      '</div>';
+    el.querySelectorAll('button[data-k]').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(!ST) return;
+        var k=b.dataset.k;
+        if(k==='auto'){ ST.auto=!ST.auto; }
+        else if(k==='cut'||k==='pad'||k==='exam'){ ST[k]=!ST[k]; }
+        else { ST.auto=false; ST[k]=!ST[k]; }
+        refreshButtons();
+      });
+    });
+    LIVE={}; el.querySelectorAll('[data-live]').forEach(function(n){ LIVE[n.dataset.live]=n; });
+    ['swDrive','swComp','swValve','iDrive','iComp','iValve'].forEach(function(id){ LIVE[id]=el.querySelector('#'+id); });
+    refreshButtons();
+  }
+  function refreshButtons(){
+    if(!PANEL||!ST) return;
+    PANEL.querySelectorAll('button[data-k]').forEach(function(b){ b.classList.toggle('on',!!ST[b.dataset.k]); });
+    var ex=PANEL.querySelector('button[data-k="exam"]'); if(ex) ex.textContent=ST.exam?'Mode examen':'Mode correction';
+    setStageLabelNamesHidden(ST.exam);
+    var nomen=document.getElementById('ficheNomen'); if(nomen) nomen.classList.toggle('exam',ST.exam);
+  }
+  var liveTimer=0;
+  function refreshLive(dt){
+    if(!LIVE||!PANEL||!PANEL.isConnected) return;
+    liveTimer+=dt; if(liveTimer<0.15) return; liveTimer=0;
+    if(ST.auto) refreshButtons();
+    var delta=Math.asin(clamp(0.9*ST.steerAmp*Math.sin(ST.steerPhase)*STEER_R/ARM,-0.9,0.9));
+    LIVE.w1.textContent=Math.round(ST.rpm);
+    LIVE.w2.textContent=Math.round(ST.rpm/3);
+    LIVE.steer.textContent=Math.round(delta*180/Math.PI);
+    LIVE.alt.textContent=Math.round(ST.alt*SCALE*1000);
+    LIVE.p.textContent=Math.round(ST.pressure*P_MAX_BAR);
+    LIVE.msg.textContent=ST.msg;
+    var on={Drive:ST.rpm>5&&ST.drive, Comp:ST.comp, Valve:ST.valve>0.5};
+    Object.keys(on).forEach(function(k){
+      LIVE['sw'+k].setAttribute('x2',on[k]?(k==='Drive'?120:k==='Comp'?225:330):(k==='Drive'?106:k==='Comp'?211:316));
+      LIVE['sw'+k].setAttribute('y2',on[k]?72:70);
+      LIVE['sw'+k].classList.toggle('closed',on[k]);
+      LIVE['i'+k].classList.toggle('on',on[k]);
+    });
+    var names=[]; if(on.Drive) names.push('M₁'); if(on.Comp) names.push('M₂'); if(on.Valve) names.push('vanne');
+    LIVE.badge.textContent=names.length?('FERMÉ : '+names.join(' + ')):'CIRCUITS OUVERTS (I = 0)';
+  }
+
   return {
-    label:'Roadster électrique volant', order:ORDER, mechs:MECHS, kinematics:kinematics, nomenclature:PARTS,
+    label:'Roadster électrique volant', order:ORDER, mechs:MECHS, kinematics:kinematics, nomenclature:PARTS, panel:panel,
+    selectPart:function(id){ if(ST&&ST.parts){ ST.sel = ST.sel===id?0:id; selectPart(ST.parts,ST.sel); } return ST?ST.sel:0; },
     buildFull:function(){
+      ST=freshState(); PANEL=null; LIVE=null;
       var b=buildParts([1,2,3,4,5,6,7,8,9,10,11,12,13]);
+      ST.parts=b.P;
       for(var id=1;id<=13;id++){ var e=EXPLODE[id]; b.P.groups[id].userData.explodeDir=new THREE.Vector3(e[0],e[1],e[2]).multiplyScalar(1/0.9); }
       var group=b.root;
       group.scale.set(SCALE,SCALE,SCALE);
       group.position.y=-GROUND_Y*SCALE;               /* roues posées sur le sol (y = 0) */
       var baseY=group.position.y;
-      function update(s){ b.update(s); group.position.y=baseY+s.lift*HOVER*SCALE; }
-      update(kinematics(0,false));
-      return {group:group, update:update, labels:b.P.labels};
+      /* lignes de rappel de la vue éclatée (axes de l'essieu, du moteur, vertical) */
+      var guideMat=new THREE.LineDashedMaterial({color:0x6c5a41,dashSize:0.3,gapSize:0.18,transparent:true,opacity:0});
+      var guides=new THREE.Group(); group.add(guides);
+      [[[0,-3.2,0.2],[0,4.2,0.2]],[[0,AXLE_Y,-6.2],[0,AXLE_Y,6.2]],[[-3.2,AXLE_Y,MOTOR_Z],[3.2,AXLE_Y,MOTOR_Z]]].forEach(function(pr){
+        var l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pr.map(function(p){ return new THREE.Vector3(p[0],p[1],p[2]); })),guideMat);
+        l.computeLineDistances(); guides.add(l);
+      });
+      var env=buildEnvironment();
+      env.group.scale.set(SCALE,SCALE,SCALE); env.group.position.y=baseY;
+      var lastCut=null, t0=null;
+      function update(s){
+        var dt=step(ST,s.t);
+        var wheel=0.9*ST.steerAmp*Math.sin(ST.steerPhase);
+        var lift=ST.alt/HOVER;
+        b.update({motor:ST.motor, axle:-ST.motor*Z_PINION/Z_GEAR, pedal:ST.drive?1:0, wheel:wheel, rack:wheel*STEER_R,
+                  crank:ST.crank, pressure:ST.pressure, valve:ST.valve, thrust:ST.valve*(0.85+0.15*Math.sin(s.t*20)), lift:lift});
+        group.position.y=baseY+(ST.alt+(ST.alt>0.05?Math.sin(s.t*3)*0.06:0))*SCALE;
+        group.rotation.x=ST.alt>0.05?Math.sin(s.t*2)*0.02:0;
+        if(ST.cut!==lastCut){ lastCut=ST.cut; b.P.cut.forEach(function(m){ if(!m.userData.origMat) m.material=mat(m.userData.key,{ds:true,cut:ST.cut}); }); }
+        guideMat.opacity=clamp(explodeAmt*1.5,0,0.8); guides.visible=explodeAmt>0.02;
+        env.update(ST);
+        refreshLive(dt);
+      }
+      update({t:0});
+      return {group:group, update:update, labels:b.P.labels, environment:env.group};
     },
     buildIsolated:function(key){
       var inst=MECHS[key].build();
@@ -5362,7 +5581,7 @@ function loadObject(spec){
     if(spec.detailed){
       var D=DetailedObjects[spec.detailed];
       var full=D.buildFull();
-      built={ group:full.group, animate:function(t){ full.update(D.kinematics(t,false)); }, labels:full.labels||null };
+      built={ group:full.group, animate:function(t){ full.update(D.kinematics(t,false)); }, labels:full.labels||null, environment:full.environment||null };
     } else {
       built=buildAssembly(stages);
     }
@@ -5377,10 +5596,15 @@ function loadObject(spec){
   }
   hideDiag();
   if(previousGroup){ scene.remove(previousGroup); disposeGeometries(previousGroup); }
+  /* décor éventuel (ex. piste d'essai du roadster) : ajouté à la scène mais
+     exclu du cadrage, pour que la caméra cadre l'objet et non le décor */
+  var previousEnv = currentInstance && currentInstance.environment;
+  if(previousEnv){ scene.remove(previousEnv); disposeGeometries(previousEnv); }
   currentInstance=built;
   animationBroken=false;
   scene.add(built.group);
   frameCamera(built.group);
+  if(built.environment) scene.add(built.environment);
   buildStageLabels(built.labels);
   document.getElementById('stageEmpty').hidden=true;
   document.getElementById('stageHud').hidden=false;
@@ -5450,8 +5674,11 @@ function render(){
    dessin d'ensemble. Simple DOM + SVG par-dessus le canevas : aucun
    contexte WebGL supplémentaire.
    ============================================================ */
-var stageLabels=[];
+var stageLabels=[], stageLabelNamesHidden=false;
+/* mode examen d'un objet : repères sans nom (numéros seuls) */
+function setStageLabelNamesHidden(b){ stageLabelNamesHidden=!!b; }
 function buildStageLabels(list){
+  stageLabelNamesHidden=false;
   var layer=document.getElementById('stageLabels');
   var svg=document.getElementById('stageLabelLines');
   layer.querySelectorAll('.stage-label').forEach(function(n){ n.remove(); });
@@ -5480,7 +5707,7 @@ function placeStageLabels(){
   if(!on) return;
   var w=canvas.clientWidth, h=canvas.clientHeight;
   /* écran étroit (téléphone) : numéros seuls, les noms sont dans la nomenclature */
-  layer.classList.toggle('compact', w<560);
+  layer.classList.toggle('compact', w<560 || stageLabelNamesHidden);
   if(currentInstance) currentInstance.group.updateMatrixWorld(true);
   _lblV.copy(orbit.target).project(camera);
   var cx=(_lblV.x*0.5+0.5)*w;
@@ -5717,8 +5944,13 @@ function fillFiche(spec, stages){
   /* Nomenclature numérotée (objets qui la fournissent, ex. perceuse) :
      mêmes numéros que les repères affichés dans la scène 3D. */
   var D=spec.detailed ? DetailedObjects[spec.detailed] : null;
+  /* pupitre propre à l'objet (boutons, mesures, schéma) s'il en fournit un */
+  var fp=document.getElementById('fichePanel');
+  fp.innerHTML=''; fp.hidden=!(D && D.panel);
+  if(D && D.panel) D.panel(fp);
   var nomen=document.getElementById('ficheNomen'), nomenList=document.getElementById('ficheNomenList');
   nomenList.innerHTML='';
+  nomen.classList.remove('exam');
   nomen.hidden=!(D && D.nomenclature);
   if(D && D.nomenclature){
     document.getElementById('ficheNomenTitle').textContent='Nomenclature ('+D.nomenclature.length+' pièces)';
@@ -5731,6 +5963,14 @@ function fillFiche(spec, stages){
       var l=document.createElement('div'); l.className='nomen-text nomen-link'; l.textContent=p.link;
       body.appendChild(t); body.appendChild(f); body.appendChild(l);
       li.appendChild(n); li.appendChild(body);
+      /* objets qui le permettent : cliquer une pièce la met en surbrillance */
+      if(D.selectPart){
+        li.classList.add('pickable');
+        li.addEventListener('click',function(){
+          var sel=D.selectPart(p.id);
+          nomenList.querySelectorAll('li').forEach(function(x,i){ x.classList.toggle('sel', sel===i+1); });
+        });
+      }
       nomenList.appendChild(li);
     });
   }

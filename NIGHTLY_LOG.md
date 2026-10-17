@@ -5,6 +5,29 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-17 (suite 4) — Roadster : route et panneau d'examen restaurés
+
+- Retour de l'utilisatrice : « la voiture est vraiment simplifiée par
+  rapport à mon code, pas de route ». Le modèle reprend maintenant tout
+  l'original, harmonisé :
+  - environnement : piste de test en béton, route en asphalte avec lignes
+    de rive et pointillés qui défilent (seulement quand les roues
+    touchent le sol), anneaux d'atterrissage, portique ;
+  - panneau interactif : Propulsion, Vol, Braquer, Démo auto, Vue en
+    coupe, Piste, Mode examen ; lectures en direct (ω moteur/roues,
+    braquage, altitude, pression) ; schéma du circuit animé
+    (interrupteurs moteur/compresseur/électrovanne) ; formules ;
+  - simulation à états (inertie du moteur, pressostat du compresseur,
+    vol tant que la pression le permet) ; guides d'éclatement pointillés ;
+    sélection d'une pièce depuis la nomenclature (surbrillance bleue) ;
+    mode examen : repères numérotés seulement, nomenclature floutée.
+- Crochets génériques ajoutés au cadre (réutilisables par les autres
+  objets) : `full.environment`, `D.panel(el)`, `D.selectPart(id)`,
+  `setStageLabelNamesHidden(b)`.
+- Vérifié par Playwright : route, portique et anneaux affichés, boutons
+  fonctionnels, mode examen OK, panneau absent pour les autres objets,
+  aucune erreur JS.
+
 ## 2026-10-17 (suite 3) — Roadster électrique volant (7e objet)
 
 - L'utilisatrice fournit un second modèle d'examen autonome
