@@ -8,7 +8,7 @@ C'est le modèle source du piano de L'Atelier : `DetailedObjects.piano`, dans
 `index.html` à la racine du dépôt, en est le portage three.js (mêmes cotes,
 mêmes rapports de leviers). Si vous modifiez une cote ici, reportez-la là-bas.
 Le dossier `apercu/` contient une visionneuse web autonome du modèle exporté
-(`apercu/index.html`, servie aussi par Netlify sous `/blender/piano/apercu/`).
+(`apercu/index.html`).
 
 ![Piano assemblé](rendus/piano_0001.jpg)
 
