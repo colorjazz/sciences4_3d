@@ -14,7 +14,8 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
   `industriels/index.html` l'affiche dans un cadre, avec onglets de
   section, ◀ ▶ et liste des objets (Main d'Optimus et Pince pour fusée
   annoncées « à venir »). Ajout ensuite de `mechazilla.html` (tour de
-  capture « baguettes » SpaceX), lui aussi identique au fichier fourni. Ajouter un objet = déposer son fichier + une
+  capture « baguettes » SpaceX) et `optimus.html` (main bionique
+  d’Optimus), eux aussi identiques aux fichiers fournis. Ajouter un objet = déposer son fichier + une
   ligne dans `OBJETS`.
 - Le Roadster harmonisé (PR #4) est abandonné à la demande de
   l'utilisatrice ; la banque quotidienne garde ses 6 objets.
