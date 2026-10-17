@@ -37,10 +37,12 @@ fonctionnalité distincte de la banque vitrine).
       (entraînement du tambour par courroie, loquet de porte à came).
       Châssis ouvert (pas de carénage plein) pour garder le mécanisme
       visible.
-- [x] Perceuse-visseuse sans fil (`perceuseSansFil`) — 2 mécanismes
-      couplés (réducteur planétaire soleil/satellites/couronne,
-      mandrin auto-serrant). Premier réducteur épicycloïdal de la
-      banque, avec vrai calcul de rapport.
+- [x] Perceuse électrique sans fil (`perceuseSansFil`, 2026-10-17) —
+      REMPLACE l'ancienne perceuse-visseuse à réducteur planétaire, à la
+      demande de l'utilisatrice, par son modèle « perceuse.txt » (style
+      cahier d'examen MEQ) : 13 pièces numérotées avec nomenclature,
+      4 mécanismes couplés (circuit électrique, engrenage droit Z10→Z30,
+      arbre + roulements, mandrin à liaison hélicoïdale).
 
 ## Objets catalogue génériques — RETIRÉS de la banque (2026-09-04)
 

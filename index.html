@@ -249,6 +249,22 @@ header.titleblock{
 }
 .stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;}
 .stage canvas:active{cursor:grabbing;}
+.hud-btn:disabled{opacity:.35;cursor:default;}
+.stage-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.stage-labels svg{position:absolute;inset:0;width:100%;height:100%;}
+.stage-labels line{stroke:var(--ink);stroke-width:1.2;}
+.stage-labels circle{fill:var(--ink);}
+.stage-label{
+  position:absolute;left:0;top:0;display:flex;align-items:center;gap:5px;
+  margin-top:-11px;white-space:nowrap;
+  font-family:var(--font-mono);font-size:10.5px;color:var(--ink);
+}
+.stage-label:not(.right){flex-direction:row-reverse;}
+.stage-label b{
+  display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+  background:var(--surface);border:1.5px solid var(--ink);font-weight:600;font-size:11px;
+}
+.stage-label span{background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;padding:1px 6px;}
 .stage-frame{
   position:absolute;inset:14px;
   border:1px solid var(--line-strong);
@@ -444,6 +460,17 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 }
 .stage-row-pills{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;}
 .stage-row-pills .pill{font-size:9px;padding:1px 6px;}
+.nomen-list{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;}
+.nomen-list li{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line);}
+.nomen-list li:first-child{border-top:none;}
+.nomen-list b{
+  flex:0 0 22px;height:22px;display:grid;place-items:center;border-radius:50%;
+  border:1.5px solid var(--ink);font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--ink);
+}
+.nomen-list li>div{min-width:0;}
+.nomen-name{font-weight:600;font-size:12.5px;color:var(--ink);margin-bottom:2px;}
+.nomen-text{font-size:11.5px;color:var(--ink-dim);line-height:1.5;}
+.nomen-link{font-style:italic;}
 .stage-row-desc{font-size:11.5px;color:var(--ink-dim);line-height:1.5;}
 .workshop-preview{
   border:1px solid var(--line);border-radius:var(--radius-m);
@@ -908,6 +935,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
 
   <div class="stage">
     <canvas id="c"></canvas>
+    <div class="stage-labels" id="stageLabels" hidden><svg id="stageLabelLines"></svg></div>
     <div class="stage-frame"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
     <div class="stage-annot" id="stageAnnot" hidden>
       <span class="name" id="annotName"></span>
@@ -976,6 +1004,10 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
         <hr class="sep">
         <h3 id="ficheStagesTitle" style="font-size:14px;">Chaîne cinématique</h3>
         <div id="ficheStages"></div>
+        <div id="ficheNomen" hidden>
+          <h3 id="ficheNomenTitle" style="font-size:14px;">Nomenclature</h3>
+          <ol class="nomen-list" id="ficheNomenList"></ol>
+        </div>
         <div id="ficheDeleteWrap" hidden>
           <hr class="sep">
           <button class="btn danger" id="deleteObjBtn">Retirer de la banque</button>
@@ -3402,313 +3434,332 @@ DetailedObjects.secheuse = (function(){
 })();
 
 DetailedObjects.perceuseSansFil = (function(){
-  var P = {
-    motorR:0.10, motorLen:0.30,
-    gearboxR:0.116, gearboxLen:0.09,
-    sunR:0.03, sunTeeth:10, planetR:0.03, planetTeeth:10, ringTeethVirt:30,
-    chuckLen:0.16, bitLen:0.28, bitR:0.013,
-    handleLen:0.40, handleR:0.055, handleTilt:0.30,
-    batW:0.24, batH:0.16, batD:0.30
+  /* Perceuse électrique sans fil — modèle d'examen ST/ATS 4e secondaire
+     (style dessin technique : gris + arêtes noires). Repris du modèle
+     autonome fourni par l'utilisatrice (« perceuse.txt ») : mêmes 13
+     pièces numérotées, mêmes cotes, même engrenage droit Z10 → Z30,
+     même liaison hélicoïdale du mandrin et mêmes vecteurs d'éclatement.
+     Les cotes sont dans les unités du modèle d'origine (le foret pointe
+     vers +Z, la poignée vers -Y) ; buildFull() met le tout à l'échelle
+     (~0,6 m de long) et le tourne pour présenter le côté en coupe. */
+  var GEAR_MODULE=0.095, Z_PINION=10, Z_GEAR=30;
+  var R_PINION=GEAR_MODULE*Z_PINION/2, R_GEAR=GEAR_MODULE*Z_GEAR/2;
+  var OUTPUT_AXIS_Y=0.55, MOTOR_AXIS_Y=OUTPUT_AXIS_Y-(R_PINION+R_GEAR);
+  var SCALE=0.06;
+  var PALETTE={ light:0xefefef, medium:0xdcdcdc, dark:0xc2c2c2, darker:0xa6a6a6, wire:0xb5b5b5 };
+
+  var PARTS=[
+    {id:1, name:'Boîtier (carter supérieur)', short:'Boîtier',
+     func:'Protéger les organes internes et maintenir l’alignement du stator, des roulements et des engrenages.',
+     link:'Liaison d’encastrement (complète, rigide, démontable par vis) avec la poignée (2) et le stator (6).'},
+    {id:2, name:'Poignée ergonomique', short:'Poignée',
+     func:'Permettre la préhension par l’utilisateur et loger l’interrupteur (3) ainsi que les fils conducteurs (5).',
+     link:'Liaison d’encastrement avec le boîtier (1) ; liaison avec le bloc-piles (4) à la base.'},
+    {id:3, name:'Gâchette (interrupteur)', short:'Gâchette',
+     func:'Fonction de COMMANDE : ouvrir ou fermer le circuit électrique pour commander la marche du moteur.',
+     link:'Guidage en translation rectiligne (course de 2,5 mm avec ressort de rappel) dans la poignée (2).'},
+    {id:4, name:'Bloc-piles / batterie rechargeable', short:'Bloc-piles',
+     func:'Fonction d’ALIMENTATION : fournir le courant continu (énergie électrique) au circuit.',
+     link:'Liaison complète démontable (glissière à encliquetage) sous la poignée (2).'},
+    {id:5, name:'Fils conducteurs (avec gaine isolante)', short:'Fils conducteurs',
+     func:'Fonction de CONDUCTION : acheminer le courant électrique des piles (4) vers la gâchette (3) et le moteur (6).',
+     link:'Fixés aux bornes électriques par soudure ou cosses.'},
+    {id:6, name:'Moteur électrique (stator + rotor)', short:'Moteur',
+     func:'TRANSFORMATION D’ÉNERGIE : convertir l’énergie électrique en énergie mécanique de rotation.',
+     link:'Stator en liaison d’encastrement avec le boîtier (1) ; rotor en liaison pivot par rapport au stator.'},
+    {id:7, name:'Pignon moteur (petit engrenage, Z = 10 dents)', short:'Pignon (Z = 10)',
+     func:'Organe menant du système de transmission du mouvement par roues dentées droites.',
+     link:'Liaison d’encastrement sur l’axe du rotor du moteur (6).'},
+    {id:8, name:'Roue dentée de sortie (grand engrenage, Z = 30 dents)', short:'Roue dentée (Z = 30)',
+     func:'Organe mené : réduire la vitesse de rotation (rapport 1/3) et tripler le couple transmis à l’arbre (9).',
+     link:'Liaison d’encastrement sur l’arbre de sortie (9) ; engrènement direct avec le pignon (7).'},
+    {id:9, name:'Arbre de sortie', short:'Arbre de sortie',
+     func:'Transmettre le mouvement de rotation de la roue dentée (8) jusqu’au mandrin (11-12).',
+     link:'Liaison pivot (guidage en rotation assuré par les roulements / coussinets 10).'},
+    {id:10, name:'Roulements / coussinets', short:'Roulements',
+     func:'Assurer le GUIDAGE EN ROTATION de l’arbre de sortie (9) tout en réduisant le frottement.',
+     link:'Logés dans le boîtier (1), supportent l’arbre de sortie (9) en liaison pivot.'},
+    {id:11, name:'Mandrin : bague filetée', short:'Bague filetée',
+     func:'Transformer une rotation manuelle de la bague en translation des mâchoires (12) pour serrer l’outil.',
+     link:'Liaison hélicoïdale avec les mâchoires (12) du mandrin.'},
+    {id:12, name:'Mandrin : mâchoires (3 mors)', short:'Mâchoires',
+     func:'Centrer et maintenir fermement le foret (13) par serrage radial concentrique.',
+     link:'Guidées en translation oblique dans le corps du mandrin, entraînées par la bague filetée (11).'},
+    {id:13, name:'Foret (mèche hélicoïdale)', short:'Foret',
+     func:'Effectuer le perçage de la pièce travaillée par enlèvement de matière.',
+     link:'Liaison d’encastrement démontable entre les 3 mâchoires (12) du mandrin.'}
+  ];
+  var ANCHORS={
+    1:[0,2.35,-1.20], 2:[0,-3.95,-2.15], 3:[0,-2.55,0.42], 4:[0,-7.25,-1.55], 5:[0,-4.35,-1.15],
+    6:[0,-1.35,-1.95], 7:[0,-1.35,0.25], 8:[0,1.65,0.25], 9:[0,0.55,1.45], 10:[0,1.25,2.35],
+    11:[0,1.55,3.45], 12:[0,0.85,4.55], 13:[0,0.55,7.15]
   };
-  P.motorZ0 = 0; P.motorZ1 = P.motorLen;
-  P.gearboxZ0 = P.motorZ1; P.gearboxZ1 = P.gearboxZ0 + P.gearboxLen;
-  P.gearZ = (P.gearboxZ0+P.gearboxZ1)/2;
-  P.chuckZ0 = P.gearboxZ1; P.chuckZ1 = P.chuckZ0 + P.chuckLen;
-  P.bitZ1 = P.chuckZ1 + P.bitLen;
-  P.planetOrbitR = P.sunR + P.planetR;
-  P.handleTopZ = P.motorZ0 + P.motorLen*0.45;
-  P.handleTopY = -0.11;
-  P.handleBotY = P.handleTopY - P.handleLen*Math.cos(P.handleTilt);
-  P.handleBotZ = P.handleTopZ - P.handleLen*Math.sin(P.handleTilt);
+  var EXPLODE={
+    1:[0,1.95,-2.20], 2:[0,-1.15,-1.40], 3:[0,-0.85,1.45], 4:[0,-3.20,-1.40], 5:[0,-1.25,0],
+    6:[0,-0.35,-3.10], 7:[0,-0.35,-1.15], 8:[0,0,0.25], 9:[0,0,2.05], 10:[0,0,3.55],
+    11:[0,0,5.30], 12:[0,0,7.05], 13:[0,0,9.20]
+  };
 
-  var YELLOW=0xfbbf24, RUBBER=0x1a1a1a, PLASTIC=0x232323, METAL=0x8d97a1,
-      RED=0xd9432f, STEEL=0x9aa9b8, DARK=0x1e242b, CHROME=0xced6db;
-
-  function cyl(r1,r2,h,color,seg,opts){
-    return new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||24), stdMat(color,opts||{metalness:.4,roughness:.45}));
-  }
-  function box(w,h,d,color,opts){
-    return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), stdMat(color,opts||{metalness:.3,roughness:.6}));
-  }
-  /* corps principal orienté selon Z (comme le foret) : un cylindre
-     three.js a son axe natif en Y, on l'incline une fois pour de bon. */
-  function zCyl(r1,r2,h,color,seg,opts){
-    var m=cyl(r1,r2,h,color,seg,opts);
-    m.rotation.x=Math.PI/2;
-    return m;
-  }
-  /* même principe pour un profil de révolution (Lathe, axe natif Y) :
-     silhouette bombée du carter moteur, orientée selon Z. Uniquement
-     statique (jamais de rotation.z dynamique dessus ensuite). */
-  function zLathe(points,seg,color,opts){
-    var m=new THREE.Mesh(new THREE.LatheGeometry(points,seg||32), stdMat(color,opts||{metalness:.3,roughness:.45}));
-    m.rotation.x=Math.PI/2;
-    return m;
-  }
-
-  /* --- 1. Réducteur planétaire (moteur -> porte-satellites) --------- */
-  function buildReducer(){
-    var group=new THREE.Group();
-    var motor=zCyl(P.motorR,P.motorR,P.motorLen,PLASTIC,24,{metalness:.35,roughness:.5});
-    motor.position.z=(P.motorZ0+P.motorZ1)/2;
-    group.add(motor);
-    for(var f=0;f<10;f++){
-      var af=(f/10)*Math.PI*2;
-      var fin=box(0.012,0.03,P.motorLen*0.7,0x151a1f,{metalness:.3,roughness:.6});
-      fin.position.set(Math.cos(af)*P.motorR,Math.sin(af)*P.motorR,(P.motorZ0+P.motorZ1)/2);
-      fin.rotation.z=af;
-      group.add(fin);
-    }
-
-    var sunGroup=new THREE.Group();
-    var sun=gearGroup({radius:P.sunR,thickness:0.03,teeth:P.sunTeeth,color:STEEL});
-    sunGroup.add(sun);
-    sunGroup.position.z=P.gearZ;
-    group.add(sunGroup);
-
-    var carrier=new THREE.Group();
-    carrier.position.z=P.gearZ;
-    var planets=[];
-    for(var i=0;i<3;i++){
-      var a=(i/3)*Math.PI*2;
-      var pWrap=new THREE.Group();
-      pWrap.position.set(Math.cos(a)*P.planetOrbitR,Math.sin(a)*P.planetOrbitR,0);
-      var planet=gearGroup({radius:P.planetR,thickness:0.03,teeth:P.planetTeeth,color:CHROME});
-      pWrap.add(planet);
-      carrier.add(pWrap);
-      planets.push(planet);
-    }
-    var carrierPlate=cyl(P.planetOrbitR+P.planetR*0.7,P.planetOrbitR+P.planetR*0.7,0.012,DARK,20,{metalness:.5,roughness:.4});
-    carrierPlate.rotation.x=Math.PI/2;
-    carrierPlate.position.z=0.022;
-    carrier.add(carrierPlate);
-    group.add(carrier);
-
-    var ring=zCyl(P.gearboxR,P.gearboxR,P.gearboxLen,PLASTIC,28,{metalness:.35,roughness:.45});
-    ring.position.z=P.gearZ;
-    group.add(ring);
-
-    return {
-      group:group,
-      update:function(s){
-        motor.rotation.z=s.motorAngle;
-        sunGroup.rotation.z=s.motorAngle;
-        carrier.rotation.z=s.carrierAngle;
-        planets.forEach(function(pl){ pl.rotation.z=s.planetLocalAngle; });
-      }
-    };
-  }
-
-  /* --- 2. Mandrin auto-serrant (bague, spirale, mors) ----------------- */
-  function buildChuck(){
-    var group=new THREE.Group();
-    var shank=zCyl(0.075,0.075,0.045,PLASTIC,24,{metalness:.35,roughness:.45});
-    shank.position.z=P.chuckZ0+0.022;
-    group.add(shank);
-
-    var sleeveRing=new THREE.Group();
-    sleeveRing.add(zCyl(0.075,0.075,0.10,METAL,26,{metalness:.7,roughness:.3}));
-    for(var i=0;i<26;i++){
-      var a=(i/26)*Math.PI*2;
-      var knurl=box(0.011,0.011,0.10,0x77828c,{metalness:.65,roughness:.4});
-      knurl.position.set(Math.cos(a)*0.076,Math.sin(a)*0.076,0);
-      knurl.rotation.z=a;
-      sleeveRing.add(knurl);
-    }
-    sleeveRing.position.z=P.chuckZ0+0.10;
-    group.add(sleeveRing);
-
-    var nose=zCyl(0.05,0.075,0.06,METAL,24,{metalness:.7,roughness:.28});
-    nose.position.z=P.chuckZ1-0.03;
-    group.add(nose);
-
-    var jaws=[];
-    var slotAngle=0.32;
-    for(var j=0;j<3;j++){
-      var pivot=new THREE.Group();
-      pivot.rotation.z=(j/3)*Math.PI*2;
-      var jaw=box(0.045,0.03,0.12,CHROME,{metalness:.8,roughness:.22});
-      jaw.rotation.y=slotAngle;
-      pivot.add(jaw);
-      group.add(pivot);
-      jaws.push(jaw);
-    }
-
-    var bit=new THREE.Group();
-    var bitShank=zCyl(0.011,0.011,0.05,STEEL,14,{metalness:.8,roughness:.25});
-    bitShank.position.z=0.025;
-    bit.add(bitShank);
-    [0,Math.PI].forEach(function(ph){
-      var c=new THREE.Curve();
-      c.getPoint=function(u){ var ang=u*Math.PI*2*2.4+ph; return new THREE.Vector3(Math.cos(ang)*0.013,Math.sin(ang)*0.013,0.05+u*(P.bitLen-0.05)); };
-      bit.add(new THREE.Mesh(new THREE.TubeGeometry(c,120,0.009,6,false), stdMat(0x4f5d6b,{metalness:.65,roughness:.35})));
+  /* Matériaux mis en cache dans ce module (jamais recréés à chaque
+     construction, donc jamais à libérer : disposeGeometries() ne touche
+     que les géométries). Le polygonOffset évite que les arêtes noires
+     « clignotent » sur les faces. */
+  var matCacheP={};
+  function techMat(hex, opts){
+    opts=opts||{};
+    var key=hex+'|'+(opts.casing?1:0)+'|'+(opts.cut?1:0);
+    if(matCacheP[key]) return matCacheP[key];
+    var m=new THREE.MeshLambertMaterial({
+      color:hex, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1,
+      side:opts.casing?THREE.DoubleSide:THREE.FrontSide
     });
-    var tip=zCyl(0.011,0.002,0.05,STEEL,14,{metalness:.8,roughness:.22});
-    tip.position.z=P.bitLen-0.025;
-    bit.add(tip);
-    bit.position.z=P.chuckZ1;
-    group.add(bit);
+    /* La demi-coque côté observateur reste en permanence translucide
+       (comme la « vue en coupe » du modèle d'origine) : L'Atelier montre
+       les mécanismes, pas une carrosserie fermée. */
+    if(opts.cut){ m.transparent=true; m.opacity=0.16; m.depthWrite=false; }
+    matCacheP[key]=m;
+    return m;
+  }
+  var edgeMat=new THREE.LineBasicMaterial({color:0x111111});
+  var edgeMatCut=new THREE.LineBasicMaterial({color:0x111111, transparent:true, opacity:0.3, depthWrite:false});
 
-    return {
-      group:group,
-      update:function(s){
-        sleeveRing.rotation.z=(1-s.grip)*2.0;
-        var open=(1-s.grip)*0.045;
-        var jawR=0.028+open;
-        jaws.forEach(function(jaw){
-          jaw.position.set(jawR*Math.cos(slotAngle),0,P.chuckZ1-P.chuckZ0-0.03+jawR*Math.sin(slotAngle));
-        });
+  function addMesh(geo, hex, parent, opts){
+    opts=opts||{};
+    var mesh=new THREE.Mesh(geo, techMat(hex,opts));
+    var edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo, opts.edgeAngle!==undefined?opts.edgeAngle:22), opts.cut?edgeMatCut:edgeMat);
+    mesh.add(edges);
+    parent.add(mesh);
+    return mesh;
+  }
+  function zCyl(rTop,rBot,len,seg,thetaStart,thetaLen){
+    var g=new THREE.CylinderGeometry(rTop,rBot,len,seg,1,false,thetaStart||0,thetaLen===undefined?Math.PI*2:thetaLen);
+    g.rotateX(Math.PI/2);
+    return g;
+  }
+  function spurGear(m,z,thickness,bore){
+    var rp=m*z/2, ro=rp+m*0.92, rr=Math.max(bore+0.08, rp-m*1.12);
+    var s=new THREE.Shape(), step=Math.PI*2/z;
+    for(var i=0;i<z;i++){
+      var a0=i*step;
+      var pts=[[a0,rr],[a0+step*0.17,rr],[a0+step*0.29,ro],[a0+step*0.51,ro],[a0+step*0.63,rr]];
+      pts.forEach(function(p,k){
+        var x=Math.cos(p[0])*p[1], y=Math.sin(p[0])*p[1];
+        if(i===0&&k===0) s.moveTo(x,y); else s.lineTo(x,y);
+      });
+    }
+    s.closePath();
+    if(bore>0.02){ var h=new THREE.Path(); h.absarc(0,0,bore,0,Math.PI*2,false); s.holes.push(h); }
+    var g=new THREE.ExtrudeGeometry(s,{depth:thickness, bevelEnabled:false, curveSegments:16});
+    g.translate(0,0,-thickness/2);
+    return g;
+  }
+
+  /* ---------- les 13 pièces (une fonction par pièce) ---------- */
+  var BUILD={
+    1:function(g){
+      [[Math.PI,false],[0,true]].forEach(function(h){
+        var start=h[0], cut=h[1];
+        var upper=zCyl(1.75,1.85,5.8,24,start,Math.PI); upper.translate(0,OUTPUT_AXIS_Y,-0.35);
+        addMesh(upper,PALETTE.light,g,{casing:true,cut:cut});
+        var bay=zCyl(1.38,1.38,4.6,20,start,Math.PI); bay.translate(0,MOTOR_AXIS_Y,-0.95);
+        addMesh(bay,PALETTE.light,g,{casing:true,cut:cut});
+        var nose=zCyl(1.15,1.65,0.85,24,start,Math.PI); nose.translate(0,OUTPUT_AXIS_Y,2.75);
+        addMesh(nose,PALETTE.medium,g,{casing:true,cut:cut});
+      });
+      var cap=new THREE.SphereGeometry(1.65,20,12,0,Math.PI*2,0,Math.PI*0.45);
+      cap.rotateX(-Math.PI/2); cap.translate(0,-0.35,-3.22);
+      addMesh(cap,PALETTE.medium,g,{casing:true,cut:true});
+    },
+    2:function(g){
+      [[-0.35,false],[0.35,true]].forEach(function(h){
+        var b=new THREE.BoxGeometry(0.68,4.3,1.75); b.rotateX(0.18); b.translate(h[0],-3.65,-1.35);
+        addMesh(b,PALETTE.medium,g,{cut:h[1]});
+      });
+      var foot=new THREE.BoxGeometry(1.65,0.45,2.35); foot.translate(0,-5.85,-1.65);
+      addMesh(foot,PALETTE.dark,g);
+    },
+    3:function(g,P){
+      var sw=new THREE.BoxGeometry(0.75,0.95,0.95); sw.translate(0,-2.55,-0.75);
+      addMesh(sw,PALETTE.dark,g);
+      P.trigger=new THREE.Group(); g.add(P.trigger);
+      var btn=new THREE.BoxGeometry(0.62,0.82,0.72); btn.translate(0,-2.55,0.05);
+      addMesh(btn,PALETTE.darker,P.trigger);
+    },
+    4:function(g){
+      var pack=new THREE.BoxGeometry(2.35,1.45,3.15); pack.translate(0,-6.82,-1.55); addMesh(pack,PALETTE.dark,g);
+      var latch=new THREE.BoxGeometry(1.45,0.35,2.15); latch.translate(0,-5.92,-1.62); addMesh(latch,PALETTE.medium,g);
+      [-0.55,0.55].forEach(function(x){
+        var c=new THREE.CylinderGeometry(0.38,0.38,2.5,16); c.rotateX(Math.PI/2); c.translate(x,-6.65,-1.55);
+        addMesh(c,PALETTE.light,g);
+      });
+    },
+    5:function(g){
+      [[[[-0.22,-5.85,-1.65],[-0.22,-4.30,-1.42],[-0.18,-2.85,-0.95]],PALETTE.wire],
+       [[[0.18,-2.25,-0.95],[0.18,-1.85,-1.85],[0.25,-1.45,-2.65]],PALETTE.wire],
+       [[[-0.25,-1.45,-2.65],[-0.28,-3.75,-1.85],[0.22,-5.85,-1.75]],PALETTE.darker]].forEach(function(w){
+        var curve=new THREE.CatmullRomCurve3(w[0].map(function(p){ return new THREE.Vector3(p[0],p[1],p[2]); }));
+        addMesh(new THREE.TubeGeometry(curve,20,0.085,10,false),w[1],g);
+      });
+    },
+    6:function(g,P){
+      var shell=zCyl(1.08,1.08,2.25,24,Math.PI*0.85,Math.PI*1.3); shell.translate(0,MOTOR_AXIS_Y,-1.55);
+      addMesh(shell,PALETTE.medium,g);
+      [[0.32,-2.55],[0.28,-0.52]].forEach(function(r){
+        var ring=zCyl(1.08,1.08,r[0],24); ring.translate(0,MOTOR_AXIS_Y,r[1]); addMesh(ring,PALETTE.dark,g);
+      });
+      P.rotor=new THREE.Group(); P.rotor.position.set(0,MOTOR_AXIS_Y,-1.55); g.add(P.rotor);
+      addMesh(zCyl(0.74,0.74,1.35,12),PALETTE.light,P.rotor,{edgeAngle:12});
+      for(var k=0;k<6;k++){
+        var fin=new THREE.BoxGeometry(0.14,1.54,1.28); fin.rotateZ(k*Math.PI/3); addMesh(fin,PALETTE.darker,P.rotor);
       }
+      var shaft=zCyl(0.18,0.18,2.65,16); shaft.translate(0,0,0.52); addMesh(shaft,PALETTE.dark,P.rotor);
+    },
+    7:function(g,P){
+      P.pinion=new THREE.Group(); P.pinion.position.set(0,MOTOR_AXIS_Y,0.25); g.add(P.pinion);
+      addMesh(spurGear(GEAR_MODULE,Z_PINION,0.65,0.18),PALETTE.dark,P.pinion,{edgeAngle:15});
+    },
+    8:function(g,P){
+      P.gear=new THREE.Group(); P.gear.position.set(0,OUTPUT_AXIS_Y,0.25); g.add(P.gear);
+      addMesh(spurGear(GEAR_MODULE,Z_GEAR,0.65,0.32),PALETTE.medium,P.gear,{edgeAngle:15});
+    },
+    9:function(g,P){
+      P.shaft=new THREE.Group(); P.shaft.position.set(0,OUTPUT_AXIS_Y,1.55); g.add(P.shaft);
+      addMesh(zCyl(0.32,0.32,3.65,20),PALETTE.darker,P.shaft);
+      addMesh(new THREE.BoxGeometry(0.14,0.72,2.95),PALETTE.light,P.shaft);
+    },
+    10:function(g){
+      [-0.65,2.35].forEach(function(z){
+        var outer=zCyl(0.78,0.78,0.42,24); outer.translate(0,OUTPUT_AXIS_Y,z); addMesh(outer,PALETTE.dark,g);
+        var inner=zCyl(0.48,0.48,0.46,20); inner.translate(0,OUTPUT_AXIS_Y,z); addMesh(inner,PALETTE.light,g);
+        for(var b=0;b<8;b++){
+          var a=b*Math.PI*2/8, ball=new THREE.SphereGeometry(0.13,10,10);
+          ball.translate(Math.cos(a)*0.63,OUTPUT_AXIS_Y+Math.sin(a)*0.63,z);
+          addMesh(ball,PALETTE.medium,g);
+        }
+      });
+    },
+    11:function(g,P){
+      P.sleeve=new THREE.Group(); P.sleeve.position.set(0,OUTPUT_AXIS_Y,3.35); g.add(P.sleeve);
+      addMesh(zCyl(1.05,1.15,1.35,12),PALETTE.medium,P.sleeve,{edgeAngle:10});
+      var cone=zCyl(0.68,1.05,0.65,12); cone.translate(0,0,1.0); addMesh(cone,PALETTE.dark,P.sleeve,{edgeAngle:10});
+      for(var t=-0.35;t<=0.35;t+=0.23){
+        var ring=new THREE.TorusGeometry(0.75,0.05,8,20); ring.translate(0,0,t); addMesh(ring,PALETTE.darker,P.sleeve);
+      }
+    },
+    12:function(g,P){
+      P.jawsPivot=new THREE.Group(); P.jawsPivot.position.set(0,OUTPUT_AXIS_Y,4.15); g.add(P.jawsPivot);
+      P.jaws=[];
+      for(var i=0;i<3;i++){
+        var holder=new THREE.Group(); holder.rotation.z=i*Math.PI*2/3+Math.PI/6;
+        var jg=new THREE.Group();
+        var geo=new THREE.BoxGeometry(0.22,0.28,1.15); geo.rotateX(-0.18);
+        addMesh(geo,PALETTE.darker,jg);
+        holder.add(jg); P.jawsPivot.add(holder); P.jaws.push(jg);
+      }
+    },
+    13:function(g,P){
+      P.bit=new THREE.Group(); P.bit.position.set(0,OUTPUT_AXIS_Y,5.55); g.add(P.bit);
+      var shank=zCyl(0.18,0.18,2.6,16); shank.translate(0,0,-0.3); addMesh(shank,PALETTE.medium,P.bit);
+      var f1=new THREE.BoxGeometry(0.32,0.14,2.2); f1.translate(0,0,1.1); addMesh(f1,PALETTE.light,P.bit);
+      var f2=new THREE.BoxGeometry(0.14,0.32,2.2); f2.translate(0,0,1.1); addMesh(f2,PALETTE.dark,P.bit);
+      var tip=new THREE.ConeGeometry(0.20,0.48,16); tip.rotateX(Math.PI/2); tip.translate(0,0,2.42); addMesh(tip,PALETTE.darker,P.bit);
+    }
+  };
+
+  /* Construit les pièces demandées ; chaque pièce est un groupe enfant
+     DIRECT de `root` (applyExplode() n'agit que sur ces enfants). */
+  function buildParts(ids){
+    var root=new THREE.Group(), P={groups:{}, labels:[]};
+    ids.forEach(function(id){
+      var g=new THREE.Group();
+      g.name='Piece_'+id;
+      BUILD[id](g,P);
+      var anchor=new THREE.Object3D(); anchor.position.fromArray(ANCHORS[id]); g.add(anchor);
+      P.labels.push({num:id, name:PARTS[id-1].short, obj:anchor});
+      P.groups[id]=g;
+      root.add(g);
+    });
+    function update(s){
+      if(P.rotor) P.rotor.rotation.z=s.motor;
+      if(P.pinion) P.pinion.rotation.z=Math.PI/Z_PINION+s.motor;   /* calage des dents */
+      if(P.gear) P.gear.rotation.z=s.out;
+      if(P.shaft) P.shaft.rotation.z=s.out;
+      if(P.jawsPivot) P.jawsPivot.rotation.z=s.out;
+      if(P.bit) P.bit.rotation.z=s.out;
+      if(P.sleeve) P.sleeve.rotation.z=s.out+s.grip*Math.PI*2.5;    /* liaison hélicoïdale */
+      if(P.jaws) P.jaws.forEach(function(j){ j.position.y=0.42-s.grip*0.18; j.position.z=0.05+s.grip*0.24; });
+      if(P.trigger) P.trigger.position.z=-0.28*s.trigger;
+    }
+    return {root:root, P:P, update:update};
+  }
+
+  /* Cinématique : gâchette enfoncée = circuit fermé, le moteur tourne ;
+     la roue (Z30) tourne 3 fois moins vite que le pignon (Z10), en sens
+     inverse. Le mandrin se desserre puis se resserre de temps en temps
+     pour montrer la liaison hélicoïdale. */
+  function kinematics(t, iso){
+    var motor=t*2.4;
+    var grip=iso ? clamp(0.5+0.8*Math.cos(t*0.6),0,1) : clamp(0.5+0.9*Math.cos(t*0.22),0,1);
+    return { motor:motor, out:-motor*Z_PINION/Z_GEAR, grip:grip, trigger:1 };
+  }
+
+  function present(group, scale){
+    /* foret vers la gauche, demi-coque translucide (x>0) vers l'observateur */
+    group.rotation.y=-Math.PI/2;
+    group.scale.set(scale,scale,scale);
+  }
+
+  function isoMech(ids){
+    return function(){
+      var b=buildParts(ids);
+      var view=new THREE.Group(); view.add(b.root);
+      b.update(kinematics(0.6,true));
+      b.root.updateMatrixWorld(true);
+      var size=new THREE.Vector3(); new THREE.Box3().setFromObject(b.root).getSize(size);
+      present(view, 1/Math.max(size.x,size.y,size.z,0.1));   /* ~1 m : lisible en vignette */
+      return {group:view, update:function(s,isIso){ b.update(s); }};
     };
   }
 
-  var MECHS = {
-    reducer:{
-      label:'Réducteur planétaire', movementIn:'rotation rapide (moteur)', movementOut:'rotation lente à couple élevé (porte-satellites)',
-      roleDesc:'Le moteur entraîne le planétaire central (le soleil), qui engrène trois satellites. Ces satellites roulent à l’intérieur d’une couronne fixe : ils sont donc forcés de tourner autour du soleil, entraînant le porte-satellites qui sert d’arbre de sortie, beaucoup plus lent mais avec un couple bien plus élevé.',
-      build:buildReducer
+  var MECHS={
+    circuit:{
+      label:'Circuit électrique : commande et transformation d’énergie',
+      movementIn:'translation de la gâchette (3)', movementOut:'rotation rapide du rotor (6)',
+      roleDesc:'Enfoncer la gâchette (3, fonction de commande) ferme le circuit : le bloc-piles (4, alimentation) fait circuler le courant continu dans les fils (5, conduction) jusqu’au moteur (6), qui transforme l’énergie électrique en énergie mécanique de rotation.',
+      build:isoMech([3,4,5,6])
     },
-    chuck:{
-      label:'Mandrin auto-serrant', movementIn:'rotation de la bague', movementOut:'serrage radial des mors',
-      roleDesc:'Tourner la bague crantée entraîne une spirale interne qui pousse les trois mors également vers l’axe, centrant et serrant le foret sans outil.',
-      build:buildChuck
+    engrenage:{
+      label:'Engrenage droit : pignon Z = 10 → roue Z = 30',
+      movementIn:'rotation rapide du pignon (7)', movementOut:'rotation 3 fois plus lente, sens inverse (8)',
+      roleDesc:'Le pignon moteur (7, 10 dents) engrène directement la roue dentée de sortie (8, 30 dents). Rapport r = 10/30 = 1/3 : la vitesse est divisée par 3 et le couple multiplié par 3 ; les deux roues tournent en sens inverse.',
+      build:isoMech([7,8])
+    },
+    guidage:{
+      label:'Arbre de sortie guidé par roulements (liaison pivot)',
+      movementIn:'rotation de la roue dentée (8)', movementOut:'rotation de l’arbre de sortie (9)',
+      roleDesc:'La roue dentée (8) est encastrée sur l’arbre de sortie (9). Deux roulements à billes (10), logés dans le boîtier, guident l’arbre en rotation (liaison pivot) en réduisant le frottement.',
+      build:isoMech([8,9,10])
+    },
+    mandrin:{
+      label:'Mandrin : liaison hélicoïdale',
+      movementIn:'rotation de la bague filetée (11)', movementOut:'translation des mâchoires (12)',
+      roleDesc:'Tourner la bague filetée (11) fait avancer les trois mâchoires (12) le long de leurs guides obliques : elles se rapprochent de l’axe et serrent le foret (13) en le centrant. C’est la transformation d’une rotation en translation par liaison hélicoïdale.',
+      build:isoMech([11,12,13])
     }
   };
-  var ORDER=['reducer','chuck'];
-
-  function kinematics(t, iso){
-    var motorAngle=t*13;
-    var ratio=P.sunTeeth/(P.sunTeeth+P.ringTeethVirt);
-    var carrierAngle=motorAngle*ratio;
-    var planetLocalAngle=-(motorAngle-carrierAngle)*(P.sunTeeth/P.planetTeeth);
-    var trigger=clamp(Math.sin(t*0.4)*1.3,0,1);
-    var grip = iso? 1 : 0.55+0.45*Math.cos(t*0.55);
-    return { motorAngle:motorAngle, carrierAngle:carrierAngle, planetLocalAngle:planetLocalAngle, trigger:trigger, grip:clamp(grip,0,1) };
-  }
-
-  function buildStructure(){
-    var g=new THREE.Group();
-
-    /* Carter moteur : profil de révolution (Lathe) bombé, comme un
-       vrai carter industriel, au lieu d'un simple tube. S'arrête là où
-       commence la bague du réducteur (déjà modélisée, plus large, dans
-       buildReducer) pour créer un épaulement réaliste — la bague noire
-       dépasse légèrement du carter jaune, comme sur un vrai outil.
-       IMPORTANT : le moteur et ses ailettes (buildReducer, dans le
-       même repère) sont un cylindre plein de rayon P.motorR=0.10 sur
-       toute la longueur z:[0,motorLen] — le carter doit donc rester
-       >= ~0.10 partout sur cette plage (le renflement/effilement ne se
-       fait qu'AU-DELÀ, en z négatif derrière le capot arrière du
-       moteur) sous peine de laisser le moteur/les ailettes dépasser. */
-    var housingPts=[
-      new THREE.Vector2(0.0,   -0.03),
-      new THREE.Vector2(0.06,  -0.015),
-      new THREE.Vector2(0.103,  0.0),
-      new THREE.Vector2(0.106,  0.05),
-      new THREE.Vector2(0.114,  0.11),
-      new THREE.Vector2(0.114,  0.17),
-      new THREE.Vector2(0.112,  0.23),
-      new THREE.Vector2(0.109,  0.28),
-      new THREE.Vector2(0.108,  P.motorLen)
-    ];
-    var housing=zLathe(housingPts,32,YELLOW,{metalness:.25,roughness:.4});
-    g.add(housing);
-    /* LatheGeometry ne ferme pas l'extrémité avant (contrairement à un
-       CylinderGeometry) : invisible tant que le réducteur/la bague
-       sont en place devant, mais un trou béant apparaît en vue éclatée
-       quand cette pièce s'écarte. Un disque plat referme l'ouverture. */
-    var housingCap=zCyl(0.108,0.108,0.003,YELLOW,32,{metalness:.25,roughness:.4});
-    housingCap.position.z=P.motorLen;
-    g.add(housingCap);
-
-    /* Poignée ergonomique : profil extrudé (au lieu d'un cylindre plein)
-       qui se resserre à mi-hauteur puis se réévase, comme une vraie
-       poignée pistolet. Même axe natif (Y, longueur de la poignée) et
-       même ancrage que l'ancien cylindre : remplacement direct, la
-       position/rotation qui suit n'a pas changé. */
-    var hw=0.05, hwWaist=0.038;
-    var handleShape=new THREE.Shape();
-    handleShape.moveTo(-hw,0);
-    handleShape.lineTo(hw,0);
-    handleShape.quadraticCurveTo(hw+0.012,-P.handleLen*0.35, hwWaist,-P.handleLen*0.55);
-    handleShape.quadraticCurveTo(hwWaist+0.01,-P.handleLen*0.8, hw+0.01,-P.handleLen);
-    handleShape.lineTo(-hw-0.01,-P.handleLen);
-    handleShape.quadraticCurveTo(-hwWaist-0.01,-P.handleLen*0.8, -hwWaist,-P.handleLen*0.55);
-    handleShape.quadraticCurveTo(-hw-0.012,-P.handleLen*0.35, -hw,0);
-    var handleDepth=0.10;
-    var handleGeo=new THREE.ExtrudeGeometry(handleShape,{depth:handleDepth,bevelEnabled:true,bevelThickness:0.006,bevelSize:0.006,bevelSegments:2,steps:1});
-    handleGeo.translate(0,P.handleLen/2,-handleDepth/2); // recentre comme l'ancien cylindre (centré à l'origine)
-    var handleMesh=new THREE.Mesh(handleGeo, stdMat(YELLOW,{metalness:.25,roughness:.4}));
-    handleMesh.position.set(0,(P.handleTopY+P.handleBotY)/2,(P.handleTopZ+P.handleBotZ)/2);
-    handleMesh.rotation.x=P.handleTilt;
-    g.add(handleMesh);
-
-    /* bande de grip caoutchouc sur la moitié basse de la poignée,
-       calculée par paramétrisation directe le long de l'axe incliné
-       (t=0 en haut, t=1 en bas) plutôt que par décalage approximatif
-       du point milieu, pour éviter toute erreur de signe. */
-    var gripT=0.72;
-    var gripY=P.handleTopY - gripT*P.handleLen*Math.cos(P.handleTilt);
-    var gripZ=P.handleTopZ - gripT*P.handleLen*Math.sin(P.handleTilt);
-    var gripBand=cyl(0.052,0.048,P.handleLen*0.5,RUBBER,20,{metalness:.05,roughness:.9});
-    gripBand.position.set(0,gripY,gripZ);
-    gripBand.rotation.x=P.handleTilt;
-    g.add(gripBand);
-
-    var trigger=box(0.03,0.06,0.05,RED,{metalness:.2,roughness:.6});
-    trigger.position.set(0,P.handleTopY-0.06,P.handleTopZ+0.05);
-    g.add(trigger);
-
-    /* Batterie : coins arrondis (Extrude) plutôt qu'un bloc brut */
-    var w2=P.batW/2, h2=P.batH/2, rc=0.025;
-    var batShape=new THREE.Shape();
-    batShape.moveTo(-w2+rc,-h2);
-    batShape.lineTo(w2-rc,-h2);
-    batShape.quadraticCurveTo(w2,-h2, w2,-h2+rc);
-    batShape.lineTo(w2,h2-rc);
-    batShape.quadraticCurveTo(w2,h2, w2-rc,h2);
-    batShape.lineTo(-w2+rc,h2);
-    batShape.quadraticCurveTo(-w2,h2, -w2,h2-rc);
-    batShape.lineTo(-w2,-h2+rc);
-    batShape.quadraticCurveTo(-w2,-h2, -w2+rc,-h2);
-    var batGeo=new THREE.ExtrudeGeometry(batShape,{depth:P.batD,bevelEnabled:true,bevelThickness:0.006,bevelSize:0.006,bevelSegments:2,steps:1});
-    batGeo.translate(0,0,-P.batD/2); // recentre comme l'ancien box (centré à l'origine)
-    var battery=new THREE.Mesh(batGeo, stdMat(PLASTIC,{metalness:.25,roughness:.55}));
-    battery.position.set(0,P.handleBotY-P.batH/2-0.01,P.handleBotZ);
-    g.add(battery);
-    var batStripe=box(P.batW*0.9,P.batH*0.28,P.batD*0.9,YELLOW,{metalness:.2,roughness:.5});
-    batStripe.position.set(0,P.handleBotY-0.02,P.handleBotZ);
-    g.add(batStripe);
-
-    return {group:g, trigger:trigger};
-  }
+  var ORDER=['circuit','engrenage','guidage','mandrin'];
 
   return {
-    label:'Perceuse-visseuse sans fil', order:ORDER, mechs:MECHS, kinematics:kinematics,
+    label:'Perceuse électrique sans fil', order:ORDER, mechs:MECHS, kinematics:kinematics,
+    nomenclature:PARTS,
     buildFull:function(){
-      var group=new THREE.Group();
-      var structure=buildStructure();
-      group.add(structure.group);
-
-      var instances={}, wrappers={};
-      ORDER.forEach(function(key){
-        var inst=MECHS[key].build();
-        instances[key]=inst;
-        var wrap=new THREE.Group();
-        wrap.add(inst.group);
-        wrappers[key]=wrap;
-        group.add(wrap);
-      });
-      wrappers.reducer.userData.explodeDir=new THREE.Vector3(-0.3,0.3,-0.7);
-      wrappers.chuck.userData.explodeDir=new THREE.Vector3(0,0,1);
-
-      return {
-        group:group,
-        update:function(s){
-          ORDER.forEach(function(key){ instances[key].update(s,false); });
-          structure.trigger.position.z = P.handleTopZ+0.05-s.trigger*0.02;
-        }
-      };
+      var b=buildParts([1,2,3,4,5,6,7,8,9,10,11,12,13]);
+      for(var id=1;id<=13;id++){
+        var e=EXPLODE[id];
+        b.P.groups[id].userData.explodeDir=new THREE.Vector3(e[0],e[1],e[2]).multiplyScalar(1/0.9);
+      }
+      present(b.root, SCALE);
+      return { group:b.root, update:b.update, labels:b.P.labels };
     },
     buildIsolated:function(key){
       var inst=MECHS[key].build();
@@ -3755,10 +3806,10 @@ var CATALOGUE = [
     builtin:true
   },
   {
-    id:'perceuse-sans-fil', name:'Perceuse-visseuse sans fil', detailed:'perceuseSansFil',
+    id:'perceuse-sans-fil', name:'Perceuse électrique sans fil', detailed:'perceuseSansFil',
     category:'Système combiné',
-    movementIn:'rotation rapide (moteur électrique)', movementOut:'rotation lente à couple élevé (mandrin)',
-    desc:'Perceuse-visseuse sans fil modélisée avec ses deux mécanismes réels. Un réducteur planétaire (un soleil central, trois satellites, une couronne fixe) ralentit fortement la rotation du moteur tout en augmentant le couple, la disposition des satellites permettant une réduction compacte impossible à obtenir avec un simple engrenage droit. Un mandrin auto-serrant (bague crantée entraînant une spirale interne) centre et serre le foret sans outil.',
+    movementIn:'translation de la gâchette (commande du circuit)', movementOut:'rotation lente du foret (couple ×3)',
+    desc:'Perceuse électrique sans fil modélisée comme sur un cahier d’examen ST/ATS (MEQ) : 13 pièces numérotées, demi-coque translucide pour voir l’intérieur. La gâchette ferme le circuit : le bloc-piles alimente le moteur par les fils conducteurs, et le moteur transforme l’énergie électrique en rotation. Le pignon moteur (10 dents) entraîne la roue dentée de sortie (30 dents) : la vitesse est divisée par 3, le couple multiplié par 3, et le sens de rotation s’inverse. L’arbre de sortie, guidé par deux roulements, entraîne le mandrin, dont la bague filetée serre les trois mâchoires sur le foret par une liaison hélicoïdale. Le bouton « Repères » affiche les numéros des pièces ; la nomenclature est dans la fiche technique.',
     builtin:true
   }
 ];
@@ -3955,7 +4006,7 @@ function loadObject(spec){
     if(spec.detailed){
       var D=DetailedObjects[spec.detailed];
       var full=D.buildFull();
-      built={ group:full.group, animate:function(t){ full.update(D.kinematics(t,false)); } };
+      built={ group:full.group, animate:function(t){ full.update(D.kinematics(t,false)); }, labels:full.labels||null };
     } else {
       built=buildAssembly(stages);
     }
@@ -3974,6 +4025,7 @@ function loadObject(spec){
   animationBroken=false;
   scene.add(built.group);
   frameCamera(built.group);
+  buildStageLabels(built.labels);
   document.getElementById('stageEmpty').hidden=true;
   document.getElementById('stageHud').hidden=false;
   var annot=document.getElementById('stageAnnot'); annot.hidden=false;
@@ -4031,6 +4083,79 @@ function render(){
     console.error('Erreur de rendu :', err);
     showDiag('⚠ Erreur de rendu 3D', err);
   }
+  placeStageLabels();
+}
+
+/* ============================================================
+   Repères numérotés (bouton « Afficher les repères »)
+   Un objet détaillé peut fournir labels:[{num, name, obj}] ; chaque
+   repère est projeté à l'écran et rangé en deux colonnes (gauche /
+   droite) reliées à la pièce par une ligne de rappel, comme sur un
+   dessin d'ensemble. Simple DOM + SVG par-dessus le canevas : aucun
+   contexte WebGL supplémentaire.
+   ============================================================ */
+var stageLabels=[];
+function buildStageLabels(list){
+  var layer=document.getElementById('stageLabels');
+  var svg=document.getElementById('stageLabelLines');
+  layer.querySelectorAll('.stage-label').forEach(function(n){ n.remove(); });
+  svg.innerHTML='';
+  stageLabels=[];
+  (list||[]).forEach(function(l){
+    var el=document.createElement('div');
+    el.className='stage-label';
+    el.innerHTML='<b></b><span></span>';
+    el.firstChild.textContent=l.num;
+    el.lastChild.textContent=l.name;
+    layer.appendChild(el);
+    var line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    var dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('r','2.6');
+    svg.appendChild(line); svg.appendChild(dot);
+    stageLabels.push({obj:l.obj, el:el, line:line, dot:dot});
+  });
+  document.getElementById('labelsBtn').disabled = !stageLabels.length;
+}
+var _lblV=new THREE.Vector3();
+function placeStageLabels(){
+  var layer=document.getElementById('stageLabels');
+  var on = showLabels && stageLabels.length>0;
+  layer.hidden=!on;
+  if(!on) return;
+  var w=canvas.clientWidth, h=canvas.clientHeight;
+  if(currentInstance) currentInstance.group.updateMatrixWorld(true);
+  _lblV.copy(orbit.target).project(camera);
+  var cx=(_lblV.x*0.5+0.5)*w;
+  var left=[], right=[];
+  stageLabels.forEach(function(l){
+    l.obj.getWorldPosition(_lblV); _lblV.project(camera);
+    var it={l:l, ax:(_lblV.x*0.5+0.5)*w, ay:(-_lblV.y*0.5+0.5)*h};
+    (it.ax>=cx?right:left).push(it);
+  });
+  var gap=26;
+  function column(list, isRight){
+    list.sort(function(a,b){ return a.ay-b.ay; });
+    var x=isRight ? Math.min(w-30, cx+Math.min(w*0.36,230)) : Math.max(30, cx-Math.min(w*0.36,230));
+    var k, it;
+    for(k=0;k<list.length;k++){
+      it=list[k]; it.bx=x;
+      it.by = k===0 ? Math.max(30,it.ay) : Math.max(it.ay, list[k-1].by+gap);
+    }
+    for(k=list.length-1;k>=0;k--){
+      it=list[k];
+      it.by = k===list.length-1 ? Math.min(h-30,it.by) : Math.min(it.by, list[k+1].by-gap);
+      it.by = Math.max(24,it.by);
+    }
+    list.forEach(function(it){
+      /* colonne de gauche : l'étiquette se termine à la ligne de rappel */
+      it.l.el.style.transform='translate('+it.bx.toFixed(1)+'px,'+it.by.toFixed(1)+'px)'+(isRight?'':' translateX(-100%)');
+      it.l.el.classList.toggle('right',isRight);
+      it.l.line.setAttribute('x1',it.ax.toFixed(1)); it.l.line.setAttribute('y1',it.ay.toFixed(1));
+      it.l.line.setAttribute('x2',it.bx.toFixed(1)); it.l.line.setAttribute('y2',it.by.toFixed(1));
+      it.l.dot.setAttribute('cx',it.ax.toFixed(1)); it.l.dot.setAttribute('cy',it.ay.toFixed(1));
+    });
+  }
+  column(left,false); column(right,true);
 }
 
 function applyExplode(group, amt){
@@ -4225,6 +4350,26 @@ function fillFiche(spec, stages){
     listEl.appendChild(row);
     activeMiniViewers.push(createMiniViewer(canvas, st));
   });
+  /* Nomenclature numérotée (objets qui la fournissent, ex. perceuse) :
+     mêmes numéros que les repères affichés dans la scène 3D. */
+  var D=spec.detailed ? DetailedObjects[spec.detailed] : null;
+  var nomen=document.getElementById('ficheNomen'), nomenList=document.getElementById('ficheNomenList');
+  nomenList.innerHTML='';
+  nomen.hidden=!(D && D.nomenclature);
+  if(D && D.nomenclature){
+    document.getElementById('ficheNomenTitle').textContent='Nomenclature ('+D.nomenclature.length+' pièces)';
+    D.nomenclature.forEach(function(p){
+      var li=document.createElement('li');
+      var n=document.createElement('b'); n.textContent=p.id;
+      var body=document.createElement('div');
+      var t=document.createElement('div'); t.className='nomen-name'; t.textContent=p.name;
+      var f=document.createElement('div'); f.className='nomen-text'; f.textContent=p.func;
+      var l=document.createElement('div'); l.className='nomen-text nomen-link'; l.textContent=p.link;
+      body.appendChild(t); body.appendChild(f); body.appendChild(l);
+      li.appendChild(n); li.appendChild(body);
+      nomenList.appendChild(li);
+    });
+  }
   var delWrap=document.getElementById('ficheDeleteWrap');
   delWrap.hidden = !!spec.builtin;
   document.getElementById('deleteObjBtn').onclick=function(){ deleteBankObject(spec); };

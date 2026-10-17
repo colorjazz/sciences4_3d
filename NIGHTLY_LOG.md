@@ -5,6 +5,37 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-17 — Perceuse sans fil remplacée par le modèle « examen MEQ »
+
+- Demande de l'utilisatrice : intégrer son modèle autonome
+  `perceuse.txt` (page HTML three.js r128, style dessin technique, 13
+  pièces numérotées, modes examen/correction) à la banque, en
+  remplacement de la perceuse existante. Interprété comme la
+  perceuse-visseuse SANS FIL (même objet) ; la perceuse à colonne
+  n'est pas touchée.
+- `DetailedObjects.perceuseSansFil` réécrit : géométrie, cotes,
+  engrenage Z10/Z30 (calage des dents compris), liaison hélicoïdale du
+  mandrin et vecteurs d'éclatement repris tels quels du modèle. La
+  demi-coque côté observateur est translucide en permanence (la « vue
+  en coupe » du modèle d'origine), puisque L'Atelier n'a pas de bouton
+  de coupe. Matériaux mis en cache dans le module (jamais recréés).
+- Deux ajouts génériques, utilisables par tout objet détaillé :
+  1. le bouton « Afficher les repères » (jusqu'ici sans effet) affiche
+     les repères numérotés fournis par l'objet (`labels` dans
+     `buildFull()`), rangés en deux colonnes avec lignes de rappel ;
+     le bouton est grisé pour les objets qui n'en fournissent pas ;
+  2. la fiche technique affiche une nomenclature numérotée (nom,
+     fonction, liaison) si l'objet la fournit (`nomenclature`).
+- Non repris : le mode examen/correction et le schéma électrique SVG du
+  modèle d'origine (l'onglet « Exercer » couvre déjà l'évaluation).
+- Vérifié par Playwright : construction, repères, éclaté 100 % +
+  « Recentrer la vue », 4 vignettes, nomenclature, aller-retour
+  vélo → perceuse sans erreur JS ; repères et nomenclature masqués
+  pour le vélo.
+- Branche `claude/perceuse-sans-fil-meq`. Elle part de `main` sans le
+  piano (PR #1) : si les deux sont fusionnées, seul le CATALOGUE peut
+  demander une petite résolution de conflit.
+
 ## 2026-09-06 (suite 4) — Carte « Exercer » + pont postMessage vers sciences4
 
 - Demande explicite de l'utilisateur, à partir d'une capture d'écran
