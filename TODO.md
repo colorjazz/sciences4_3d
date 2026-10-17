@@ -43,6 +43,11 @@ fonctionnalité distincte de la banque vitrine).
       cahier d'examen MEQ) : 13 pièces numérotées avec nomenclature,
       4 mécanismes couplés (circuit électrique, engrenage droit Z10→Z30,
       arbre + roulements, mandrin à liaison hélicoïdale).
+- [x] Roadster électrique volant (`roadster`, 2026-10-17) — modèle
+      d'examen fourni (« tesla.html »), 4 mécanismes (propulsion par
+      engrenage Z12→Z36, direction pignon-crémaillère + biellettes,
+      compresseur bielle-manivelle, électrovanne + tuyères), physique
+      corrigée (voir NIGHTLY_LOG).
 - [x] Piano à queue (`piano`) — 5 mécanismes couplés (touche-levier,
       pilote et bascule, échappement et marteau, levier d'étouffoir,
       pédale forte). Portage fidèle du modèle Blender du dépôt
