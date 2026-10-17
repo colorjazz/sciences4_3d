@@ -5,6 +5,18 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-17 (suite) — Sources Blender du piano rapatriées ici
+
+- Demande de l'utilisatrice : « tout mettre dans sciences4_3d et non
+  bombe ». Le dossier `piano/` du dépôt colorjazz/bombe (script Blender
+  `piano_a_queue.py`, scène `.blend`, rendus, visionneuse web
+  `apercu/`) est copié dans `blender/piano/`, puis retiré de la branche
+  de bombe.
+- `blender/piano/apercu/index.html` reçoit son propre squelette HTML
+  (doctype, head) pour fonctionner comme page autonome.
+- Lien entre les deux : `DetailedObjects.piano` (index.html) est le
+  portage three.js de `blender/piano/piano_a_queue.py`.
+
 ## 2026-10-17 — Perceuse sans fil remplacée par le modèle « examen MEQ »
 
 - Demande de l'utilisatrice : intégrer son modèle autonome
