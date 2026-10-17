@@ -5,6 +5,80 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-17 (suite) — Sources Blender du piano rapatriées ici
+
+- Demande de l'utilisatrice : « tout mettre dans sciences4_3d et non
+  bombe ». Le dossier `piano/` du dépôt colorjazz/bombe (script Blender
+  `piano_a_queue.py`, scène `.blend`, rendus, visionneuse web
+  `apercu/`) est copié dans `blender/piano/`, puis retiré de la branche
+  de bombe.
+- `blender/piano/apercu/index.html` reçoit son propre squelette HTML
+  (doctype, head) pour fonctionner comme page autonome.
+- Lien entre les deux : `DetailedObjects.piano` (index.html) est le
+  portage three.js de `blender/piano/piano_a_queue.py`.
+
+## 2026-10-17 — Perceuse sans fil remplacée par le modèle « examen MEQ »
+
+- Demande de l'utilisatrice : intégrer son modèle autonome
+  `perceuse.txt` (page HTML three.js r128, style dessin technique, 13
+  pièces numérotées, modes examen/correction) à la banque, en
+  remplacement de la perceuse existante. Interprété comme la
+  perceuse-visseuse SANS FIL (même objet) ; la perceuse à colonne
+  n'est pas touchée.
+- `DetailedObjects.perceuseSansFil` réécrit : géométrie, cotes,
+  engrenage Z10/Z30 (calage des dents compris), liaison hélicoïdale du
+  mandrin et vecteurs d'éclatement repris tels quels du modèle. La
+  demi-coque côté observateur est translucide en permanence (la « vue
+  en coupe » du modèle d'origine), puisque L'Atelier n'a pas de bouton
+  de coupe. Matériaux mis en cache dans le module (jamais recréés).
+- Deux ajouts génériques, utilisables par tout objet détaillé :
+  1. le bouton « Afficher les repères » (jusqu'ici sans effet) affiche
+     les repères numérotés fournis par l'objet (`labels` dans
+     `buildFull()`), rangés en deux colonnes avec lignes de rappel ;
+     le bouton est grisé pour les objets qui n'en fournissent pas ;
+  2. la fiche technique affiche une nomenclature numérotée (nom,
+     fonction, liaison) si l'objet la fournit (`nomenclature`).
+- Non repris : le mode examen/correction et le schéma électrique SVG du
+  modèle d'origine (l'onglet « Exercer » couvre déjà l'évaluation).
+- Vérifié par Playwright : construction, repères, éclaté 100 % +
+  « Recentrer la vue », 4 vignettes, nomenclature, aller-retour
+  vélo → perceuse sans erreur JS ; repères et nomenclature masqués
+  pour le vélo.
+- Branche `claude/perceuse-sans-fil-meq` (PR #2). Le piano (branche
+  `claude/piano-a-queue`, PR #1) y a été fusionné à la demande de
+  l'utilisatrice, qui ne le voyait pas dans l'aperçu : PR #2 contient
+  donc les deux objets, et la fusionner ajoute aussi le piano à `main`.
+## 2026-10-12 — Piano à queue (6e objet détaillé)
+
+- Demande de l'utilisateur : ajouter à la banque le piano à queue
+  modélisé dans Blender (dépôt colorjazz/bombe, `piano/`), recodé dans
+  le format de L'Atelier, « simplifié pour réduire la taille si et
+  seulement si la qualité n'est pas affectée ».
+- `DetailedObjects.piano` : portage JS du générateur Python (mêmes
+  cotes, mêmes pièces, mêmes rapports : bascule ×2,13, marteau ×6,4,
+  étouffoir par la queue de la touche, échappement qui bascule en fin
+  de course, pas d'étouffoirs sur les 19 notes aiguës). Ajout d'une
+  pédale forte (tringle + barre de levée) pour un 5e mécanisme couplé.
+- Simplifications sans perte visible : aucune ressource 3D à charger
+  (tout est généré) ; les pièces répétées 88 fois sont des
+  InstancedMesh (`frustumCulled=false`, car en r128 la sphère
+  englobante ignore les instances) ; les touches blanches sont
+  regroupées en 4 formes (selon les touches noires voisines), les
+  touches noires sont centrées sur la jonction des blanches (décalage
+  réel de ±2,5 mm abandonné). Rien de neuf côté contextes WebGL :
+  le piano passe par la scène principale et le contexte unique des
+  vignettes.
+- Animation : « Au clair de la lune » en boucle (main droite + basses),
+  pédale forte sur la dernière phrase. Vignettes : une note agrandie
+  ×2,5 et tournée pour être vue de profil.
+- Éclaté : décalages du modèle Blender réduits à 75 % pour rester dans
+  le cadrage ; « Recentrer la vue » cadre la vue éclatée entière.
+- Vérifié par Playwright (Chromium + swiftshader) : construction en
+  ~0,5 s, 5 vignettes générées, éclaté à 100 %, aller-retour
+  vélo → piano sans bandeau de diagnostic ni erreur JS.
+- Poussé sur la branche `claude/piano-a-queue` (pas sur `main`) pour
+  relecture par l'utilisatrice avant fusion.
+
 ## 2026-09-06 (suite 4) — Carte « Exercer » + pont postMessage vers sciences4
 
 - Demande explicite de l'utilisateur, à partir d'une capture d'écran

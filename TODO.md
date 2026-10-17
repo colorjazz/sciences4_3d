@@ -37,10 +37,19 @@ fonctionnalité distincte de la banque vitrine).
       (entraînement du tambour par courroie, loquet de porte à came).
       Châssis ouvert (pas de carénage plein) pour garder le mécanisme
       visible.
-- [x] Perceuse-visseuse sans fil (`perceuseSansFil`) — 2 mécanismes
-      couplés (réducteur planétaire soleil/satellites/couronne,
-      mandrin auto-serrant). Premier réducteur épicycloïdal de la
-      banque, avec vrai calcul de rapport.
+- [x] Perceuse électrique sans fil (`perceuseSansFil`, 2026-10-17) —
+      REMPLACE l'ancienne perceuse-visseuse à réducteur planétaire, à la
+      demande de l'utilisatrice, par son modèle « perceuse.txt » (style
+      cahier d'examen MEQ) : 13 pièces numérotées avec nomenclature,
+      4 mécanismes couplés (circuit électrique, engrenage droit Z10→Z30,
+      arbre + roulements, mandrin à liaison hélicoïdale).
+- [x] Piano à queue (`piano`) — 5 mécanismes couplés (touche-levier,
+      pilote et bascule, échappement et marteau, levier d'étouffoir,
+      pédale forte). Portage fidèle du modèle Blender du dépôt
+      colorjazz/bombe (`piano/piano_a_queue.py`) : mêmes cotes et mêmes
+      rapports de leviers, 88 notes. Géométrie générée par le code (pas
+      de fichier 3D) ; pièces répétées en InstancedMesh (~70 commandes
+      de dessin au lieu de ~1 300).
 
 ## Objets catalogue génériques — RETIRÉS de la banque (2026-09-04)
 
