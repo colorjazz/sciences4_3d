@@ -4757,6 +4757,365 @@ DetailedObjects.piano = (function(){
   };
 })();
 
+DetailedObjects.roadster = (function(){
+  /* Roadster électrique « volant » (pack propulseurs à gaz froid), repris
+     du modèle d'examen fourni par l'utilisatrice (« tesla.html ») : mêmes
+     13 pièces, mêmes cotes, même engrenage Z12 → Z36. Corrections
+     physiques par rapport à l'original :
+       - le pignon de direction engrène vraiment la crémaillère (il flottait
+         plus d'un mètre au-dessus) et la course de la crémaillère vaut
+         r_pignon × angle du volant (elle était arbitraire) ; des biellettes
+         relient la crémaillère aux roues ;
+       - le compresseur suit la vraie loi bielle-manivelle (piston à
+         r·sinθ + √(L² − (r·cosθ)²)) au lieu d'un simple sinus ;
+       - le compresseur recharge le réservoir AU SOL ; en vol, le réservoir
+         se vide dans les tuyères (pression affichée par un manomètre), la
+         durée de vol est donc limitée.
+     Unités du modèle d'origine (avant à +Z, haut à +Y, droite à +X) ;
+     buildFull() met le tout à l'échelle réelle (≈ 4,2 m de long). */
+  var GEAR_MOD=0.055, Z_PINION=12, Z_GEAR=36;
+  var R_PINION=GEAR_MOD*Z_PINION/2, R_GEAR=GEAR_MOD*Z_GEAR/2;
+  var REAR_Z=-2.25, AXLE_Y=-0.62, MOTOR_Z=REAR_Z+R_PINION+R_GEAR, FRONT_Z=2.35, WHEEL_X=1.72, WHEEL_R=0.95;
+  var GROUND_Y=AXLE_Y-WHEEL_R;
+  var RACK_Y=AXLE_Y+0.12, RACK_Z=FRONT_Z-0.32, ARM=0.32;
+  var STEER_MOD=0.04, STEER_Z=12, STEER_R=STEER_MOD*STEER_Z/2;      /* pignon de direction */
+  var PINION_C=new THREE.Vector3(-0.65, RACK_Y+0.07+STEER_R+0.01, RACK_Z);
+  var YOKE_C=new THREE.Vector3(-0.65, 0.42, 1.12);
+  var CRANK_C=new THREE.Vector3(0.65,0.18,-0.55), CRANK_R=0.16, ROD_L=0.58;
+  var HOVER=1.2, SCALE=0.55;
+
+  var PARTS=[
+    {id:1,name:'Carrosserie aérodynamique et châssis',short:'Carrosserie',func:'Protéger les organes, porter les passagers et réduire la traînée aérodynamique.',link:'Encastrement avec le bloc-batterie (4) et le stator du moteur (6) ; aluminium et fibre de carbone.'},
+    {id:2,name:'Pédale d’accélérateur',short:'Pédale',func:'Fonction de COMMANDE : fermer le circuit de puissance du moteur de propulsion (6).',link:'Liaison pivot à course limitée, rappelée par ressort.'},
+    {id:3,name:'Direction : volant, pignon, crémaillère, biellettes',short:'Direction',func:'TRANSFORMATION DU MOUVEMENT : la rotation du volant devient une translation de la crémaillère, puis le pivotement des roues avant.',link:'Pignon-crémaillère (réversible) ; colonne guidée en rotation ; biellettes articulées aux roues.'},
+    {id:4,name:'Bloc-batterie lithium-ion',short:'Batterie',func:'Fonction d’ALIMENTATION : fournir le courant continu aux moteurs.',link:'Boulonnée sous le plancher (1) : abaisse le centre de gravité.'},
+    {id:5,name:'Câbles haute tension et fusible',short:'Câbles et fusible',func:'CONDUCTION du courant ; PROTECTION : le fusible coupe le circuit en cas de surintensité.',link:'Âme en cuivre, gaine isolante orange (code couleur haute tension).'},
+    {id:6,name:'Moteur électrique arrière',short:'Moteur',func:'TRANSFORMATION D’ÉNERGIE : électrique → mécanique de rotation.',link:'Stator encastré dans le châssis ; rotor en liaison pivot.'},
+    {id:7,name:'Pignon moteur (Z = 12)',short:'Pignon (Z = 12)',func:'Organe menant de la transmission par roues dentées.',link:'Encastré sur l’arbre du rotor (6).'},
+    {id:8,name:'Roue dentée de sortie (Z = 36)',short:'Roue dentée (Z = 36)',func:'Réduire la vitesse par 3 (12/36) et tripler le couple transmis à l’essieu.',link:'Encastrée sur l’essieu arrière (9) ; tourne en sens inverse du pignon.'},
+    {id:9,name:'Essieux, roulements et roues',short:'Roues et essieux',func:'Guider les arbres en rotation et faire avancer le véhicule par adhérence au sol.',link:'Liaisons pivot (roulements) ; pneus en élastomère (élasticité, adhérence).'},
+    {id:10,name:'Compresseur à bielle et manivelle',short:'Compresseur',func:'TRANSFORMATION DU MOUVEMENT : la rotation du moteur auxiliaire devient la translation alternative du piston qui comprime l’azote.',link:'Bielle-manivelle ; piston guidé en translation dans le cylindre.'},
+    {id:11,name:'Réservoir haute pression (azote)',short:'Réservoir',func:'Emmagasiner l’azote comprimé (énergie pneumatique) pour les tuyères.',link:'Enveloppe en fibre de carbone bobinée, encastrée à l’arrière ; manomètre de pression.'},
+    {id:12,name:'Conduites et électrovanne',short:'Électrovanne',func:'Commander l’ouverture du flux de gaz vers les tuyères.',link:'Liaison étanche entre réservoir (11) et tuyères (13) ; soupape rappelée par ressort.'},
+    {id:13,name:'Tuyères à gaz froid et ressorts de suspension',short:'Tuyères et ressorts',func:'Éjecter le gaz vers le bas pour créer une poussée (action-réaction) ; les ressorts se détendent quand les roues quittent le sol et amortissent l’atterrissage.',link:'Tuyères fixées sous le châssis ; ressorts hélicoïdaux en compression.'}
+  ];
+  var ANCHORS={1:[0.6,1.0,-0.4],2:[-0.65,-0.25,1.6],3:[-0.65,0.5,1.1],4:[0.9,-0.72,0.6],5:[-0.35,-0.42,-0.45],
+    6:[0.15,-0.3,-0.93],7:[-0.48,-0.3,-0.93],8:[-0.48,0.4,-2.25],9:[1.72,0.3,-2.25],10:[0.65,1.15,-0.55],
+    11:[0.5,0.75,-1.55],12:[0,0.75,-1.55],13:[0.65,-0.6,-3.58]};
+  var EXPLODE={1:[0,2.55,0],2:[-1.4,0.2,1.8],3:[-1.1,1.25,2.2],4:[0,-2.1,0],5:[-1.8,-0.6,0],6:[1.9,-0.4,-0.9],
+    7:[-1.6,-0.2,-0.9],8:[-1.6,-0.2,-2.6],9:[0,-1.05,3.2],10:[2.4,0.9,-0.5],11:[0,1.45,-2.4],12:[0,2.35,-2.8],13:[0,-0.85,-3.6]};
+
+  /* ---------- matériaux (PBR, mis en cache dans le module) ---------- */
+  var C={
+    paint:[0xb3121b,.45,.3], carbon:[0x1c1e22,.4,.35], seat:[0x24262a,.1,.7], alu:[0xc3c9ce,.85,.28],
+    steel:[0xa9b2bb,.85,.25], steelDark:[0x8a949e,.85,.3], chrome:[0xd4d9de,.95,.15], black:[0x1f2124,.2,.6],
+    tire:[0x1b1c1e,.05,.9], packBox:[0x2d3a47,.4,.45], cell:[0x3c7dbf,.25,.4], hv:[0xf0782d,.1,.55],
+    fuse:[0xc0392b,.15,.45], stator:[0x6b737b,.6,.4], lam:[0xb7bec6,.8,.3], copper:[0xc8763d,.85,.3],
+    compressor:[0x4a5057,.5,.4], brass:[0xc9a24b,.85,.28], nozzle:[0x3a3f45,.6,.4], spring:[0xe0b030,.6,.35],
+    gauge:[0xf2f0eb,.1,.4], needle:[0xd9432f,.2,.5]
+  };
+  var cache={};
+  function mat(key,opts){
+    opts=opts||{};
+    var k=key+'|'+(opts.cut?1:0)+'|'+(opts.ds?1:0);
+    if(cache[k]) return cache[k];
+    var c=C[key], m=new THREE.MeshStandardMaterial({color:c[0],metalness:c[1],roughness:c[2],side:opts.ds?THREE.DoubleSide:THREE.FrontSide});
+    m.envMapIntensity=c[1]>=0.5?0.9:0.3;
+    if(opts.cut){ m.color.setHex(0xf3efe6); m.transparent=true; m.opacity=0.12; m.depthWrite=false; }
+    return (cache[k]=m);
+  }
+  var plumeMat=new THREE.MeshStandardMaterial({color:0xcfe9ff,emissive:0x9fd4ff,emissiveIntensity:.8,transparent:true,opacity:.35,depthWrite:false});
+  function add(geo,key,parent,opts){ var m=new THREE.Mesh(geo,mat(key,opts)); parent.add(m); return m; }
+  function cylX(r,len,seg){ var g=new THREE.CylinderGeometry(r,r,len,seg||20); g.rotateZ(Math.PI/2); return g; }
+  function between(mesh,a,b){              /* oriente un cylindre (axe Y) entre deux points */
+    var d=b.clone().sub(a), l=d.length();
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.scale.set(1,l,1);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+  }
+  function spurGear(m,z,thick,bore){
+    var rp=m*z/2, ro=rp+m*0.9, rr=Math.max(bore+0.05,rp-m*1.1), s=new THREE.Shape(), st=Math.PI*2/z;
+    for(var i=0;i<z;i++){
+      var a0=i*st;
+      [[a0,rr],[a0+st*.17,rr],[a0+st*.29,ro],[a0+st*.51,ro],[a0+st*.63,rr]].forEach(function(p,k){
+        var x=Math.cos(p[0])*p[1], y=Math.sin(p[0])*p[1]; if(i===0&&k===0) s.moveTo(x,y); else s.lineTo(x,y);
+      });
+    }
+    s.closePath();
+    if(bore>0.02){ var h=new THREE.Path(); h.absarc(0,0,bore,0,Math.PI*2,false); s.holes.push(h); }
+    var g=new THREE.ExtrudeGeometry(s,{depth:thick,bevelEnabled:false,curveSegments:14}); g.translate(0,0,-thick/2);
+    return g;
+  }
+  function springGeo(r,len,coils,wire){
+    var pts=[]; for(var i=0;i<=coils*16;i++){ var t=i/(coils*16), a=t*coils*Math.PI*2; pts.push(new THREE.Vector3(Math.cos(a)*r,t*len,Math.sin(a)*r)); }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),coils*32,wire,8,false);
+  }
+
+  /* ---------- les 13 pièces ---------- */
+  var BUILD={
+    1:function(g){
+      var prof=new THREE.Shape();
+      [[-3.65,-0.55],[3.65,-0.55],[3.82,-0.2],[3.45,0.22],[1.85,0.42],[0.55,1.12],[-1.15,1.08],[-2.75,0.58],[-3.72,0.45],[-3.82,-0.2]]
+        .forEach(function(p,i){ if(i===0) prof.moveTo(p[0],p[1]); else prof.lineTo(p[0],p[1]); });
+      prof.closePath();
+      [[-1,false],[1,true]].forEach(function(h){
+        var geo=new THREE.ExtrudeGeometry(prof,{depth:1.45,bevelEnabled:true,bevelThickness:0.1,bevelSize:0.1,bevelSegments:3});
+        var pos=geo.attributes.position;
+        for(var i=0;i<pos.count;i++){ var x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i); pos.setXYZ(i,h[0]*z,y,x); }
+        geo.computeVertexNormals();
+        add(geo,'paint',g,{ds:true,cut:h[1]});
+      });
+      var wing=new THREE.BoxGeometry(2.85,0.08,0.48); wing.rotateX(0.15); wing.translate(0,0.72,-3.55); add(wing,'carbon',g);
+      [-0.95,0.95].forEach(function(x){ var s=new THREE.BoxGeometry(0.08,0.28,0.22); s.translate(x,0.55,-3.52); add(s,'carbon',g); });
+      var seat=new THREE.BoxGeometry(0.62,0.85,0.14); seat.rotateX(-0.22); seat.translate(-0.65,0.12,-0.15); add(seat,'seat',g);
+      var cushion=new THREE.BoxGeometry(0.62,0.14,0.6); cushion.translate(-0.65,-0.28,0.2); add(cushion,'seat',g);
+    },
+    2:function(g,P){
+      var base=new THREE.BoxGeometry(0.32,0.22,0.35); base.translate(-0.65,-0.42,1.62); add(base,'black',g);
+      P.pedal=new THREE.Group(); P.pedal.position.set(-0.65,-0.35,1.55); g.add(P.pedal);
+      var pad=new THREE.BoxGeometry(0.22,0.52,0.08); pad.rotateX(0.45); pad.translate(0,0.18,-0.08); add(pad,'alu',P.pedal);
+    },
+    3:function(g,P){
+      /* colonne : du volant au pignon, qui repose SUR la crémaillère */
+      var axis=YOKE_C.clone().sub(PINION_C).normalize();
+      P.column=new THREE.Group(); P.column.position.copy(PINION_C);
+      P.column.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis); g.add(P.column);
+      P.colSpin=new THREE.Group(); P.column.add(P.colSpin);
+      var len=YOKE_C.distanceTo(PINION_C);
+      var shaft=new THREE.CylinderGeometry(0.05,0.05,len,12); shaft.translate(0,len/2,0); add(shaft,'steel',P.colSpin);
+      var pin=spurGear(STEER_MOD,STEER_Z,0.14,0.05); pin.rotateX(Math.PI/2); add(pin,'steelDark',P.colSpin);
+      var yoke=new THREE.TorusGeometry(0.3,0.045,12,28); yoke.rotateX(Math.PI/2); yoke.translate(0,len,0); add(yoke,'black',P.colSpin);
+      var spoke=new THREE.BoxGeometry(0.58,0.06,0.08); spoke.translate(0,len,0); add(spoke,'black',P.colSpin);
+      P.rack=new THREE.Group(); P.rack.position.set(0,RACK_Y,RACK_Z); g.add(P.rack);
+      add(new THREE.BoxGeometry(2.55,0.14,0.16),'steel',P.rack);
+      var pitch=Math.PI*STEER_MOD;
+      for(var x=-1.0;x<=0.6;x+=pitch){ var t=new THREE.BoxGeometry(pitch*0.5,0.07,0.16); t.translate(x,0.105,0); add(t,'steelDark',P.rack); }
+      var housing=cylX(0.11,1.6,18); housing.translate(0.55,RACK_Y,RACK_Z); add(housing,'black',g);
+      P.tieRods=[-1,1].map(function(){ var m=add(new THREE.CylinderGeometry(0.035,0.035,1,10),'steel',g); return m; });
+    },
+    4:function(g){
+      var slab=new THREE.BoxGeometry(2.65,0.32,3.65); slab.translate(0,-0.72,0.2); add(slab,'packBox',g);
+      for(var z=-1.25;z<=1.65;z+=0.72){ var c=new THREE.BoxGeometry(2.35,0.08,0.56); c.translate(0,-0.52,z); add(c,'cell',g); }
+    },
+    5:function(g){
+      var fuse=cylX(0.14,0.55,14); fuse.rotateY(Math.PI/2); fuse.translate(-0.35,-0.42,-0.45); add(fuse,'fuse',g);
+      [[[-0.35,-0.52,1.25],[-0.65,-0.42,1.55],[-0.35,-0.42,0.15],[-0.15,-0.5,-0.88]],[[0.35,-0.52,0.2],[0.55,-0.15,-0.45],[0.25,-0.5,-0.88]]]
+        .forEach(function(w){ add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(w.map(function(p){ return new THREE.Vector3(p[0],p[1],p[2]); })),24,0.05,8,false),'hv',g); });
+    },
+    6:function(g,P){
+      var stator=new THREE.CylinderGeometry(0.46,0.46,0.78,22,1,false,Math.PI*0.25,Math.PI*1.5); stator.rotateZ(Math.PI/2); stator.translate(0.05,AXLE_Y,MOTOR_Z);
+      add(stator,'stator',g,{ds:true});
+      P.rotor=new THREE.Group(); P.rotor.position.set(0,AXLE_Y,MOTOR_Z); g.add(P.rotor);
+      var core=cylX(0.3,0.68,12); core.translate(0.05,0,0); add(core,'lam',P.rotor);
+      for(var k=0;k<6;k++){ var fin=new THREE.BoxGeometry(0.64,0.62,0.07); fin.rotateX(k*Math.PI/3); fin.translate(0.05,0,0); add(fin,'copper',P.rotor); }
+      var sh=cylX(0.09,1.35,14); sh.translate(-0.1,0,0); add(sh,'steel',P.rotor);
+    },
+    7:function(g,P){
+      P.pinion=new THREE.Group(); P.pinion.position.set(-0.48,AXLE_Y,MOTOR_Z); g.add(P.pinion);
+      var pg=spurGear(GEAR_MOD,Z_PINION,0.24,0.09); pg.rotateY(Math.PI/2); add(pg,'steel',P.pinion);
+    },
+    8:function(g,P){
+      P.gear=new THREE.Group(); P.gear.position.set(-0.48,AXLE_Y,REAR_Z); g.add(P.gear);
+      var gg=spurGear(GEAR_MOD,Z_GEAR,0.24,0.14); gg.rotateY(Math.PI/2); add(gg,'steelDark',P.gear);
+    },
+    9:function(g,P){
+      function wheel(parent,x){
+        var tire=new THREE.TorusGeometry(WHEEL_R-0.18,0.2,14,40); tire.rotateY(Math.PI/2); tire.translate(x,0,0); add(tire,'tire',parent);
+        var tread=cylX(WHEEL_R-0.02,0.46,40); tread.translate(x,0,0); add(tread,'tire',parent);
+        var rim=cylX(0.62,0.48,32); rim.translate(x,0,0); add(rim,'chrome',parent);
+        for(var s=0;s<5;s++){ var sp=new THREE.BoxGeometry(0.5,1.18,0.11); sp.rotateX(s*Math.PI*2/5); sp.translate(x+(x>=0?0.02:-0.02),0,0); add(sp,'alu',parent); }
+        var hub=cylX(0.14,0.52,16); hub.translate(x,0,0); add(hub,'black',parent);
+      }
+      P.rear=new THREE.Group(); P.rear.position.set(0,AXLE_Y,REAR_Z); g.add(P.rear);
+      add(cylX(0.12,WHEEL_X*2,16),'steel',P.rear);
+      wheel(P.rear,-WHEEL_X); wheel(P.rear,WHEEL_X);
+      [-1.05,1.05].forEach(function(x){ var b=cylX(0.28,0.18,18); b.translate(x,AXLE_Y,REAR_Z); add(b,'chrome',g); });
+      P.steer=[]; P.spin=[];
+      [-1,1].forEach(function(sx){
+        var st=new THREE.Group(); st.position.set(sx*WHEEL_X,AXLE_Y,FRONT_Z); g.add(st);
+        var sp=new THREE.Group(); st.add(sp); wheel(sp,0);
+        /* bras de direction, derrière l'axe de pivot, relié à la biellette */
+        var arm=new THREE.BoxGeometry(0.06,0.06,ARM); arm.translate(-sx*0.38,0.12,-ARM/2); add(arm,'steel',st);
+        P.steer.push(st); P.spin.push(sp);
+      });
+    },
+    10:function(g,P){
+      var m2=cylX(0.26,0.48,18); m2.translate(0.32,CRANK_C.y,CRANK_C.z); add(m2,'compressor',g);
+      P.crank=new THREE.Group(); P.crank.position.copy(CRANK_C); g.add(P.crank);
+      var disk=cylX(0.24,0.1,24); add(disk,'steel',P.crank);
+      var pin=cylX(0.04,0.16,10); pin.translate(0.06,0,CRANK_R); add(pin,'chrome',P.crank);
+      P.rod=add(new THREE.CylinderGeometry(0.04,0.04,1,10),'steelDark',g);
+      P.piston=new THREE.Group(); g.add(P.piston);
+      var pist=new THREE.CylinderGeometry(0.2,0.2,0.22,20); add(pist,'alu',P.piston);
+      var sleeve=new THREE.CylinderGeometry(0.23,0.23,0.62,20,1,true,Math.PI*0.5,Math.PI);
+      sleeve.translate(CRANK_C.x+0.06,CRANK_C.y+Math.sqrt(ROD_L*ROD_L)+0.22,CRANK_C.z); add(sleeve,'compressor',g,{ds:true});
+      var head=new THREE.CylinderGeometry(0.25,0.25,0.06,20); head.translate(CRANK_C.x+0.06,CRANK_C.y+ROD_L+0.56,CRANK_C.z); add(head,'compressor',g);
+    },
+    11:function(g,P){
+      var tank=cylX(0.46,1.35,24); tank.translate(0,0.28,-1.55); add(tank,'carbon',g);
+      [-0.675,0.675].forEach(function(x){
+        var dome=new THREE.SphereGeometry(0.46,20,14); dome.translate(x,0.28,-1.55); add(dome,'carbon',g);
+        var strap=cylX(0.48,0.08,24); strap.translate(x*0.65,0.28,-1.55); add(strap,'alu',g);
+      });
+      /* manomètre : l'aiguille indique la pression de l'azote */
+      var dial=cylX(0.12,0.04,24); dial.translate(0.98,0.5,-1.55); add(dial,'gauge',g);
+      P.needle=new THREE.Group(); P.needle.position.set(1.01,0.5,-1.55); g.add(P.needle);
+      var nd=new THREE.BoxGeometry(0.01,0.1,0.015); nd.translate(0,0.05,0); add(nd,'needle',P.needle);
+    },
+    12:function(g,P){
+      var block=new THREE.BoxGeometry(0.42,0.32,0.38); block.translate(0,0.58,-1.55); add(block,'brass',g);
+      P.valve=new THREE.Group(); P.valve.position.set(0,0.62,-1.55); g.add(P.valve);
+      var lever=new THREE.BoxGeometry(0.32,0.08,0.12); lever.translate(0,0.2,0); add(lever,'needle',P.valve);
+      [[[0,0.48,-1.55],[0,0.15,-2.85],[-0.65,-0.3,-3.58]],[[0,0.48,-1.55],[0,0.15,-2.85],[0.65,-0.3,-3.58]],
+       [[0,0.48,-1.55],[-0.4,-0.38,0.2],[-1.35,-0.35,2.85]],[[0,0.48,-1.55],[0.4,-0.38,0.2],[1.35,-0.35,2.85]]].forEach(function(w){
+        add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(w.map(function(p){ return new THREE.Vector3(p[0],p[1],p[2]); })),20,0.045,8,false),'steel',g);
+      });
+    },
+    13:function(g,P){
+      P.plumes=[];
+      [[-0.65,-0.42,-3.58],[0.65,-0.42,-3.58],[-1.35,-0.45,2.85],[1.35,-0.45,2.85]].forEach(function(p){
+        var n=new THREE.Group(); n.position.set(p[0],p[1],p[2]); g.add(n);
+        var bell=new THREE.CylinderGeometry(0.1,0.24,0.36,18,1,true); bell.translate(0,-0.18,0); add(bell,'nozzle',n,{ds:true});
+        var plume=new THREE.Mesh(new THREE.ConeGeometry(0.3,1.35,16,1,true),plumeMat); plume.rotation.x=Math.PI; plume.position.y=-1.05; n.add(plume);
+        P.plumes.push(plume);
+      });
+      P.springs=[];
+      [[-1.25,REAR_Z],[1.25,REAR_Z],[-1.25,FRONT_Z],[1.25,FRONT_Z]].forEach(function(p){
+        var s=add(springGeo(0.16,0.62,6,0.032),'spring',g); s.position.set(p[0],AXLE_Y,p[1]); P.springs.push(s);
+      });
+    }
+  };
+
+  /* ---------- cinématique (cycle de 30 unités, vitesses intégrées) ----------
+     0–9   roule (moteur → engrenage → roues), braque à gauche puis à droite
+     9–13  arrêt, le compresseur recharge le réservoir
+     13–15 électrovanne ouverte : décollage ; 15–21 vol stationnaire, la
+           pression baisse ; 21–23 atterrissage ; 23–30 recharge au sol */
+  var CYC=30, WM=9;
+  function sm(x){ x=clamp(x,0,1); return x*x*(3-2*x); }
+  function drive(u){ return u<1?u:u<8?1:u<9?9-u:0; }
+  function driveInt(u){ return u<1?u*u/2:u<8?0.5+(u-1):u<9?7.5+(u-8)-(u-8)*(u-8)/2:8; }
+  function compOn(u){ return (u>=9&&u<13)||(u>=23&&u<29.5); }
+  function compInt(u){ return clamp(u-9,0,4)+clamp(u-23,0,6.5); }
+  function kinematics(t, iso){
+    var n=Math.floor(t/CYC), u=t-n*CYC;
+    var motor=WM*(n*8+driveInt(u));
+    var lift=sm((u-13)/2)*(1-sm((u-21)/2));
+    var thrust=u>=13&&u<23 ? Math.max(sm((u-12.8)/0.4),0)*(1-sm((u-22.6)/0.4)) : 0;
+    /* pression (0 à 1) : monte avec le compresseur, baisse pendant le vol */
+    var p=u<9?0.55 : u<13?0.55+0.45*(u-9)/4 : u<23?1-0.6*clamp((u-13)/10,0,1) : 0.4+0.15*clamp((u-23)/6.5,0,1);
+    var steerA=drive(u)*0.9*Math.sin(u*0.9);   /* angle du volant (rad) */
+    return {
+      motor:motor, axle:-motor*Z_PINION/Z_GEAR, pedal:drive(u),
+      wheel:steerA, rack:steerA*STEER_R,
+      crank:9*(n*10.5+compInt(u)), comp:compOn(u)?1:0,
+      lift:lift, thrust:thrust, valve:thrust, pressure:p
+    };
+  }
+
+  function buildParts(ids){
+    var root=new THREE.Group(), P={groups:{}, labels:[]};
+    ids.forEach(function(id){
+      var g=new THREE.Group(); BUILD[id](g,P);
+      var a=new THREE.Object3D(); a.position.fromArray(ANCHORS[id]); g.add(a);
+      P.labels.push({num:id, name:PARTS[id-1].short, obj:a});
+      P.groups[id]=g; root.add(g);
+    });
+    var A=new THREE.Vector3(), B=new THREE.Vector3();
+    function update(s){
+      if(P.rotor) P.rotor.rotation.x=s.motor;
+      if(P.pinion) P.pinion.rotation.x=Math.PI/Z_PINION+s.motor;
+      if(P.gear) P.gear.rotation.x=s.axle;
+      if(P.rear) P.rear.rotation.x=s.axle;
+      if(P.spin) P.spin.forEach(function(w){ w.rotation.x=s.axle; });
+      if(P.pedal) P.pedal.rotation.x=0.3*s.pedal;
+      if(P.colSpin) P.colSpin.rotation.y=-s.wheel;
+      if(P.rack){
+        P.rack.position.x=s.rack;
+        /* angle de braquage donné par la biellette : δ = asin(course / bras) */
+        var delta=Math.asin(clamp(s.rack/ARM,-0.9,0.9));
+        if(P.steer) P.steer.forEach(function(st){ st.rotation.y=-delta; });
+        if(P.tieRods && P.steer) P.tieRods.forEach(function(rod,i){
+          var sx=i===0?-1:1;
+          A.set(sx*1.275+s.rack,RACK_Y,RACK_Z);
+          P.steer[i].updateMatrix(); B.set(-sx*0.38,0.12,-ARM).applyMatrix4(P.steer[i].matrix);
+          between(rod,A,B);
+        });
+      }
+      if(P.crank){
+        var th=s.crank;
+        P.crank.rotation.x=-th;            /* maneton en (r·cos θ, r·sin θ) dans le plan (z, y) */
+        var pinY=CRANK_C.y+CRANK_R*Math.sin(th), pinZ=CRANK_C.z+CRANK_R*Math.cos(th);
+        var pistonY=CRANK_C.y+CRANK_R*Math.sin(th)+Math.sqrt(ROD_L*ROD_L-Math.pow(CRANK_R*Math.cos(th),2));
+        P.piston.position.set(CRANK_C.x+0.06,pistonY+0.11,CRANK_C.z);
+        A.set(CRANK_C.x+0.06,pinY,pinZ); B.set(CRANK_C.x+0.06,pistonY,CRANK_C.z);
+        between(P.rod,A,B);
+      }
+      if(P.needle) P.needle.rotation.x=-2.2+4.4*s.pressure;
+      if(P.valve) P.valve.rotation.y=s.valve*Math.PI/2;
+      if(P.plumes) P.plumes.forEach(function(pl){ pl.visible=s.thrust>0.02; pl.scale.set(1,0.3+0.7*s.thrust,1); });
+      if(P.springs) P.springs.forEach(function(sp){ sp.scale.y=1+0.25*s.lift; });
+    }
+    return {root:root, P:P, update:update};
+  }
+
+  function isoMech(ids){
+    return function(){
+      var b=buildParts(ids), view=new THREE.Group(); view.add(b.root);
+      b.update(kinematics(3,true)); b.root.updateMatrixWorld(true);
+      var size=new THREE.Vector3(); new THREE.Box3().setFromObject(b.root).getSize(size);
+      var k=1/Math.max(size.x,size.y,size.z,0.1); view.scale.set(k,k,k);
+      return {group:view, update:function(s){ b.update(s); }};
+    };
+  }
+  var MECHS={
+    propulsion:{
+      label:'Propulsion : moteur et engrenage Z = 12 → Z = 36',
+      movementIn:'rotation rapide du moteur (pignon 7)', movementOut:'rotation 3 fois plus lente des roues (sens inverse)',
+      roleDesc:'La pédale ferme le circuit : la batterie alimente le moteur par les câbles et le fusible. Le pignon de 12 dents entraîne la roue de 36 dents montée sur l’essieu : r = 12/36 = 1/3, la vitesse est divisée par 3, le couple multiplié par 3, et le sens de rotation s’inverse.',
+      build:isoMech([6,7,8,9])
+    },
+    direction:{
+      label:'Direction à pignon et crémaillère',
+      movementIn:'rotation du volant', movementOut:'translation de la crémaillère, puis pivotement des roues',
+      roleDesc:'Le pignon au bas de la colonne engrène la crémaillère : elle se déplace de r × θ (rayon du pignon × angle du volant, en radians). Les biellettes poussent les bras de direction, qui font pivoter les roues avant autour de leur axe : braquage δ = arcsin(course / longueur du bras).',
+      build:isoMech([3])
+    },
+    compresseur:{
+      label:'Compresseur à bielle et manivelle',
+      movementIn:'rotation de la manivelle (moteur auxiliaire)', movementOut:'translation alternative du piston',
+      roleDesc:'Au sol, le moteur auxiliaire fait tourner la manivelle ; la bielle transforme cette rotation en va-et-vient du piston, qui comprime l’azote dans le réservoir. La position du piston n’est pas un simple sinus : y = r·sin θ + √(L² − (r·cos θ)²), avec r le rayon de la manivelle et L la longueur de la bielle.',
+      build:isoMech([10,11])
+    },
+    vol:{
+      label:'Électrovanne, tuyères et ressorts',
+      movementIn:'ouverture de l’électrovanne', movementOut:'poussée verticale (le véhicule s’élève)',
+      roleDesc:'L’électrovanne ouvre le passage de l’azote vers les quatre tuyères, qui l’éjectent vers le bas : par action-réaction, le véhicule est poussé vers le haut. La réserve d’azote est limitée : la pression baisse pendant le vol, il faut se poser puis recharger avec le compresseur. Quand les roues quittent le sol, les ressorts de suspension se détendent.',
+      build:isoMech([11,12,13])
+    }
+  };
+  var ORDER=['propulsion','direction','compresseur','vol'];
+
+  return {
+    label:'Roadster électrique volant', order:ORDER, mechs:MECHS, kinematics:kinematics, nomenclature:PARTS,
+    buildFull:function(){
+      var b=buildParts([1,2,3,4,5,6,7,8,9,10,11,12,13]);
+      for(var id=1;id<=13;id++){ var e=EXPLODE[id]; b.P.groups[id].userData.explodeDir=new THREE.Vector3(e[0],e[1],e[2]).multiplyScalar(1/0.9); }
+      var group=b.root;
+      group.scale.set(SCALE,SCALE,SCALE);
+      group.position.y=-GROUND_Y*SCALE;               /* roues posées sur le sol (y = 0) */
+      var baseY=group.position.y;
+      function update(s){ b.update(s); group.position.y=baseY+s.lift*HOVER*SCALE; }
+      update(kinematics(0,false));
+      return {group:group, update:update, labels:b.P.labels};
+    },
+    buildIsolated:function(key){
+      var inst=MECHS[key].build();
+      return {group:inst.group, animate:function(t){ inst.update(kinematics(t+3,true)); }};
+    }
+  };
+})();
+
 var CATALOGUE = [
   {
     id:'velo', name:'Vélo', detailed:'velo',
@@ -4798,6 +5157,13 @@ var CATALOGUE = [
     category:'Système combiné',
     movementIn:'rotation de la touche (appui du doigt)', movementOut:'rotation du marteau (frappe) + translation des étouffoirs',
     desc:'Piano à queue complet (88 notes) modélisé avec sa mécanique à double échappement. La touche est un levier qui pivote sur la barre d’équilibre ; à l’arrière, le pilote soulève la bascule, qui amplifie le mouvement ; l’échappement pousse le rouleau du marteau, qui tourne environ 6,4 fois plus que la touche et frappe la corde par-dessous, puis échappe pour la laisser vibrer. La queue de la touche soulève aussi le levier d’étouffoir, qui retire le feutre de la corde. La pédale forte soulève tous les étouffoirs à la fois par une tringle et une barre de levée. La vue éclatée sépare le couvercle, le cadre en fonte, le sommier, les cordes, la table d’harmonie, le clavier, la mécanique, les marteaux, les étouffoirs, la lyre et les pieds.',
+    builtin:true
+  },
+  {
+    id:'roadster', name:'Roadster électrique volant', detailed:'roadster',
+    category:'Système combiné',
+    movementIn:'rotation du moteur électrique + ouverture de l’électrovanne', movementOut:'roulement, braquage et sustentation',
+    desc:'Voiture électrique de concept à « pack de propulseurs à gaz froid », d’après le modèle d’examen ST/ATS fourni (13 pièces numérotées). Au sol, la pédale ferme le circuit : le moteur arrière entraîne l’essieu par un engrenage 12 → 36 dents (vitesse ÷ 3, couple × 3) ; le volant fait braquer les roues avant par un pignon, une crémaillère et des biellettes. À l’arrêt, un compresseur à bielle et manivelle remplit d’azote un réservoir haute pression. L’électrovanne envoie ensuite le gaz aux quatre tuyères, qui le rejettent vers le bas : par action-réaction, le véhicule s’élève tant que la pression le permet, puis se pose.',
     builtin:true
   }
 ];

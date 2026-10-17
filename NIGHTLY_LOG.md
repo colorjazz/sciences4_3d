@@ -5,6 +5,29 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 
 ---
 
+## 2026-10-17 (suite 3) — Roadster électrique volant (7e objet)
+
+- L'utilisatrice fournit un second modèle d'examen autonome
+  (« tesla.html » : Roadster électrique + pack de propulseurs à gaz
+  froid, 13 pièces, style gris à arêtes noires). Intégré comme NOUVEL
+  objet `DetailedObjects.roadster` (n'en remplace aucun), directement
+  dans le style harmonisé (PBR coloré, demi-carrosserie translucide,
+  câbles haute tension orange, repères + nomenclature).
+- Corrections physiques par rapport à l'original :
+  - pignon de direction : il flottait ~1 m au-dessus de la crémaillère ;
+    il repose maintenant dessus, la colonne va du volant au pignon ;
+    course de la crémaillère = r_pignon × θ_volant (elle était
+    arbitraire) ; biellettes ajoutées, braquage δ = asin(course / bras) ;
+  - compresseur : vraie loi bielle-manivelle
+    y = r·sin θ + √(L² − (r·cos θ)²) au lieu d'un sinus ;
+  - cycle cohérent : le compresseur recharge le réservoir au sol, la
+    pression baisse en vol (manomètre), le véhicule se pose ensuite ;
+    les ressorts se détendent quand les roues quittent le sol.
+- Vitesses intégrées exactement sur un cycle de 30 unités (roulage et
+  braquage, recharge, décollage, vol, atterrissage, recharge).
+- Vérifié par Playwright : les 7 objets se chargent deux fois de suite
+  sans erreur ; vignettes, nomenclature et repères du roadster OK.
+
 ## 2026-10-17 (suite 2) — Harmonisation et précision physique
 
 - Demande de l'utilisatrice : « le piano est super coloré et stylé, la
