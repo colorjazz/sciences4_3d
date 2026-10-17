@@ -13,7 +13,8 @@ Journal des sessions de travail autonome. Nouvelle entrée à chaque
 - `industriels/roadster.html` = tesla.html d'origine, octet pour octet.
   `industriels/index.html` l'affiche dans un cadre, avec onglets de
   section, ◀ ▶ et liste des objets (Main d'Optimus et Pince pour fusée
-  annoncées « à venir »). Ajouter un objet = déposer son fichier + une
+  annoncées « à venir »). Ajout ensuite de `mechazilla.html` (tour de
+  capture « baguettes » SpaceX), lui aussi identique au fichier fourni. Ajouter un objet = déposer son fichier + une
   ligne dans `OBJETS`.
 - Le Roadster harmonisé (PR #4) est abandonné à la demande de
   l'utilisatrice ; la banque quotidienne garde ses 6 objets.
