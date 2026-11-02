@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Main Bionique d'Optimus (Tesla Bot) — Modèle d'Examen ST/ATS 4e sec. (MEQ)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --ink: #111111;
+      --paper: #ffffff;
+      --panel-bg: #f6f6f6;
+      --border: #1a1a1a;
+      --accent: #0055cc;
+      --accent-soft: #e6f0ff;
+      --muted: #555555;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 640px;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+      min-height: 640px;
+    }
+
+    /* EN-TÊTE STYLE CAHIER D'EXAMEN MEQ */
+    header {
+      border-bottom: 2px solid var(--border);
+      background: var(--paper);
+      padding: 7px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .exam-title-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .meq-badge {
+      border: 2px solid var(--border);
+      font-weight: 800;
+      padding: 3px 7px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .exam-title {
+      font-weight: 700;
+      font-size: 13.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .exam-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .btn-group {
+      display: inline-flex;
+      border: 1.5px solid var(--border);
+      background: var(--paper);
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--paper);
+      color: var(--ink);
+      padding: 5px 9px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    button:last-child {
+      border-right: none;
+    }
+
+    button:hover {
+      background: #eaeaea;
+    }
+
+    button.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    button.power-btn {
+      border: 1.5px solid var(--border);
+      font-weight: 700;
+    }
+
+    button.power-btn.running {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* ZONE PRINCIPALE (OPTIMISÉE DESKTOP, MOBILE & GOOGLE SITES) */
+    #workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 395px;
+      grid-template-rows: minmax(460px, 1fr);
+      min-height: 460px;
+      position: relative;
+    }
+
+    #viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      background: #ffffff;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      display: block;
+    }
+
+    /* CALQUE SVG + HTML POUR LES REPÈRES NUMÉROTÉS */
+    #callout-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #callout-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .callout-badge {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #ffffff;
+      border: 1.8px solid #111111;
+      border-radius: 14px;
+      padding: 2px 7px;
+      min-width: 24px;
+      height: 24px;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #111111;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      white-space: nowrap;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .callout-badge:hover {
+      border-color: var(--accent);
+    }
+
+    .callout-badge.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      z-index: 10;
+    }
+
+    .callout-badge .part-label {
+      font-weight: 600;
+      font-size: 11px;
+      display: none;
+    }
+
+    body.mode-correction .callout-badge .part-label {
+      display: inline;
+    }
+
+    /* ÉTIQUETTES PÉDAGOGIQUES FLOTTANTES */
+    .floating-tag {
+      position: absolute;
+      pointer-events: none;
+      background: #ffffff;
+      border: 1.5px solid var(--ink);
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      transform: translate(-50%, -50%);
+      z-index: 7;
+      white-space: nowrap;
+    }
+
+    .floating-tag.energy-tag {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* AIDE NAVIGATION BAS GAUCHE */
+    #viewport-hud {
+      position: absolute;
+      left: 10px;
+      bottom: 8px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--border);
+      padding: 5px 8px;
+      font-size: 11px;
+      line-height: 1.3;
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    /* PANNEAU LATÉRAL (SCHÉMA ÉLECTRIQUE, CINÉMATIQUE, FICHE PIÈCE) */
+    #side-panel {
+      border-left: 2px solid var(--border);
+      background: var(--panel-bg);
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1.5px solid var(--border);
+      padding: 9px 10px;
+    }
+
+    .card-title {
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .part-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .part-num-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.8px solid var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .part-num-circle.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dotted #cccccc;
+      padding: 3px 0;
+      font-size: 12px;
+      gap: 8px;
+    }
+
+    .kv-row:last-child {
+      border-bottom: none;
+    }
+
+    .kv-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .kv-val {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .exam-masked {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .formula-box {
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: #f0f0f0;
+      border-left: 3px solid var(--ink);
+      font-family: "Courier New", monospace;
+      font-size: 11.2px;
+      line-height: 1.38;
+    }
+
+    /* LISTE DES 13 PIÈCES CLIQUABLES */
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+
+    .part-chip {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      padding: 4px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-align: left;
+    }
+
+    .part-chip.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .part-chip b {
+      display: inline-block;
+      min-width: 16px;
+    }
+
+    /* RESPONSIVE MOBILE */
+    @media (max-width: 880px) {
+      #workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(380px, 56vh) 1fr;
+      }
+      #viewport, #three-canvas {
+        min-height: 380px;
+      }
+      #side-panel {
+        border-left: none;
+        border-top: 2px solid var(--border);
+      }
+      .exam-subtitle, #viewport-hud {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="mode-examen">
+<div id="app">
+  <header>
+    <div class="exam-title-block">
+      <span class="meq-badge">MEQ • ST / ATS 4e SEC.</span>
+      <div>
+        <div class="exam-title">Analyse technologique — Main droite bionique à tendons (« Optimus »)</div>
+        <div class="exam-subtitle">Roue et vis sans fin (irréversible) • Vis et écrou • Poulies et câbles-tendons • Pouce latéral opposable</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="btn-group" aria-label="Mode pédagogique">
+        <button id="btn-mode-examen" class="active" title="Affiche uniquement les numéros">Mode Examen</button>
+        <button id="btn-mode-correction" title="Affiche les noms, fonctions, liaisons et énergies">Mode Correction</button>
+      </div>
+
+      <div class="btn-group" aria-label="Modes de vue">
+        <button id="btn-view-ext" class="active">1. Vue extérieure</button>
+        <button id="btn-view-cut">2. Vue en coupe</button>
+        <button id="btn-view-exp">3. Vue éclatée</button>
+      </div>
+
+      <button id="btn-power" class="power-btn" title="Fermer l'interrupteur (3) et saisir la cellule 4680 (13)">4. Préhension : OUVERTE</button>
+      <button id="btn-wave" style="border:1.5px solid #1a1a1a;" title="Tester la flexion séquentielle des 5 doigts">Vague doigts</button>
+      <button id="btn-lab-toggle" class="active" style="border:1.5px solid #1a1a1a;" title="Afficher/Masquer le banc d'essai robotique">Labo : OUI</button>
+      <button id="btn-reset-cam" style="border:1.5px solid #1a1a1a;" title="Recadrer sur la main bionique">Recadrer</button>
+    </div>
+  </header>
+
+  <div id="workspace">
+    <!-- VUE 3D INTERACTIVE -->
+    <div id="viewport">
+      <canvas id="three-canvas"></canvas>
+      <svg id="callout-svg"></svg>
+      <div id="callout-layer"></div>
+      <div id="viewport-hud">
+        <strong>Contrôles 3D :</strong> Glisser (1 doigt / souris) = Orienter • Pincer / Molette = Zoomer • Cliquer bouton <b>(3)</b>, pouce/doigts <b>(10)</b> ou cellule <b>(13)</b>
+      </div>
+    </div>
+
+    <!-- PANNEAU TECHNIQUE LATÉRAL -->
+    <div id="side-panel">
+      <!-- FICHE DE LA PIÈCE SÉLECTIONNÉE -->
+      <div class="card">
+        <div class="card-title">
+          <span>Pièce sélectionnée</span>
+          <span id="mode-indicator-label">MODE EXAMEN</span>
+        </div>
+        <div class="part-detail-header">
+          <span id="detail-num" class="part-num-circle active">1</span>
+          <div>
+            <div id="detail-name" style="font-weight:700; font-size:13px;">Pièce n° 1 (Mode Examen)</div>
+            <div id="detail-sub" style="font-size:11px; color:var(--muted);">Cliquez sur « Mode Correction » pour révéler la nomenclature</div>
+          </div>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Fonction technique :</span>
+          <span id="detail-func" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Liaison / Guidage / Matériau :</span>
+          <span id="detail-link" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+      </div>
+
+      <!-- CIRCUIT ÉLECTRIQUE NORMALISÉ PFEQ -->
+      <div class="card">
+        <div class="card-title">
+          <span>Schéma de principes — Circuit de préhension</span>
+          <span id="circuit-state-badge" style="font-weight:700;">CIRCUIT OUVERT</span>
+        </div>
+        <svg id="circuit-svg" viewBox="0 0 340 175" width="100%" height="162" style="background:#ffffff; border:1px solid #ccc; display:block;">
+          <!-- Alimentation CC 48V (4) + Fusible de protection (5) + Interrupteur de commande (3) -->
+          <line x1="42" y1="34" x2="72" y2="34" stroke="#111" stroke-width="2.2" />
+          <rect x="72" y="27" width="28" height="14" fill="#fff" stroke="#111" stroke-width="2" />
+          <line x1="72" y1="34" x2="100" y2="34" stroke="#111" stroke-width="1.4" />
+          <text x="86" y="21" font-size="9" font-weight="700" text-anchor="middle" fill="#111">Fusible (5)</text>
+
+          <line x1="100" y1="34" x2="136" y2="34" stroke="#111" stroke-width="2.2" />
+          <!-- Interrupteur de commande (3) -->
+          <circle cx="139" cy="34" r="3.2" fill="#fff" stroke="#111" stroke-width="2" />
+          <circle cx="178" cy="34" r="3.2" fill="#fff" stroke="#111" stroke-width="2" />
+          <line id="svg-sw-main" x1="142" y1="33" x2="175" y2="16" stroke="#111" stroke-width="2.5" stroke-linecap="round" style="cursor:pointer;" />
+          <text x="159" y="12" font-size="9.5" font-weight="700" text-anchor="middle" fill="#111">(3) Commande</text>
+
+          <line x1="181" y1="34" x2="288" y2="34" stroke="#111" stroke-width="2.2" />
+
+          <!-- Branche Moteurs des actionneurs linéaires (6) -->
+          <line x1="230" y1="34" x2="230" y2="62" stroke="#111" stroke-width="2.2" />
+          <circle cx="230" cy="80" r="18" fill="#fff" stroke="#111" stroke-width="2.2" />
+          <text x="230" y="85" font-size="13" font-weight="800" text-anchor="middle" fill="#111">M</text>
+          <line x1="230" y1="98" x2="230" y2="136" stroke="#111" stroke-width="2.2" />
+
+          <!-- Branche Capteur tactile de pression (3) + DEL témoin de prise ferme -->
+          <line x1="288" y1="34" x2="288" y2="62" stroke="#111" stroke-width="2.2" />
+          <polygon id="svg-led-grip" points="280,62 296,62 288,78" fill="#fff" stroke="#111" stroke-width="2" />
+          <line x1="279" y1="78" x2="297" y2="78" stroke="#111" stroke-width="2.2" />
+          <text x="303" y="73" font-size="9" font-weight="700" fill="#111">DEL</text>
+          <line x1="288" y1="78" x2="288" y2="136" stroke="#111" stroke-width="2.2" />
+
+          <!-- Ligne inférieure de retour (Conduction 5) -->
+          <line x1="288" y1="136" x2="42" y2="136" stroke="#111" stroke-width="2.2" />
+
+          <!-- Batterie Lithium-ion 48 V (4) -->
+          <line x1="42" y1="34" x2="42" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="42" y1="94" x2="42" y2="136" stroke="#111" stroke-width="2.2" />
+          <line x1="27" y1="68" x2="57" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="75" x2="50" y2="75" stroke="#111" stroke-width="3.6" />
+          <line x1="27" y1="84" x2="57" y2="84" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="91" x2="50" y2="91" stroke="#111" stroke-width="3.6" />
+          <text x="17" y="67" font-size="11" font-weight="700" fill="#111">+</text>
+          <text x="18" y="98" font-size="12" font-weight="700" fill="#111">−</text>
+
+          <!-- Animation du courant électrique -->
+          <rect id="anim-loop-main" x="42" y="34" width="246" height="102" fill="none" stroke="#0055cc" stroke-width="2.5" stroke-dasharray="6 10" opacity="0" />
+
+          <!-- Étiquettes normalisées PFEQ -->
+          <g font-size="9.5" font-weight="700" fill="#111">
+            <text x="6" y="153">(4) Alimentation (CC 48V)</text>
+            <text x="135" y="130" text-anchor="middle">(5) Conduction</text>
+            <text x="235" y="153" text-anchor="middle">(6) Transf. d'énergie (Moteur)</text>
+            <text x="175" y="167" font-weight="400" fill="#555" text-anchor="middle">Énergie électrique → mécanique (traction des tendons 9)</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- CINÉMATIQUE & MÉCANISMES (PFEQ) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Cinématique & Biomécanique PFEQ</span>
+          <span>Temps réel</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Roue et vis sans fin (7) (Z = 20) :</span>
+          <span class="kv-val">r = 1/20 (IRRÉVERSIBLE)</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Vitesses (Vis 6 / Roue 7) :</span>
+          <span class="kv-val">ω₁ = <span id="kin-w1">0</span> tr/min | ω₂ = <span id="kin-w2">0</span> tr/min</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Course Écrou (8) & Tendons (9) :</span>
+          <span class="kv-val">Δz = <span id="kin-stroke">0.0</span> / 28 mm</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Opposition Pouce / Doigts (10) :</span>
+          <span class="kv-val">Flexion = <span id="kin-curl">0</span>°</span>
+        </div>
+        <div class="formula-box">
+          <strong>1. Transmission (Roue et vis sans fin 7) :</strong><br/>
+          ω_roue = ω_moteur / 20. <strong>Irréversible</strong> : maintient la prise de l'objet (13) même lorsque le moteur (6) est coupé.<br/>
+          <strong>2. Transformation (Vis et écrou 8) :</strong><br/>
+          Rotation de la vis → Translation rectiligne de l'écrou.<br/>
+          <strong>3. Poulies/câbles (9) & Ressorts dorsaux (11) :</strong><br/>
+          Le pouce (implanté sur le flanc radial de la paume) et les 4 doigts sont tirés par les tendons (9) et rappelés par les ressorts (11).
+        </div>
+      </div>
+
+      <!-- RÉPERTOIRE DES 13 PIÈCES -->
+      <div class="card">
+        <div class="card-title">
+          <span>Nomenclature des 13 pièces</span>
+          <span>Cliquer pour cibler</span>
+        </div>
+        <div id="parts-grid" class="parts-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   1. DONNÉES PÉDAGOGIQUES PFEQ (13 PIÈCES NORMALISÉES ST/ATS 4e SECONDAIRE)
+   ============================================================================ */
+const PARTS_DATA = [
+  {
+    id: 1,
+    name: "Coque d'avant-bras et châssis palmaire (carter)",
+    func: "Loger et protéger les actionneurs de l'avant-bras, guider les écrous et supporter les 4 doigts à l'avant ainsi que le pouce sur le côté radial.",
+    link: "Liaison d'encastrement (complète, rigide, démontable par vis) entre les demi-coques ; alliage léger et polymère technique."
+  },
+  {
+    id: 2,
+    name: "Articulation du poignet (chape en liaison pivot)",
+    func: "Relier la paume à l'avant-bras et permettre l'inclinaison verticale de la main pour soulever la charge saisie.",
+    link: "Liaison pivot (guidage en rotation assuré par un axe transversal et deux coussinets)."
+  },
+  {
+    id: 3,
+    name: "Interrupteur principal et capteurs tactiles",
+    func: "Fonction de COMMANDE : fermer le circuit électrique d'actionnement et détecter la pression de contact sur l'objet (13).",
+    link: "Bouton à bascule sur l'avant-bras et micro-capteurs logés au bout des phalanges distales."
+  },
+  {
+    id: 4,
+    name: "Bloc-batterie Lithium-ion 48 V (accumulateur)",
+    func: "Fonction d'ALIMENTATION : fournir le courant continu (énergie électrique) aux moteurs sans balais (6).",
+    link: "Liaison complète démontable dans le compartiment inférieur de l'avant-bras (1)."
+  },
+  {
+    id: 5,
+    name: "Faisceau de fils conducteurs et fusible",
+    func: "Fonction de CONDUCTION (acheminer le courant) et de PROTECTION (le fusible coupe le circuit en cas de surintensité).",
+    link: "Conducteurs souples en cuivre (haute conductibilité) protégés par une gaine isolante en polymère."
+  },
+  {
+    id: 6,
+    name: "Moteurs électriques sans balais (stator + rotor)",
+    func: "TRANSFORMATION D'ÉNERGIE : convertir l'énergie électrique de la batterie (4) en énergie mécanique de rotation.",
+    link: "Stators encastrés dans le châssis d'avant-bras (1) ; rotors guidés en rotation."
+  },
+  {
+    id: 7,
+    name: "Réducteurs à roue dentée et vis sans fin (Z = 20)",
+    func: "TRANSMISSION DU MOUVEMENT : réduire fortement la vitesse (÷20), multiplier le couple et bloquer le retour de façon IRRÉVERSIBLE.",
+    link: "Mécanisme irréversible : la main garde sa force de serrage sur l'objet (13) sans consommer d'électricité une fois fermée."
+  },
+  {
+    id: 8,
+    name: "Systèmes vis et écrou (actionneurs linéaires)",
+    func: "TRANSFORMATION DU MOUVEMENT : convertir la rotation de la vis filetée en translation rectiligne de l'écrou tire-câble.",
+    link: "L'écrou est empêché de tourner par une glissière de l'avant-bras (guidage en translation rectiligne)."
+  },
+  {
+    id: 9,
+    name: "Poulies de renvoi et câbles-tendons fléchisseurs",
+    func: "TRANSMISSION DU MOUVEMENT : transmettre à distance la traction de l'écrou (8) à travers le poignet jusqu'aux 4 doigts et au pouce latéral (10).",
+    link: "Câbles synthétiques/acier travaillant sous contrainte de TRACTION ; guidés par des poulies à gorge au poignet."
+  },
+  {
+    id: 10,
+    name: "Phalanges des 4 doigts et du pouce latéral opposable",
+    func: "Le pouce émerge sur le côté de la paume (près du poignet) et se referme en opposition face aux 4 doigts pour former une pince cylindrique.",
+    link: "Liaisons pivots en série (articulations métacarpo-phalangiennes et interphalangiennes) au moyen de goupilles cylindriques."
+  },
+  {
+    id: 11,
+    name: "Ressorts hélicoïdaux de rappel dorsal",
+    func: "S'étirer lors de la flexion des doigts et du pouce, puis les ramener automatiquement en position ouverte (extension) au relâchement.",
+    link: "Propriété mécanique d'ÉLASTICITÉ : emmagasinent de l'énergie potentielle élastique en traction sur le dos des articulations."
+  },
+  {
+    id: 12,
+    name: "Coussinets tactiles en élastomère (adhérence)",
+    func: "Augmenter le frottement (adhérence) et épouser la surface de l'objet (13) entre le pouce et les doigts pour empêcher tout glissement.",
+    link: "Fixés sur la face interne (palmaire) des phalanges (10) ; élastomère à fort coefficient de frottement."
+  },
+  {
+    id: 13,
+    name: "Cellule cylindrique 4680 (objet saisi sur socle)",
+    func: "Objet technique manipulé par la main bionique : est pincé entre le pouce opposable et les 4 doigts puis soulevé hors de son socle.",
+    link: "Maintenu par adhérence et pression radiale opposée (liaison complète temporaire assurée par les coussinets 12)."
+  }
+];
+
+/* ============================================================================
+   2. INITIALISATION DE LA SCÈNE THREE.JS & STYLE VISUEL "EXAMEN MEQ"
+   ============================================================================ */
+const viewport = document.getElementById('viewport');
+const canvas = document.getElementById('three-canvas');
+const calloutSvg = document.getElementById('callout-svg');
+const calloutLayer = document.getElementById('callout-layer');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 300);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+// Éclairage doux et uniforme sans ombres portées dures (style dessin technique MEQ)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.80);
+scene.add(ambientLight);
+
+const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.30);
+dirLight1.position.set(14, 24, 18);
+scene.add(dirLight1);
+
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.16);
+dirLight2.position.set(-16, 10, -14);
+scene.add(dirLight2);
+
+// Palette monochrome officielle (aucune couleur décorative, uniquement gris techniques + bleu de sélection)
+const PALETTE = {
+  white: 0xfbfbfb,
+  veryLight: 0xf1f1f1,
+  light: 0xe3e3e3,
+  medium: 0xcfcfcf,
+  dark: 0xb5b5b5,
+  darker: 0x969696,
+  elastomer: 0x7b7b7b,
+  accent: 0x0055cc,
+  edge: 0x111111,
+  labEdge: 0x444444
+};
+
+const edgeMaterial = new THREE.LineBasicMaterial({ color: PALETTE.edge });
+const labLineMaterial = new THREE.LineBasicMaterial({ color: PALETTE.labEdge });
+const dashedGuideMaterial = new THREE.LineDashedMaterial({
+  color: 0x222222,
+  dashSize: 0.28,
+  gapSize: 0.16
+});
+
+const partGroups = {};
+const partMeshes = {};
+const partAnchors = {};
+const partExplodeVectors = {};
+const partBasePositions = {};
+const clickableMeshes = [];
+
+function createTechnicalMaterial(hexColor, isCasing = false) {
+  return new THREE.MeshLambertMaterial({
+    color: hexColor,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+    side: isCasing ? THREE.DoubleSide : THREE.FrontSide
+  });
+}
+
+function addTechnicalMesh(partId, geometry, hexColor, parentGroup, options = {}) {
+  const mat = createTechnicalMaterial(hexColor, options.isCasing || false);
+  mat.userData.baseColor = hexColor;
+  mat.userData.partId = partId;
+  mat.userData.isCutawayHalf = options.isCutawayHalf || false;
+
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.userData.partId = partId;
+
+  const threshold = options.edgeAngle !== undefined ? options.edgeAngle : 20;
+  const edgesGeo = new THREE.EdgesGeometry(geometry, threshold);
+  const lines = new THREE.LineSegments(edgesGeo, edgeMaterial.clone());
+  lines.userData.isEdge = true;
+  mesh.add(lines);
+
+  parentGroup.add(mesh);
+  if (!partMeshes[partId]) partMeshes[partId] = [];
+  partMeshes[partId].push(mesh);
+  clickableMeshes.push(mesh);
+  return mesh;
+}
+
+/* ============================================================================
+   3. ARRIÈRE-PLAN : BANC D'ESSAI ROBOTIQUE TESLA BOT EN 3D (STYLE MEQ)
+   ============================================================================ */
+const labBenchGroup = new THREE.Group();
+scene.add(labBenchGroup);
+
+(function buildRoboticLabBenchEnvironment() {
+  const tableY = -2.45;
+
+  // Plateau du banc d'étalonnage biomécanique
+  const slabGeo = new THREE.BoxGeometry(16, 0.22, 16);
+  slabGeo.translate(0, tableY - 0.11, 0);
+  const slabMat = new THREE.MeshLambertMaterial({
+    color: 0xf8f8f8,
+    polygonOffset: true,
+    polygonOffsetFactor: 2,
+    polygonOffsetUnits: 2
+  });
+  const slabMesh = new THREE.Mesh(slabGeo, slabMat);
+  slabMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(slabGeo), labLineMaterial));
+  labBenchGroup.add(slabMesh);
+
+  // Grille de calibration millimétrique sur la table d'essai
+  const gridPts = [];
+  for (let x = -6; x <= 6; x += 1.5) {
+    gridPts.push(new THREE.Vector3(x, tableY + 0.01, -6), new THREE.Vector3(x, tableY + 0.01, 6));
+  }
+  for (let z = -6; z <= 6; z += 1.5) {
+    gridPts.push(new THREE.Vector3(-6, tableY + 0.01, z), new THREE.Vector3(6, tableY + 0.01, z));
+  }
+  labBenchGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(gridPts), labLineMaterial));
+
+  // Colonne support d'essai fixant la base de l'avant-bras à Z = -4.85
+  const mountPillarGeo = new THREE.BoxGeometry(1.15, 2.55, 0.85);
+  mountPillarGeo.translate(0, tableY + 1.27, -4.85);
+  const mountPillar = new THREE.Mesh(mountPillarGeo, createTechnicalMaterial(PALETTE.medium));
+  mountPillar.add(new THREE.LineSegments(new THREE.EdgesGeometry(mountPillarGeo), labLineMaterial));
+  labBenchGroup.add(mountPillar);
+
+  // Socle berceau de réception sous la cellule 4680 (à Z = +2.45)
+  const cradleBaseGeo = new THREE.CylinderGeometry(0.85, 1.05, 0.55, 20);
+  cradleBaseGeo.translate(0, tableY + 0.27, 2.45);
+  const cradleBase = new THREE.Mesh(cradleBaseGeo, createTechnicalMaterial(PALETTE.light));
+  cradleBase.add(new THREE.LineSegments(new THREE.EdgesGeometry(cradleBaseGeo), labLineMaterial));
+  labBenchGroup.add(cradleBase);
+
+  // Portique de capteurs optiques en arrière-plan
+  for (let sx of [-4.8, 4.8]) {
+    const postGeo = new THREE.BoxGeometry(0.32, 5.2, 0.32);
+    postGeo.translate(sx, tableY + 2.6, -5.5);
+    const post = new THREE.Mesh(postGeo, createTechnicalMaterial(PALETTE.veryLight));
+    post.add(new THREE.LineSegments(new THREE.EdgesGeometry(postGeo), labLineMaterial));
+    labBenchGroup.add(post);
+  }
+  const topBarGeo = new THREE.BoxGeometry(10.0, 0.32, 0.32);
+  topBarGeo.translate(0, tableY + 5.05, -5.5);
+  const topBar = new THREE.Mesh(topBarGeo, createTechnicalMaterial(PALETTE.light));
+  topBar.add(new THREE.LineSegments(new THREE.EdgesGeometry(topBarGeo), labLineMaterial));
+  labBenchGroup.add(topBar);
+})();
+
+/* ============================================================================
+   4. GÉNÉRATEURS DE GÉOMÉTRIES MÉCANIQUES (ROUE DENTÉE, RESSORT DORSAL)
+   ============================================================================ */
+function createSpurGearGeometry(moduleM, teethCount, thickness, boreRadius) {
+  const pitchRadius = (moduleM * teethCount) / 2;
+  const addendum = moduleM * 0.9;
+  const dedendum = moduleM * 1.1;
+  const outerRadius = pitchRadius + addendum;
+  const rootRadius = Math.max(boreRadius + 0.04, pitchRadius - dedendum);
+
+  const shape = new THREE.Shape();
+  const step = (Math.PI * 2) / teethCount;
+
+  for (let i = 0; i < teethCount; i++) {
+    const a0 = i * step;
+    const a1 = a0 + step * 0.17;
+    const a2 = a0 + step * 0.29;
+    const a3 = a0 + step * 0.51;
+    const a4 = a0 + step * 0.63;
+
+    if (i === 0) shape.moveTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    else shape.lineTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    shape.lineTo(Math.cos(a1) * rootRadius, Math.sin(a1) * rootRadius);
+    shape.lineTo(Math.cos(a2) * outerRadius, Math.sin(a2) * outerRadius);
+    shape.lineTo(Math.cos(a3) * outerRadius, Math.sin(a3) * outerRadius);
+    shape.lineTo(Math.cos(a4) * rootRadius, Math.sin(a4) * rootRadius);
+  }
+  shape.closePath();
+
+  if (boreRadius > 0.02) {
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, boreRadius, 0, Math.PI * 2, false);
+    shape.holes.push(hole);
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 12 });
+  geo.translate(0, 0, -thickness / 2);
+  return geo;
+}
+
+function createHelicalSpringGeometry(radius, length, coils, wireRadius) {
+  const pts = [];
+  const totalSteps = coils * 14;
+  for (let i = 0; i <= totalSteps; i++) {
+    const t = i / totalSteps;
+    const angle = t * coils * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, t * length));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  return new THREE.TubeGeometry(curve, totalSteps * 2, wireRadius, 8, false);
+}
+
+/* ============================================================================
+   5. CONSTRUCTION DES 13 PIÈCES DE LA MAIN DROITE BIONIQUE OPTIMUS
+   ============================================================================
+   SILHOUETTE ANATOMIQUE CONFORME À LA PHOTO :
+   - Les 4 doigts (Index, Majeur, Annulaire, Auriculaire) sortent à l'extrémité
+     avant de la paume (z = 1.96 à 2.22).
+   - Le POUCE sort FRANCHEMENT SUR LE CÔTÉ de la paume (à x = +1.05, z = 0.68,
+     près de la base de la paume), avec un angle d'abduction latérale positif
+     (+0.92 rad ≈ 53° vers l'extérieur +X), puis ses phalanges reviennent vers
+     l'avant (+Z) à l'extérieur de l'index (x ≈ +1.95) !
+   ============================================================================ */
+const bionicHandRoot = new THREE.Group();
+scene.add(bionicHandRoot);
+
+for (let i = 1; i <= 13; i++) {
+  const g = new THREE.Group();
+  g.name = `Piece_${i}`;
+  partGroups[i] = g;
+  partMeshes[i] = [];
+  bionicHandRoot.add(g);
+}
+
+const FOREARM_Y = 0.55;
+const WRIST_Z = -0.85;
+const Z_WORM_TEETH = 20;
+
+const ACTUATOR_X = [0.66, 0.22, -0.22, -0.66];
+const motorRotorPivots = [];
+const wormShaftPivots = [];
+const wormWheelPivots = [];
+const leadScrewPivots = [];
+const nutSliderGroups = [];
+const wristPulleyPivots = [];
+const tendonCableMeshes = [];
+
+const wristFollowers = {};
+[1, 2, 3, 9, 10, 11, 12].forEach(id => {
+  const wf = new THREE.Group();
+  wf.position.set(0, FOREARM_Y, WRIST_Z);
+  partGroups[id].add(wf);
+  wristFollowers[id] = wf;
+});
+
+// Configuration des 4 doigts (au bout de la paume) + du Pouce (implanté sur le FLANC LATÉRAL de la paume à z = 0.68, x = +1.05)
+const FINGERS_CONFIG = [
+  { name: 'Index',       x:  0.74, y:  0.00, z: 2.12, l1: 0.86, l2: 0.64, l3: 0.48, isThumb: false },
+  { name: 'Majeur',      x:  0.25, y:  0.00, z: 2.22, l1: 0.94, l2: 0.70, l3: 0.50, isThumb: false },
+  { name: 'Annulaire',   x: -0.25, y:  0.00, z: 2.14, l1: 0.88, l2: 0.65, l3: 0.48, isThumb: false },
+  { name: 'Auriculaire', x: -0.74, y:  0.00, z: 1.96, l1: 0.74, l2: 0.54, l3: 0.42, isThumb: false },
+  { name: 'Pouce',       x:  1.05, y: -0.08, z: 0.68, l1: 0.85, l2: 0.68, l3: 0.52, isThumb: true  }
+];
+
+const fingerJointTrees = { 10: [], 11: [], 12: [], 3: [] };
+
+// --- PIÈCE 1 : COQUE D'AVANT-BRAS ET CHÂSSIS PALMAIRE (CARTER) ---
+(function buildForearmAndPalmCasing() {
+  const g1 = partGroups[1];
+
+  // Demi-coque inférieure de l'avant-bras (toujours opaque)
+  const lowerForearm = new THREE.CylinderGeometry(1.12, 1.32, 3.70, 24, 1, false, Math.PI * 0.5, Math.PI);
+  lowerForearm.rotateX(Math.PI / 2);
+  lowerForearm.translate(0, FOREARM_Y, -2.75);
+  addTechnicalMesh(1, lowerForearm, PALETTE.light, g1, { isCasing: true });
+
+  // Demi-coque supérieure de l'avant-bras (transparente à 85% en "Vue en coupe")
+  const upperForearmCut = new THREE.CylinderGeometry(1.12, 1.32, 3.70, 24, 1, false, -Math.PI * 0.5, Math.PI);
+  upperForearmCut.rotateX(Math.PI / 2);
+  upperForearmCut.translate(0, FOREARM_Y, -2.75);
+  addTechnicalMesh(1, upperForearmCut, PALETTE.light, g1, { isCasing: true, isCutawayHalf: true });
+
+  // Cloison arrière de fermeture de l'avant-bras
+  const backCap = new THREE.CylinderGeometry(1.32, 1.32, 0.18, 24);
+  backCap.rotateX(Math.PI / 2);
+  backCap.translate(0, FOREARM_Y, -4.65);
+  addTechnicalMesh(1, backCap, PALETTE.medium, g1);
+
+  // Rail interne de guidage en translation des écrous (8)
+  const guidePlate = new THREE.BoxGeometry(1.85, 0.10, 2.25);
+  guidePlate.translate(0, FOREARM_Y - 0.15, -2.10);
+  addTechnicalMesh(1, guidePlate, PALETTE.medium, g1);
+
+  // Châssis palmaire (métacarpe) : moitié inférieure fixe + capot dorsal supérieur transparent en coupe
+  const palmLower = new THREE.BoxGeometry(2.05, 0.26, 2.05);
+  palmLower.translate(0, -0.14, 1.10);
+  addTechnicalMesh(1, palmLower, PALETTE.medium, wristFollowers[1], { isCasing: true });
+
+  const palmUpperCut = new THREE.BoxGeometry(2.05, 0.26, 2.05);
+  palmUpperCut.translate(0, 0.14, 1.10);
+  addTechnicalMesh(1, palmUpperCut, PALETTE.light, wristFollowers[1], { isCasing: true, isCutawayHalf: true });
+
+  // Bossage latéral trapézoïdal (articulation trapézo-métacarpienne) sur le flanc droit (+X) de la paume d'où sort le pouce !
+  const sideThumbSocket = new THREE.CylinderGeometry(0.24, 0.30, 0.48, 16);
+  sideThumbSocket.rotateZ(-Math.PI / 2);
+  sideThumbSocket.rotateY(0.75);
+  sideThumbSocket.translate(1.02, -0.06, 0.68);
+  addTechnicalMesh(1, sideThumbSocket, PALETTE.dark, wristFollowers[1]);
+})();
+
+// --- PIÈCE 2 : ARTICULATION DU POIGNET (CHAPE EN LIAISON PIVOT) ---
+(function buildWristJoint() {
+  const g2 = partGroups[2];
+
+  for (let sx of [-0.95, 0.95]) {
+    const clevisEar = new THREE.BoxGeometry(0.18, 0.65, 0.55);
+    clevisEar.translate(sx, FOREARM_Y, WRIST_Z);
+    addTechnicalMesh(2, clevisEar, PALETTE.dark, g2);
+  }
+
+  const wristPin = new THREE.CylinderGeometry(0.20, 0.20, 2.25, 18);
+  wristPin.rotateZ(Math.PI / 2);
+  addTechnicalMesh(2, wristPin, PALETTE.darker, wristFollowers[2]);
+})();
+
+// --- PIÈCE 3 : INTERRUPTEUR PRINCIPAL ET CAPTEURS TACTILES (COMMANDE) ---
+const switchRockerPivot = new THREE.Group();
+switchRockerPivot.position.set(1.26, FOREARM_Y + 0.35, -3.55);
+partGroups[3].add(switchRockerPivot);
+
+(function buildSwitchAndSensors() {
+  const g3 = partGroups[3];
+  const swBox = new THREE.BoxGeometry(0.24, 0.48, 0.58);
+  swBox.translate(1.20, FOREARM_Y + 0.35, -3.55);
+  addTechnicalMesh(3, swBox, PALETTE.dark, g3);
+
+  const rocker = new THREE.BoxGeometry(0.18, 0.34, 0.38);
+  addTechnicalMesh(3, rocker, PALETTE.darker, switchRockerPivot);
+})();
+
+// --- PIÈCE 4 : BLOC-BATTERIE LITHIUM-ION 48 V (ALIMENTATION CC) ---
+(function buildForearmBattery() {
+  const g4 = partGroups[4];
+  const battPack = new THREE.BoxGeometry(1.55, 0.46, 2.55);
+  battPack.translate(0, FOREARM_Y - 0.62, -2.95);
+  addTechnicalMesh(4, battPack, PALETTE.dark, g4);
+
+  for (let sx of [-0.45, 0.45]) {
+    const terminal = new THREE.CylinderGeometry(0.09, 0.09, 0.18, 12);
+    terminal.rotateX(Math.PI / 2);
+    terminal.translate(sx, FOREARM_Y - 0.58, -4.30);
+    addTechnicalMesh(4, terminal, PALETTE.darker, g4);
+  }
+})();
+
+// --- PIÈCE 5 : FAISCEAU DE FILS CONDUCTEURS ET FUSIBLE (CONDUCTION & PROTECTION) ---
+(function buildWiringAndFuse() {
+  const g5 = partGroups[5];
+  const fuseGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.52, 14);
+  fuseGeo.rotateX(Math.PI / 2);
+  fuseGeo.translate(0.78, FOREARM_Y - 0.22, -3.85);
+  addTechnicalMesh(5, fuseGeo, PALETTE.darker, g5);
+
+  const c1 = new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.45, FOREARM_Y - 0.58, -4.30),
+    new THREE.Vector3( 0.78, FOREARM_Y - 0.22, -3.85),
+    new THREE.Vector3( 1.12, FOREARM_Y + 0.35, -3.55),
+    new THREE.Vector3( 0.66, FOREARM_Y + 0.52, -3.95),
+    new THREE.Vector3(-0.66, FOREARM_Y + 0.52, -3.95)
+  ]);
+  addTechnicalMesh(5, new THREE.TubeGeometry(c1, 24, 0.045, 8, false), PALETTE.medium, g5);
+})();
+
+// --- PIÈCE 6 : MOTEURS ÉLECTRIQUES SANS BALAIS (STATOR + ROTOR) ---
+(function buildBrushlessMotors() {
+  const g6 = partGroups[6];
+
+  ACTUATOR_X.forEach((ax) => {
+    const stator = new THREE.CylinderGeometry(0.18, 0.18, 0.52, 16, 1, false, 0, Math.PI * 1.4);
+    stator.translate(ax, FOREARM_Y + 0.52, -3.85);
+    addTechnicalMesh(6, stator, PALETTE.medium, g6);
+
+    const rotPiv = new THREE.Group();
+    rotPiv.position.set(ax, FOREARM_Y + 0.52, -3.85);
+    g6.add(rotPiv);
+    motorRotorPivots.push(rotPiv);
+
+    const rotCore = new THREE.CylinderGeometry(0.12, 0.12, 0.46, 10);
+    addTechnicalMesh(6, rotCore, PALETTE.light, rotPiv, { edgeAngle: 12 });
+
+    const fin = new THREE.BoxGeometry(0.26, 0.42, 0.05);
+    addTechnicalMesh(6, fin, PALETTE.darker, rotPiv);
+  });
+})();
+
+// --- PIÈCE 7 : RÉDUCTEURS À ROUE DENTÉE ET VIS SANS FIN (Z = 20, IRRÉVERSIBLE) ---
+(function buildWormGearReducers() {
+  const g7 = partGroups[7];
+
+  ACTUATOR_X.forEach((ax) => {
+    const wShaft = new THREE.Group();
+    wShaft.position.set(ax, FOREARM_Y + 0.12, -3.85);
+    g7.add(wShaft);
+    wormShaftPivots.push(wShaft);
+
+    const core = new THREE.CylinderGeometry(0.06, 0.06, 0.48, 12);
+    addTechnicalMesh(7, core, PALETTE.darker, wShaft);
+
+    for (let y = -0.14; y <= 0.14; y += 0.09) {
+      const th = new THREE.TorusGeometry(0.085, 0.022, 6, 12);
+      th.rotateX(Math.PI / 2 + 0.22);
+      th.translate(0, y, 0);
+      addTechnicalMesh(7, th, PALETTE.dark, wShaft);
+    }
+
+    const wWheel = new THREE.Group();
+    wWheel.position.set(ax, FOREARM_Y + 0.10, -3.58);
+    g7.add(wWheel);
+    wormWheelPivots.push(wWheel);
+
+    const wheelGeo = createSpurGearGeometry(0.018, Z_WORM_TEETH, 0.12, 0.05);
+    addTechnicalMesh(7, wheelGeo, PALETTE.medium, wWheel, { edgeAngle: 15 });
+  });
+})();
+
+// --- PIÈCE 8 : SYSTÈMES VIS ET ÉCROU (ACTIONNEURS LINÉAIRES D'AVANT-BRAS) ---
+(function buildLeadScrewsAndNuts() {
+  const g8 = partGroups[8];
+
+  ACTUATOR_X.forEach((ax) => {
+    const screwPiv = new THREE.Group();
+    screwPiv.position.set(ax, FOREARM_Y + 0.10, -2.55);
+    g8.add(screwPiv);
+    leadScrewPivots.push(screwPiv);
+
+    const shaft = new THREE.CylinderGeometry(0.055, 0.055, 1.95, 12);
+    shaft.rotateX(Math.PI / 2);
+    addTechnicalMesh(8, shaft, PALETTE.darker, screwPiv);
+
+    for (let z = -0.80; z <= 0.80; z += 0.16) {
+      const ring = new THREE.TorusGeometry(0.072, 0.018, 6, 12);
+      ring.translate(0, 0, z);
+      addTechnicalMesh(8, ring, PALETTE.dark, screwPiv);
+    }
+
+    const nutGrp = new THREE.Group();
+    nutGrp.position.set(ax, FOREARM_Y + 0.10, -1.85);
+    g8.add(nutGrp);
+    nutSliderGroups.push(nutGrp);
+
+    const nutBlock = new THREE.BoxGeometry(0.24, 0.26, 0.28);
+    addTechnicalMesh(8, nutBlock, PALETTE.light, nutGrp);
+  });
+})();
+
+// --- PIÈCE 9 : POULIES DE RENVOI ET CÂBLES-TENDONS FLÉCHISSEURS ---
+(function buildPulleysAndTendonCables() {
+  const g9 = partGroups[9];
+
+  ACTUATOR_X.forEach((ax, idx) => {
+    const pulPiv = new THREE.Group();
+    pulPiv.position.set(ax, FOREARM_Y - 0.05, WRIST_Z);
+    g9.add(pulPiv);
+    wristPulleyPivots.push(pulPiv);
+
+    const pulWheel = new THREE.CylinderGeometry(0.16, 0.16, 0.09, 16);
+    pulWheel.rotateZ(Math.PI / 2);
+    addTechnicalMesh(9, pulWheel, PALETTE.medium, pulPiv);
+
+    const spoke = new THREE.BoxGeometry(0.11, 0.28, 0.05);
+    addTechnicalMesh(9, spoke, PALETTE.darker, pulPiv);
+
+    const forearmTendonGeo = new THREE.CylinderGeometry(0.024, 0.024, 1.45, 8);
+    forearmTendonGeo.rotateX(Math.PI / 2);
+    const fCable = addTechnicalMesh(9, forearmTendonGeo, PALETTE.elastomer, g9);
+    fCable.position.set(ax, FOREARM_Y + 0.05, -1.55);
+    tendonCableMeshes.push(fCable);
+
+    // Câble-tendon sous la paume vers chacun des 4 doigts
+    const fingerX = FINGERS_CONFIG[idx].x;
+    const palmCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(ax, -0.08, 0.0),
+      new THREE.Vector3((ax + fingerX) * 0.5, -0.16, 1.05),
+      new THREE.Vector3(fingerX, -0.14, FINGERS_CONFIG[idx].z)
+    ]);
+    addTechnicalMesh(9, new THREE.TubeGeometry(palmCurve, 14, 0.025, 8, false), PALETTE.elastomer, wristFollowers[9]);
+  });
+
+  // 5e câble-tendon bifurquant sur le CÔTÉ RADIAL (+X) vers la base latérale du pouce (x = +1.05, z = 0.68)
+  const thumbCfg = FINGERS_CONFIG[4];
+  const thumbTendonCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.66, -0.08, 0.0),
+    new THREE.Vector3(0.88, -0.14, 0.35),
+    new THREE.Vector3(thumbCfg.x, thumbCfg.y - 0.04, thumbCfg.z)
+  ]);
+  addTechnicalMesh(9, new THREE.TubeGeometry(thumbTendonCurve, 12, 0.025, 8, false), PALETTE.elastomer, wristFollowers[9]);
+})();
+
+// --- PIÈCES 10 (PHALANGES), 11 (RESSORTS DORSAUX), 12 (COUSSINETS) & 3 (CAPTEURS) ---
+(function buildArticulatedFingersSpringsAndPads() {
+  for (let px of [-0.55, 0.0, 0.55]) {
+    const palmPad = new THREE.BoxGeometry(0.42, 0.08, 0.75);
+    palmPad.translate(px, -0.29, 1.35);
+    addTechnicalMesh(12, palmPad, PALETTE.elastomer, wristFollowers[12]);
+  }
+
+  FINGERS_CONFIG.forEach((fCfg) => {
+    [10, 11, 12, 3].forEach((partId) => {
+      const mount = new THREE.Group();
+      mount.position.set(fCfg.x, fCfg.y, fCfg.z);
+
+      if (fCfg.isThumb) {
+        // ORIENTATION DU POUCE QUI SORT SUR LE CÔTÉ DE LA PAUME (exactement comme sur la photo) :
+        // En Three.js, la phalange s'allonge selon son axe local +Z.
+        // Une rotation POSITIVE autour de Y (mount.rotation.y = +0.92 rad ≈ +53°) projette
+        // l'axe +Z vers +X (X_monde = x_base + L * sin(+0.92)), donc le pouce sort
+        // FRANCHEMENT SUR LE CÔTÉ DROIT (+X) hors de la paume !
+        mount.rotation.order = 'YXZ';
+        mount.rotation.y = 0.92;   // Sort à +53° sur le côté extérieur (+X) !
+        mount.rotation.x = 0.22;   // Légèrement abaissé sous le plan dorsal
+        mount.rotation.z = -0.55;  // Légère pronation pour que la pulpe regarde en oblique vers l'index
+      }
+
+      wristFollowers[partId].add(mount);
+
+      const mcp = new THREE.Group();
+      mount.add(mcp);
+
+      const pip = new THREE.Group();
+      pip.position.set(0, 0, fCfg.l1);
+      mcp.add(pip);
+
+      const dip = new THREE.Group();
+      dip.position.set(0, 0, fCfg.l2);
+      pip.add(dip);
+
+      fingerJointTrees[partId].push({ mount, mcp, pip, dip, cfg: fCfg });
+
+      if (partId === 10) {
+        // Segment 1 (métacarpien pour le pouce / phalange proximale pour les doigts) + goupille
+        const pin1 = new THREE.CylinderGeometry(0.11, 0.11, 0.38, 14);
+        pin1.rotateZ(Math.PI / 2);
+        addTechnicalMesh(10, pin1, PALETTE.darker, mcp);
+
+        const phal1 = new THREE.BoxGeometry(fCfg.isThumb ? 0.36 : 0.32, 0.24, fCfg.l1 - 0.08);
+        phal1.translate(0, 0, fCfg.l1 * 0.5);
+        addTechnicalMesh(10, phal1, PALETTE.light, mcp);
+
+        // Segment 2 + goupille
+        const pin2 = new THREE.CylinderGeometry(0.095, 0.095, 0.34, 14);
+        pin2.rotateZ(Math.PI / 2);
+        addTechnicalMesh(10, pin2, PALETTE.darker, pip);
+
+        const phal2 = new THREE.BoxGeometry(fCfg.isThumb ? 0.31 : 0.28, 0.21, fCfg.l2 - 0.08);
+        phal2.translate(0, 0, fCfg.l2 * 0.5);
+        addTechnicalMesh(10, phal2, PALETTE.medium, pip);
+
+        // Segment 3 (phalange distale avec l'ongle/extrémité) + goupille
+        const pin3 = new THREE.CylinderGeometry(0.08, 0.08, 0.30, 12);
+        pin3.rotateZ(Math.PI / 2);
+        addTechnicalMesh(10, pin3, PALETTE.darker, dip);
+
+        const phal3 = new THREE.BoxGeometry(fCfg.isThumb ? 0.28 : 0.25, 0.18, fCfg.l3);
+        phal3.translate(0, 0, fCfg.l3 * 0.5);
+        addTechnicalMesh(10, phal3, PALETTE.light, dip);
+      } else if (partId === 11) {
+        // Ressorts hélicoïdaux de rappel dorsal (face supérieure +Y)
+        const sp1 = createHelicalSpringGeometry(0.055, 0.42, 6, 0.015);
+        sp1.translate(0, 0.16, 0.12);
+        addTechnicalMesh(11, sp1, PALETTE.dark, mcp, { edgeAngle: 26 });
+
+        const sp2 = createHelicalSpringGeometry(0.048, 0.34, 5, 0.014);
+        sp2.translate(0, 0.14, 0.08);
+        addTechnicalMesh(11, sp2, PALETTE.dark, pip, { edgeAngle: 26 });
+      } else if (partId === 12) {
+        // Coussinets tactiles en élastomère (face interne -Y)
+        const pad1 = new THREE.BoxGeometry(0.26, 0.06, fCfg.l1 * 0.65);
+        pad1.translate(0, -0.14, fCfg.l1 * 0.5);
+        addTechnicalMesh(12, pad1, PALETTE.elastomer, mcp);
+
+        const pad2 = new THREE.BoxGeometry(0.23, 0.06, fCfg.l2 * 0.65);
+        pad2.translate(0, -0.12, fCfg.l2 * 0.5);
+        addTechnicalMesh(12, pad2, PALETTE.elastomer, pip);
+
+        const pad3 = new THREE.BoxGeometry(0.21, 0.07, fCfg.l3 * 0.72);
+        pad3.translate(0, -0.11, fCfg.l3 * 0.55);
+        addTechnicalMesh(12, pad3, PALETTE.elastomer, dip);
+      } else if (partId === 3) {
+        // Capteur tactile de pression au bout des doigts et du pouce
+        const sensorDot = new THREE.CylinderGeometry(0.06, 0.06, 0.04, 12);
+        sensorDot.translate(0, -0.13, fCfg.l3 * 0.65);
+        addTechnicalMesh(3, sensorDot, PALETTE.darker, dip);
+      }
+    });
+  });
+})();
+
+// --- PIÈCE 13 : CELLULE CYLINDRIQUE 4680 (OBJET MANIPULÉ SUR SOCLE) ---
+const cellObjectGroup = new THREE.Group();
+cellObjectGroup.position.set(0, -0.95, 2.45);
+partGroups[13].add(cellObjectGroup);
+
+(function build4680CellObject() {
+  const cellCyl = new THREE.CylinderGeometry(0.56, 0.56, 2.25, 24);
+  cellCyl.rotateZ(Math.PI / 2);
+  addTechnicalMesh(13, cellCyl, PALETTE.veryLight, cellObjectGroup);
+
+  for (let sx of [-1.14, 1.14]) {
+    const cap = new THREE.CylinderGeometry(0.42, 0.42, 0.08, 18);
+    cap.rotateZ(Math.PI / 2);
+    cap.translate(sx, 0, 0);
+    addTechnicalMesh(13, cap, PALETTE.darker, cellObjectGroup);
+  }
+})();
+
+/* ============================================================================
+   6. POINTS D'ANCRAGE 3D DES 13 REPÈRES & VECTEURS DE VUE ÉCLATÉE
+   ============================================================================ */
+// Le point d'ancrage n° 10 pointe directement sur le POUCE LATÉRAL (à x = +1.95 sur le côté)
+const ANCHOR_COORDS = {
+  1:  new THREE.Vector3( 0.00,  1.65, -2.50), // Coque d'avant-bras et châssis palmaire
+  2:  new THREE.Vector3( 0.95,  0.55, -0.85), // Articulation du poignet (liaison pivot)
+  3:  new THREE.Vector3( 1.26,  0.90, -3.55), // Interrupteur et capteurs tactiles
+  4:  new THREE.Vector3( 0.00, -0.15, -2.95), // Bloc-batterie 48 V
+  5:  new THREE.Vector3( 0.78,  0.33, -3.85), // Fils conducteurs et fusible
+  6:  new THREE.Vector3(-0.66,  1.15, -3.85), // Moteurs électriques sans balais
+  7:  new THREE.Vector3( 0.22,  0.65, -3.62), // Réducteurs roue et vis sans fin
+  8:  new THREE.Vector3(-0.22,  0.65, -2.35), // Systèmes vis et écrou
+  9:  new THREE.Vector3( 0.66,  0.50, -0.85), // Poulies et câbles-tendons
+  10: new THREE.Vector3( 1.95,  0.22,  0.85), // Phalanges des 4 doigts et du pouce latéral
+  11: new THREE.Vector3(-0.25,  0.72,  2.45), // Ressorts hélicoïdaux de rappel dorsal
+  12: new THREE.Vector3( 0.74,  0.38,  2.65), // Coussinets tactiles en élastomère
+  13: new THREE.Vector3( 0.00, -0.95,  2.45)  // Cellule cylindrique 4680 saisie
+};
+
+const EXPLODE_OFFSETS = {
+  1:  new THREE.Vector3( 0.00,  1.45, -0.95),
+  2:  new THREE.Vector3( 0.00,  0.00, -0.25),
+  3:  new THREE.Vector3( 1.35,  0.65, -0.95),
+  4:  new THREE.Vector3( 0.00, -1.75, -0.95),
+  5:  new THREE.Vector3( 1.50, -0.35, -1.20),
+  6:  new THREE.Vector3( 0.00,  1.95, -2.35),
+  7:  new THREE.Vector3( 0.00,  0.85, -2.05),
+  8:  new THREE.Vector3( 0.00,  0.35, -0.95),
+  9:  new THREE.Vector3( 0.00, -0.50,  0.35),
+  10: new THREE.Vector3( 0.00,  0.00,  1.65),
+  11: new THREE.Vector3( 0.00,  1.25,  1.65),
+  12: new THREE.Vector3( 0.00, -1.05,  1.65),
+  13: new THREE.Vector3( 0.00, -1.55,  2.95)
+};
+
+for (let i = 1; i <= 13; i++) {
+  const anchorObj = new THREE.Object3D();
+  anchorObj.position.copy(ANCHOR_COORDS[i]);
+  partGroups[i].add(anchorObj);
+  partAnchors[i] = anchorObj;
+  partBasePositions[i] = partGroups[i].position.clone();
+  partExplodeVectors[i] = EXPLODE_OFFSETS[i];
+}
+
+// Lignes pointillées d'alignement en Vue éclatée (incluant l'axe latéral du pouce !)
+const explodeGuideGroup = new THREE.Group();
+explodeGuideGroup.visible = false;
+bionicHandRoot.add(explodeGuideGroup);
+
+(function buildExplodeGuides() {
+  const gPts = [
+    [new THREE.Vector3(0, FOREARM_Y, -6.5), new THREE.Vector3(0, FOREARM_Y, 5.4)],
+    [new THREE.Vector3(0, -2.4, -2.95), new THREE.Vector3(0, 3.1, -2.95)],
+    [new THREE.Vector3(0, -2.8, 2.45), new THREE.Vector3(0, 2.4, 2.45)],
+    // Ligne pointillée latérale montrant l'axe d'abduction du pouce sur le côté droit (+X)
+    [new THREE.Vector3(0.95, 0.45, -0.17), new THREE.Vector3(2.85, 0.25, 2.25)]
+  ];
+  gPts.forEach(pair => {
+    const geo = new THREE.BufferGeometry().setFromPoints(pair);
+    const l = new THREE.Line(geo, dashedGuideMaterial);
+    l.computeLineDistances();
+    explodeGuideGroup.add(l);
+  });
+})();
+
+/* ============================================================================
+   7. CRÉATION DES PASTILLES NUMÉROTÉES HTML/SVG & DE LA NOMENCLATURE
+   ============================================================================ */
+const calloutBadges = {};
+const calloutLines = {};
+const partChips = {};
+const partsGridEl = document.getElementById('parts-grid');
+
+PARTS_DATA.forEach((p) => {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('stroke', '#111111');
+  line.setAttribute('stroke-width', '1.4');
+  calloutSvg.appendChild(line);
+  calloutLines[p.id] = line;
+
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('r', '2.8');
+  dot.setAttribute('fill', '#111111');
+  calloutSvg.appendChild(dot);
+  line.anchorDot = dot;
+
+  const badge = document.createElement('div');
+  badge.className = 'callout-badge';
+  badge.innerHTML = `<span class="part-num">${p.id}</span><span class="part-label">${p.name.split('(')[0].trim()}</span>`;
+  badge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectPart(p.id);
+    if (p.id === 3 || p.id === 13) toggleGripPower();
+    else if (p.id === 10 || p.id === 11) toggleFingerWave();
+  });
+  calloutLayer.appendChild(badge);
+  calloutBadges[p.id] = badge;
+
+  const chip = document.createElement('button');
+  chip.className = 'part-chip';
+  chip.innerHTML = `<b>${p.id}.</b> <span class="chip-text">Pièce ${p.id}</span>`;
+  chip.addEventListener('click', () => selectPart(p.id));
+  partsGridEl.appendChild(chip);
+  partChips[p.id] = chip;
+});
+
+const energyTag = document.createElement('div');
+energyTag.className = 'floating-tag energy-tag';
+energyTag.style.display = 'none';
+energyTag.textContent = '⚡ Électrique (4) → ⚙️ Vis sans fin irréversible (7) & Vis-écrou (8)';
+calloutLayer.appendChild(energyTag);
+
+const tendonBioTag = document.createElement('div');
+tendonBioTag.className = 'floating-tag';
+tendonBioTag.style.display = 'none';
+tendonBioTag.textContent = '↻ Pouce latéral opposable + 4 doigts tirés par les tendons (9)';
+calloutLayer.appendChild(tendonBioTag);
+
+/* ============================================================================
+   8. GESTION DES MODES (EXAMEN / CORRECTION), VUES (1, 2, 3) ET SÉLECTION
+   ============================================================================ */
+let currentMode = 'examen';
+let currentView = 'ext';
+let selectedPartId = 10;
+let isGripActive = false;
+let isWaveActive = false;
+let explodeProgress = 0;
+let targetExplodeProgress = 0;
+
+function selectPart(partId) {
+  selectedPartId = partId;
+  const data = PARTS_DATA.find(d => d.id === partId);
+
+  for (let i = 1; i <= 13; i++) {
+    const isSel = (i === partId);
+    partMeshes[i].forEach(mesh => {
+      mesh.material.color.setHex(isSel ? PALETTE.accent : mesh.material.userData.baseColor);
+    });
+    calloutBadges[i].classList.toggle('selected', isSel);
+    calloutLines[i].setAttribute('stroke', isSel ? '#0055cc' : '#111111');
+    calloutLines[i].setAttribute('stroke-width', isSel ? '2.2' : '1.3');
+    calloutLines[i].anchorDot.setAttribute('fill', isSel ? '#0055cc' : '#111111');
+    partChips[i].classList.toggle('selected', isSel);
+  }
+
+  updateDetailCard(data);
+}
+
+function updateDetailCard(data) {
+  document.getElementById('detail-num').textContent = data.id;
+  const nameEl = document.getElementById('detail-name');
+  const subEl = document.getElementById('detail-sub');
+  const funcEl = document.getElementById('detail-func');
+  const linkEl = document.getElementById('detail-link');
+
+  if (currentMode === 'examen') {
+    nameEl.textContent = `Pièce n° ${data.id} (À identifier)`;
+    subEl.textContent = `Mode Examen : identifiez le nom, la fonction et le mécanisme de cette pièce.`;
+    funcEl.textContent = `Masqué en mode examen`;
+    funcEl.classList.add('exam-masked');
+    linkEl.textContent = `Masqué en mode examen`;
+    linkEl.classList.add('exam-masked');
+  } else {
+    nameEl.textContent = data.name;
+    subEl.textContent = `Nomenclature officielle ST/ATS — 4e secondaire`;
+    funcEl.textContent = data.func;
+    funcEl.classList.remove('exam-masked');
+    linkEl.textContent = data.link;
+    linkEl.classList.remove('exam-masked');
+  }
+}
+
+function setPedagogicalMode(mode) {
+  currentMode = mode;
+  document.body.className = (mode === 'correction') ? 'mode-correction' : 'mode-examen';
+  document.getElementById('btn-mode-examen').classList.toggle('active', mode === 'examen');
+  document.getElementById('btn-mode-correction').classList.toggle('active', mode === 'correction');
+  document.getElementById('mode-indicator-label').textContent = mode === 'correction' ? 'MODE CORRECTION' : 'MODE EXAMEN';
+
+  PARTS_DATA.forEach(p => {
+    const span = partChips[p.id].querySelector('.chip-text');
+    span.textContent = (mode === 'correction') ? p.name.split('(')[0].trim() : `Pièce ${p.id}`;
+  });
+
+  energyTag.style.display = (mode === 'correction') ? 'block' : 'none';
+  tendonBioTag.style.display = (mode === 'correction') ? 'block' : 'none';
+
+  updateDetailCard(PARTS_DATA.find(d => d.id === selectedPartId));
+}
+
+function setViewMode(view) {
+  currentView = view;
+  document.getElementById('btn-view-ext').classList.toggle('active', view === 'ext');
+  document.getElementById('btn-view-cut').classList.toggle('active', view === 'cut');
+  document.getElementById('btn-view-exp').classList.toggle('active', view === 'exp');
+
+  targetExplodeProgress = (view === 'exp') ? 1 : 0;
+  explodeGuideGroup.visible = (view === 'exp');
+
+  partMeshes[1].forEach(mesh => {
+    if (mesh.material.userData.isCutawayHalf) {
+      if (view === 'cut') {
+        mesh.material.transparent = true;
+        mesh.material.opacity = 0.15;
+        mesh.material.depthWrite = false;
+      } else {
+        mesh.material.transparent = false;
+        mesh.material.opacity = 1.0;
+        mesh.material.depthWrite = true;
+      }
+      mesh.material.needsUpdate = true;
+    }
+  });
+
+  setTimeout(() => frameModelAutomatically(view === 'exp' ? 1 : 0), 30);
+}
+
+/* ============================================================================
+   9. CONTRÔLES CAMÉRA PAR POINTER EVENTS & CADRAGE AUTOMATIQUE BOX3
+   ============================================================================ */
+// Angle de vue dorsal 3/4 (comme sur la photo de référence) montrant clairement le dos de la main,
+// les 4 doigts vers l'avant et le pouce qui sort sur le côté !
+let camSpherical = {
+  radius: 15.5,
+  theta: 0.72,
+  phi: 0.92
+};
+const camTarget = new THREE.Vector3(0.15, 0.05, -0.35);
+
+function updateCameraFromSpherical() {
+  camSpherical.phi = Math.max(0.18, Math.min(Math.PI * 0.49, camSpherical.phi));
+  camSpherical.radius = Math.max(6, Math.min(60, camSpherical.radius));
+
+  const sinPhi = Math.sin(camSpherical.phi);
+  camera.position.x = camTarget.x + camSpherical.radius * sinPhi * Math.sin(camSpherical.theta);
+  camera.position.y = camTarget.y + camSpherical.radius * Math.cos(camSpherical.phi);
+  camera.position.z = camTarget.z + camSpherical.radius * sinPhi * Math.cos(camSpherical.theta);
+  camera.lookAt(camTarget);
+}
+
+function frameModelAutomatically(simExplodeFactor = targetExplodeProgress) {
+  for (let i = 1; i <= 13; i++) {
+    partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], simExplodeFactor);
+  }
+  bionicHandRoot.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(bionicHandRoot);
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  box.getCenter(center);
+  box.getSize(size);
+
+  if (size.lengthSq() > 0.01) {
+    camTarget.copy(center);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fovRad = THREE.MathUtils.degToRad(camera.fov);
+    const aspect = Math.max(0.50, camera.aspect || 1.2);
+    const fitHeightDistance = (maxDim / 2) / Math.tan(fovRad / 2);
+    const fitWidthDistance = (maxDim / 2) / (Math.tan(fovRad / 2) * aspect);
+    // Marge accrue sur mobile en mode portrait pour que les doigts (10) et la pastille (12) ne soient jamais coupés en bas
+    const marginFactor = aspect < 0.95 ? 1.36 : 1.22;
+    camSpherical.radius = Math.max(fitHeightDistance, fitWidthDistance) * marginFactor;
+  }
+
+  updateCameraFromSpherical();
+}
+
+const activePointers = new Map();
+let prevPinchDist = null;
+let pointerDownPos = { x: 0, y: 0 };
+let pointerMoved = false;
+
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (activePointers.size === 1) {
+    pointerDownPos = { x: e.clientX, y: e.clientY };
+    pointerMoved = false;
+  }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!activePointers.has(e.pointerId)) return;
+  const prev = activePointers.get(e.pointerId);
+  const curr = { x: e.clientX, y: e.clientY };
+  activePointers.set(e.pointerId, curr);
+
+  if (activePointers.size === 1) {
+    const dx = curr.x - prev.x;
+    const dy = curr.y - prev.y;
+    if (Math.hypot(curr.x - pointerDownPos.x, curr.y - pointerDownPos.y) > 5) {
+      pointerMoved = true;
+    }
+    camSpherical.theta -= dx * 0.0085;
+    camSpherical.phi -= dy * 0.0085;
+    updateCameraFromSpherical();
+  } else if (activePointers.size === 2) {
+    pointerMoved = true;
+    const pts = Array.from(activePointers.values());
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (prevPinchDist !== null) {
+      const delta = prevPinchDist - dist;
+      camSpherical.radius += delta * 0.045;
+      updateCameraFromSpherical();
+    }
+    prevPinchDist = dist;
+  }
+});
+
+function onPointerUpOrCancel(e) {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) prevPinchDist = null;
+  if (!pointerMoved && e.type === 'pointerup') {
+    handleCanvasTap(e.clientX, e.clientY);
+  }
+}
+
+canvas.addEventListener('pointerup', onPointerUpOrCancel);
+canvas.addEventListener('pointercancel', onPointerUpOrCancel);
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  camSpherical.radius += e.deltaY * 0.015;
+  updateCameraFromSpherical();
+}, { passive: false });
+
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+
+function handleCanvasTap(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointerNDC, camera);
+  const hits = raycaster.intersectObjects(clickableMeshes, false);
+
+  if (hits.length > 0) {
+    let chosenHit = hits[0];
+    if (currentView === 'cut') {
+      const nonTransparentHit = hits.find(h => !h.object.material.userData.isCutawayHalf);
+      if (nonTransparentHit) chosenHit = nonTransparentHit;
+    }
+    const pId = chosenHit.object.userData.partId;
+    if (pId) {
+      selectPart(pId);
+      if (pId === 3 || pId === 13) toggleGripPower();
+      else if (pId === 10 || pId === 11) toggleFingerWave();
+    }
+  }
+}
+
+/* ============================================================================
+   10. PROJECTION 3D -> 2D DES NUMÉROS AVEC ANTI-CHEVAUCHEMENT DYNAMIQUE
+   ============================================================================ */
+const tempProj = new THREE.Vector3();
+
+function updateCallouts2D() {
+  const width = lastCssWidth || viewport.clientWidth || 640;
+  const height = lastCssHeight || viewport.clientHeight || 460;
+
+  tempProj.copy(camTarget).project(camera);
+  const centerX = (tempProj.x * 0.5 + 0.5) * width;
+
+  const leftItems = [];
+  const rightItems = [];
+
+  for (let i = 1; i <= 13; i++) {
+    partAnchors[i].getWorldPosition(tempProj);
+    tempProj.project(camera);
+
+    const ax = (tempProj.x * 0.5 + 0.5) * width;
+    const ay = (-tempProj.y * 0.5 + 0.5) * height;
+
+    const item = { id: i, ax, ay, bx: 0, by: ay };
+    if (ax >= centerX) rightItems.push(item);
+    else leftItems.push(item);
+  }
+
+  const minVerticalGap = 27;
+  const marginX = currentMode === 'correction' ? 92 : 30;
+
+  function distributeColumn(list, isRight) {
+    list.sort((a, b) => a.ay - b.ay);
+    const targetX = isRight
+      ? Math.min(width - marginX, centerX + Math.min(width * 0.36, 220))
+      : Math.max(marginX, centerX - Math.min(width * 0.36, 220));
+
+    for (let k = 0; k < list.length; k++) {
+      list[k].bx = targetX;
+      if (k === 0) list[k].by = Math.max(22, list[k].ay);
+      else list[k].by = Math.max(list[k].ay, list[k - 1].by + minVerticalGap);
+    }
+    for (let k = list.length - 1; k >= 0; k--) {
+      if (k === list.length - 1) list[k].by = Math.min(height - 24, list[k].by);
+      else list[k].by = Math.min(list[k].by, list[k + 1].by - minVerticalGap);
+      list[k].by = Math.max(20, list[k].by);
+    }
+  }
+
+  distributeColumn(leftItems, false);
+  distributeColumn(rightItems, true);
+
+  [...leftItems, ...rightItems].forEach(item => {
+    const badge = calloutBadges[item.id];
+    const line = calloutLines[item.id];
+
+    badge.style.left = `${item.bx}px`;
+    badge.style.top = `${item.by}px`;
+
+    line.setAttribute('x1', item.ax.toFixed(1));
+    line.setAttribute('y1', item.ay.toFixed(1));
+    line.setAttribute('x2', item.bx.toFixed(1));
+    line.setAttribute('y2', item.by.toFixed(1));
+
+    line.anchorDot.setAttribute('cx', item.ax.toFixed(1));
+    line.anchorDot.setAttribute('cy', item.ay.toFixed(1));
+  });
+
+  if (currentMode === 'correction') {
+    partAnchors[7].getWorldPosition(tempProj);
+    tempProj.y += 0.95;
+    tempProj.project(camera);
+    energyTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    energyTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+
+    partAnchors[10].getWorldPosition(tempProj);
+    tempProj.y += 0.75;
+    tempProj.project(camera);
+    tendonBioTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    tendonBioTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+  }
+}
+
+/* ============================================================================
+   11. INTERACTION PRÉHENSION, VAGUE DES DOIGTS & SCHÉMA ÉLECTRIQUE
+   ============================================================================ */
+const NOMINAL_MOTOR_RPM = 2400;
+let gripProgress = 0;
+let waveTime = 0;
+
+const btnPower = document.getElementById('btn-power');
+const btnWave = document.getElementById('btn-wave');
+const svgSwMain = document.getElementById('svg-sw-main');
+const svgLedGrip = document.getElementById('svg-led-grip');
+const animLoopMain = document.getElementById('anim-loop-main');
+const circuitStateBadge = document.getElementById('circuit-state-badge');
+
+function updateCircuitUI() {
+  const active = isGripActive || isWaveActive;
+  if (active) {
+    svgSwMain.setAttribute('x2', '178');
+    svgSwMain.setAttribute('y2', '34');
+    svgSwMain.setAttribute('stroke', '#0055cc');
+    animLoopMain.setAttribute('opacity', '1');
+    circuitStateBadge.textContent = 'CIRCUIT FERMÉ (I > 0)';
+    circuitStateBadge.style.color = '#0055cc';
+  } else {
+    svgSwMain.setAttribute('x2', '175');
+    svgSwMain.setAttribute('y2', '16');
+    svgSwMain.setAttribute('stroke', '#111111');
+    animLoopMain.setAttribute('opacity', '0');
+    svgLedGrip.setAttribute('fill', '#ffffff');
+    circuitStateBadge.textContent = 'CIRCUIT OUVERT (I = 0)';
+    circuitStateBadge.style.color = '#111111';
+  }
+}
+
+function toggleGripPower() {
+  isGripActive = !isGripActive;
+  if (isGripActive) isWaveActive = false;
+  btnPower.classList.toggle('running', isGripActive);
+  btnWave.classList.toggle('active', isWaveActive);
+  btnPower.textContent = isGripActive ? '4. Préhension : PRISE FERME' : '4. Préhension : OUVERTE';
+  updateCircuitUI();
+}
+
+function toggleFingerWave() {
+  isWaveActive = !isWaveActive;
+  if (isWaveActive) {
+    isGripActive = false;
+    btnPower.classList.remove('running');
+    btnPower.textContent = '4. Préhension : OUVERTE';
+  }
+  btnWave.classList.toggle('active', isWaveActive);
+  updateCircuitUI();
+}
+
+document.getElementById('btn-mode-examen').addEventListener('click', () => setPedagogicalMode('examen'));
+document.getElementById('btn-mode-correction').addEventListener('click', () => setPedagogicalMode('correction'));
+document.getElementById('btn-view-ext').addEventListener('click', () => setViewMode('ext'));
+document.getElementById('btn-view-cut').addEventListener('click', () => setViewMode('cut'));
+document.getElementById('btn-view-exp').addEventListener('click', () => setViewMode('exp'));
+document.getElementById('btn-power').addEventListener('click', toggleGripPower);
+document.getElementById('btn-wave').addEventListener('click', toggleFingerWave);
+
+let labVisible = true;
+document.getElementById('btn-lab-toggle').addEventListener('click', (e) => {
+  labVisible = !labVisible;
+  labBenchGroup.visible = labVisible;
+  e.target.classList.toggle('active', labVisible);
+  e.target.textContent = labVisible ? 'Labo : OUI' : 'Labo : NON';
+});
+
+document.getElementById('btn-reset-cam').addEventListener('click', () => {
+  camSpherical.theta = 0.72;
+  camSpherical.phi = 0.92;
+  frameModelAutomatically();
+});
+
+svgSwMain.addEventListener('click', () => {
+  selectPart(3);
+  toggleGripPower();
+});
+
+/* ============================================================================
+   12. BOUCLE D'ANIMATION & CINÉMATIQUE DU POUCE LATÉRAL OPPOSABLE
+   ============================================================================ */
+let lastTime = performance.now();
+let svgDashOffset = 0;
+let lastCssWidth = 0;
+let lastCssHeight = 0;
+
+const elW1 = document.getElementById('kin-w1');
+const elW2 = document.getElementById('kin-w2');
+const elStroke = document.getElementById('kin-stroke');
+const elCurl = document.getElementById('kin-curl');
+
+function syncViewportSize(reframe = false) {
+  const rect = viewport.getBoundingClientRect();
+  const w = Math.max(300, Math.round(rect.width || viewport.clientWidth || (window.innerWidth - 395)));
+  const h = Math.max(360, Math.round(rect.height || viewport.clientHeight || (window.innerHeight - 60)));
+
+  if (Math.abs(w - lastCssWidth) > 1 || Math.abs(h - lastCssHeight) > 1) {
+    lastCssWidth = w;
+    lastCssHeight = h;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+    if (reframe) {
+      frameModelAutomatically();
+    } else {
+      updateCameraFromSpherical();
+    }
+  }
+}
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  syncViewportSize(false);
+
+  const targetRocker = (isGripActive || isWaveActive) ? 0.35 : -0.35;
+  switchRockerPivot.rotation.z += (targetRocker - switchRockerPivot.rotation.z) * Math.min(1, dt * 10);
+
+  // 1. Calcul de la progression de préhension (0 -> 1) et du mode Vague
+  const prevGrip = gripProgress;
+  const targetGrip = isGripActive ? 1.0 : 0.0;
+  gripProgress += (targetGrip - gripProgress) * Math.min(1, dt * 3.2);
+  const gripVelocity = Math.abs(gripProgress - prevGrip) / Math.max(0.0001, dt);
+
+  if (isWaveActive) {
+    waveTime += dt * 3.8;
+  }
+
+  const fingerCurlFactors = [0, 0, 0, 0, 0];
+  for (let f = 0; f < 5; f++) {
+    if (isWaveActive) {
+      fingerCurlFactors[f] = (Math.sin(waveTime - f * 0.65) * 0.5 + 0.5) * 0.90;
+    } else {
+      fingerCurlFactors[f] = Math.min(1.0, gripProgress * 1.35);
+    }
+  }
+
+  // 2. Cinématique des 4 actionneurs linéaires d'avant-bras (Moteur 6 -> Vis sans fin 7 -> Vis-écrou 8 -> Poulies 9)
+  for (let a = 0; a < 4; a++) {
+    const fFactor = fingerCurlFactors[a];
+    const prevZ = nutSliderGroups[a].position.z;
+    const targetNutZ = -1.70 - fFactor * 0.95;
+    nutSliderGroups[a].position.z += (targetNutZ - nutSliderGroups[a].position.z) * Math.min(1, dt * 10);
+    const deltaZ = nutSliderGroups[a].position.z - prevZ;
+
+    const dAngleWheel = -deltaZ * 18.0;
+    leadScrewPivots[a].rotation.z += dAngleWheel;
+    wormWheelPivots[a].rotation.z += dAngleWheel;
+    wristPulleyPivots[a].rotation.x += dAngleWheel * 0.45;
+
+    const dAngleWorm = dAngleWheel * Z_WORM_TEETH;
+    wormShaftPivots[a].rotation.y += dAngleWorm;
+    motorRotorPivots[a].rotation.y += dAngleWorm;
+
+    tendonCableMeshes[a].position.z = (nutSliderGroups[a].position.z + WRIST_Z) * 0.5;
+    tendonCableMeshes[a].scale.z = Math.abs(WRIST_Z - nutSliderGroups[a].position.z) / 1.45;
+  }
+
+  // 3. Cinématique des 4 doigts ET du POUCE LATÉRAL (qui sort à +53° sur le côté +X et courbe ses phalanges)
+  [10, 11, 12, 3].forEach((partId) => {
+    fingerJointTrees[partId].forEach((jointNode, fIdx) => {
+      const c = fingerCurlFactors[fIdx];
+      if (jointNode.cfg.isThumb) {
+        // En Vue éclatée, le pouce s'écarte aussi latéralement (+X) pour bien montrer son implantation sur le côté de la paume !
+        jointNode.mount.position.set(
+          jointNode.cfg.x + explodeProgress * 0.55,
+          jointNode.cfg.y,
+          jointNode.cfg.z - explodeProgress * 0.35
+        );
+        // Au repos (c = 0) : le 1er segment sort à +0.92 rad (+53° vers le côté +X), et les phalanges 2 et 3
+        // reviennent légèrement vers l'avant (exactement la posture naturelle de la photo).
+        // En fermeture (c -> 1) : le pouce pivote vers le bas et l'intérieur pour serrer le flanc de la cellule 4680.
+        jointNode.mount.rotation.y = 0.92 - c * 0.32;
+        jointNode.mcp.rotation.x = 0.10 + c * 0.62;
+        jointNode.pip.rotation.y = -0.34 - c * 0.25;
+        jointNode.pip.rotation.x = 0.12 + c * 0.68;
+        jointNode.dip.rotation.y = -0.24 - c * 0.20;
+        jointNode.dip.rotation.x = 0.08 + c * 0.55;
+      } else {
+        jointNode.mcp.rotation.x = 0.12 + c * 0.78;
+        jointNode.pip.rotation.x = 0.10 + c * 0.88;
+        jointNode.dip.rotation.x = 0.08 + c * 0.65;
+      }
+    });
+  });
+
+  // 4. Inclinaison du poignet (2) et soulèvement de la cellule cylindrique 4680 (13)
+  const liftPhase = Math.max(0, (gripProgress - 0.65) / 0.35);
+  const wristLiftAngle = -liftPhase * 0.28;
+
+  [1, 2, 3, 9, 10, 11, 12].forEach(id => {
+    wristFollowers[id].rotation.x = wristLiftAngle;
+  });
+
+  cellObjectGroup.position.y = -0.95 + liftPhase * 0.88;
+  cellObjectGroup.position.z = 2.45 - liftPhase * 0.14;
+
+  if (gripProgress > 0.62) {
+    svgLedGrip.setAttribute('fill', '#0055cc');
+  } else {
+    svgLedGrip.setAttribute('fill', '#ffffff');
+  }
+
+  // 5. Interpolation de la Vue éclatée
+  if (Math.abs(targetExplodeProgress - explodeProgress) > 0.001) {
+    explodeProgress += (targetExplodeProgress - explodeProgress) * Math.min(1, dt * 8);
+    for (let i = 1; i <= 13; i++) {
+      partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], explodeProgress);
+    }
+  }
+
+  // 6. Mise à jour des indicateurs numériques en direct et du schéma électrique
+  const activeRPM = isWaveActive
+    ? NOMINAL_MOTOR_RPM
+    : Math.min(NOMINAL_MOTOR_RPM, Math.round(gripVelocity * 3800));
+  elW1.textContent = activeRPM;
+  elW2.textContent = Math.round(activeRPM / Z_WORM_TEETH);
+
+  const avgCurl = fingerCurlFactors[0];
+  elStroke.textContent = (avgCurl * 28.0).toFixed(1);
+  elCurl.textContent = Math.round(THREE.MathUtils.radToDeg(avgCurl * (0.78 + 0.88 + 0.65)));
+
+  if (activeRPM > 10 || isWaveActive || isGripActive) {
+    svgDashOffset -= dt * 55;
+    animLoopMain.setAttribute('stroke-dashoffset', svgDashOffset.toFixed(1));
+  }
+
+  renderer.render(scene, camera);
+  updateCallouts2D();
+}
+
+window.addEventListener('resize', () => syncViewportSize(true));
+
+// Initialisation
+syncViewportSize(true);
+frameModelAutomatically();
+selectPart(10);
+setPedagogicalMode('examen');
+setViewMode('ext');
+setTimeout(() => syncViewportSize(true), 120);
+setTimeout(() => syncViewportSize(true), 450);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

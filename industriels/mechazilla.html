@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tour de Capture à Bras-Pinces « Mechazilla » SpaceX — Modèle d'Examen ST/ATS 4e sec. (MEQ)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --ink: #111111;
+      --paper: #ffffff;
+      --panel-bg: #f6f6f6;
+      --border: #1a1a1a;
+      --accent: #0055cc;
+      --accent-soft: #e6f0ff;
+      --muted: #555555;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+    }
+
+    /* EN-TÊTE STYLE CAHIER D'EXAMEN MEQ */
+    header {
+      border-bottom: 2px solid var(--border);
+      background: var(--paper);
+      padding: 8px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .exam-title-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .meq-badge {
+      border: 2px solid var(--border);
+      font-weight: 800;
+      padding: 3px 7px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .exam-title {
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .exam-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-group {
+      display: inline-flex;
+      border: 1.5px solid var(--border);
+      background: var(--paper);
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--paper);
+      color: var(--ink);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    button:last-child {
+      border-right: none;
+    }
+
+    button:hover {
+      background: #eaeaea;
+    }
+
+    button.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    button.power-btn {
+      border: 1.5px solid var(--border);
+      font-weight: 700;
+    }
+
+    button.power-btn.running {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* ZONE PRINCIPALE */
+    #workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 395px;
+      min-height: 360px;
+      height: calc(100vh - 54px);
+      position: relative;
+    }
+
+    #viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 360px;
+      background: #ffffff;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #three-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* CALQUE SVG + HTML POUR LES REPÈRES NUMÉROTÉS */
+    #callout-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #callout-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .callout-badge {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #ffffff;
+      border: 1.8px solid #111111;
+      border-radius: 14px;
+      padding: 2px 7px;
+      min-width: 24px;
+      height: 24px;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #111111;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      white-space: nowrap;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .callout-badge:hover {
+      border-color: var(--accent);
+    }
+
+    .callout-badge.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      z-index: 10;
+    }
+
+    .callout-badge .part-label {
+      font-weight: 600;
+      font-size: 11px;
+      display: none;
+    }
+
+    body.mode-correction .callout-badge .part-label {
+      display: inline;
+    }
+
+    /* ÉTIQUETTES PÉDAGOGIQUES FLOTTANTES */
+    .floating-tag {
+      position: absolute;
+      pointer-events: none;
+      background: #ffffff;
+      border: 1.5px solid var(--ink);
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      transform: translate(-50%, -50%);
+      z-index: 7;
+      white-space: nowrap;
+    }
+
+    .floating-tag.energy-tag {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* AIDE NAVIGATION BAS GAUCHE */
+    #viewport-hud {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--border);
+      padding: 6px 9px;
+      font-size: 11px;
+      line-height: 1.35;
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    /* PANNEAU LATÉRAL (SCHÉMA ÉLECTRIQUE, CINÉMATIQUE, FICHE PIÈCE) */
+    #side-panel {
+      border-left: 2px solid var(--border);
+      background: var(--panel-bg);
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1.5px solid var(--border);
+      padding: 9px 10px;
+    }
+
+    .card-title {
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .part-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .part-num-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.8px solid var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .part-num-circle.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dotted #cccccc;
+      padding: 3px 0;
+      font-size: 12px;
+      gap: 8px;
+    }
+
+    .kv-row:last-child {
+      border-bottom: none;
+    }
+
+    .kv-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .kv-val {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .exam-masked {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .formula-box {
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: #f0f0f0;
+      border-left: 3px solid var(--ink);
+      font-family: "Courier New", monospace;
+      font-size: 11.2px;
+      line-height: 1.38;
+    }
+
+    /* LISTE DES 13 PIÈCES CLIQUABLES */
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+
+    .part-chip {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      padding: 4px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-align: left;
+    }
+
+    .part-chip.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .part-chip b {
+      display: inline-block;
+      min-width: 16px;
+    }
+
+    /* RESPONSIVE MOBILE */
+    @media (max-width: 880px) {
+      #workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 55% 45%;
+      }
+      #side-panel {
+        border-left: none;
+        border-top: 2px solid var(--border);
+      }
+      .exam-subtitle {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="mode-examen">
+<div id="app">
+  <header>
+    <div class="exam-title-block">
+      <span class="meq-badge">MEQ • ST / ATS 4e SEC.</span>
+      <div>
+        <div class="exam-title">Analyse technologique — Tour de capture à bras-pinces (« Mechazilla » SpaceX)</div>
+        <div class="exam-subtitle">Roue et vis sans fin (irréversible) • Vis et écrou à bielles (serrage) • Ressorts de compression (amortissement)</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="btn-group" aria-label="Mode pédagogique">
+        <button id="btn-mode-examen" class="active" title="Affiche uniquement les numéros">Mode Examen</button>
+        <button id="btn-mode-correction" title="Affiche les noms, fonctions, liaisons et énergies">Mode Correction</button>
+      </div>
+
+      <div class="btn-group" aria-label="Modes de vue">
+        <button id="btn-view-ext" class="active">1. Vue extérieure</button>
+        <button id="btn-view-cut">2. Vue en coupe</button>
+        <button id="btn-view-exp">3. Vue éclatée</button>
+      </div>
+
+      <button id="btn-power" class="power-btn" title="Actionner le pupitre (3) et lancer la capture du propulseur (13)">4. Capture Booster : ARRÊT</button>
+      <button id="btn-clamp" style="border:1.5px solid #1a1a1a;" title="Actionner manuellement le système vis et écrou (9) des bras-pinces (10)">Fermer / Ouvrir Pinces</button>
+      <button id="btn-winch" style="border:1.5px solid #1a1a1a;" title="Tester le treuil à roue et vis sans fin (7) et les poulies (8)">Monter / Descendre Chariot</button>
+      <button id="btn-site-toggle" class="active" style="border:1.5px solid #1a1a1a;" title="Afficher/Masquer le pas de tir orbital Starbase">Site : OUI</button>
+      <button id="btn-reset-cam" style="border:1.5px solid #1a1a1a;" title="Recadrer sur la tour et la fusée">Recadrer</button>
+    </div>
+  </header>
+
+  <div id="workspace">
+    <!-- VUE 3D INTERACTIVE -->
+    <div id="viewport">
+      <canvas id="three-canvas"></canvas>
+      <svg id="callout-svg"></svg>
+      <div id="callout-layer"></div>
+      <div id="viewport-hud">
+        <strong>Contrôles 3D :</strong> Glisser (1 doigt / souris) = Orienter • Pincer / Molette = Zoomer • Cliquer pupitre <b>(3)</b>, vis <b>(9)</b> ou bras <b>(10)</b>
+      </div>
+    </div>
+
+    <!-- PANNEAU TECHNIQUE LATÉRAL -->
+    <div id="side-panel">
+      <!-- FICHE DE LA PIÈCE SÉLECTIONNÉE -->
+      <div class="card">
+        <div class="card-title">
+          <span>Pièce sélectionnée</span>
+          <span id="mode-indicator-label">MODE EXAMEN</span>
+        </div>
+        <div class="part-detail-header">
+          <span id="detail-num" class="part-num-circle active">1</span>
+          <div>
+            <div id="detail-name" style="font-weight:700; font-size:13px;">Pièce n° 1 (Mode Examen)</div>
+            <div id="detail-sub" style="font-size:11px; color:var(--muted);">Cliquez sur « Mode Correction » pour révéler la nomenclature</div>
+          </div>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Fonction technique :</span>
+          <span id="detail-func" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Liaison / Guidage / Mécanisme :</span>
+          <span id="detail-link" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+      </div>
+
+      <!-- CIRCUIT ÉLECTRIQUE NORMALISÉ PFEQ -->
+      <div class="card">
+        <div class="card-title">
+          <span>Schéma de principes — Circuit de capture</span>
+          <span id="circuit-state-badge" style="font-weight:700;">CIRCUIT OUVERT</span>
+        </div>
+        <svg id="circuit-svg" viewBox="0 0 340 175" width="100%" height="162" style="background:#ffffff; border:1px solid #ccc; display:block;">
+          <!-- Alimentation CC (4) + Fusible de protection (5) + Interrupteur principal (3) -->
+          <line x1="42" y1="32" x2="72" y2="32" stroke="#111" stroke-width="2.2" />
+          <rect x="72" y="25" width="28" height="14" fill="#fff" stroke="#111" stroke-width="2" />
+          <line x1="72" y1="32" x2="100" y2="32" stroke="#111" stroke-width="1.4" />
+          <text x="86" y="20" font-size="9" font-weight="700" text-anchor="middle" fill="#111">Fusible (5)</text>
+
+          <line x1="100" y1="32" x2="132" y2="32" stroke="#111" stroke-width="2.2" />
+          <!-- Interrupteur de commande (3) -->
+          <circle cx="135" cy="32" r="3.2" fill="#fff" stroke="#111" stroke-width="2" />
+          <circle cx="172" cy="32" r="3.2" fill="#fff" stroke="#111" stroke-width="2" />
+          <line id="svg-sw-main" x1="138" y1="31" x2="169" y2="15" stroke="#111" stroke-width="2.5" stroke-linecap="round" style="cursor:pointer;" />
+          <text x="153" y="12" font-size="9.5" font-weight="700" text-anchor="middle" fill="#111">(3) Commande</text>
+
+          <line x1="175" y1="32" x2="295" y2="32" stroke="#111" stroke-width="2.2" />
+
+          <!-- Branche 1 : Moteur du treuil de levage M1 (6-7) -->
+          <line x1="220" y1="32" x2="220" y2="58" stroke="#111" stroke-width="2.2" />
+          <circle cx="220" cy="76" r="17" fill="#fff" stroke="#111" stroke-width="2.2" />
+          <text x="220" y="81" font-size="12" font-weight="800" text-anchor="middle" fill="#111">M₁</text>
+          <line x1="220" y1="93" x2="220" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Branche 2 : Moteur de vis des bras-pinces M2 (9-10) + DEL témoin d'accostage -->
+          <line x1="295" y1="32" x2="295" y2="58" stroke="#111" stroke-width="2.2" />
+          <circle cx="295" cy="76" r="17" fill="#fff" stroke="#111" stroke-width="2.2" />
+          <text x="295" y="81" font-size="12" font-weight="800" text-anchor="middle" fill="#111">M₂</text>
+          <line x1="295" y1="93" x2="295" y2="108" stroke="#111" stroke-width="2.2" />
+
+          <!-- Symbole normalisé : DEL témoin de verrouillage en série sur la branche de serrage -->
+          <polygon id="svg-led-tri" points="287,108 303,108 295,122" fill="#fff" stroke="#111" stroke-width="2" />
+          <line x1="286" y1="122" x2="304" y2="122" stroke="#111" stroke-width="2.2" />
+          <line x1="295" y1="122" x2="295" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Ligne de retour vers le banc d'accumulateurs (4) -->
+          <line x1="295" y1="138" x2="42" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Source CC : Banc d'accumulateurs (4) -->
+          <line x1="42" y1="32" x2="42" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="42" y1="94" x2="42" y2="138" stroke="#111" stroke-width="2.2" />
+          <line x1="27" y1="68" x2="57" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="75" x2="50" y2="75" stroke="#111" stroke-width="3.6" />
+          <line x1="27" y1="84" x2="57" y2="84" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="91" x2="50" y2="91" stroke="#111" stroke-width="3.6" />
+          <text x="17" y="67" font-size="11" font-weight="700" fill="#111">+</text>
+          <text x="18" y="98" font-size="12" font-weight="700" fill="#111">−</text>
+
+          <!-- Animation du courant électrique -->
+          <rect id="anim-loop-main" x="42" y="32" width="253" height="106" fill="none" stroke="#0055cc" stroke-width="2.5" stroke-dasharray="6 10" opacity="0" />
+
+          <!-- Étiquettes normalisées PFEQ -->
+          <g font-size="9.5" font-weight="700" fill="#111">
+            <text x="6" y="154">(4) Alimentation (CC)</text>
+            <text x="130" y="132" text-anchor="middle">(5) Conduction</text>
+            <text x="215" y="154" text-anchor="middle">(6) Treuil M₁</text>
+            <text x="292" y="154" text-anchor="middle">(9) Pinces M₂</text>
+            <text x="180" y="168" font-weight="400" fill="#555" text-anchor="middle">Transformation d'énergie : Électrique → Mécanique & Lumineuse (DEL)</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- CINÉMATIQUE & MÉCANISMES (PFEQ) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Cinématique & Mécanismes PFEQ</span>
+          <span>Temps réel</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Roue et vis sans fin (7) (Z = 24) :</span>
+          <span class="kv-val">r = 1 / 24 (IRRÉVERSIBLE)</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Vitesses Treuil (Vis 6 / Roue 7) :</span>
+          <span class="kv-val">ω₁ = <span id="kin-w1">0</span> tr/min | ω₂ = <span id="kin-w2">0</span> tr/min</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Vis et écrou (9) → Bras-pinces (10) :</span>
+          <span class="kv-val">Ouverture = <span id="kin-angle">38</span>° (<span id="kin-clamp-state">OUVERTS</span>)</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Ressorts d'amortissement (12) :</span>
+          <span class="kv-val">Compression Δy = <span id="kin-spring">0</span> mm</span>
+        </div>
+        <div class="formula-box">
+          <strong>1. Transmission (Roue et vis sans fin 7) :</strong><br/>
+          ω_roue = ω_vis / Z = ω_moteur / 24. Mécanisme <strong>irréversible</strong> : bloque la chute du propulseur (250 t) si le moteur s'arrête.<br/>
+          <strong>2. Transformation (Vis et écrou 9 + bielles) :</strong><br/>
+          Rotation de la vis filetée → Translation de l'écrou → Pivotement symétrique des 2 bras « Chopsticks » (10).<br/>
+          <strong>3. Ressorts hélicoïdaux (12) :</strong><br/>
+          Compression élastique lors de l'accostage des ergots (13) sur les rails (11).
+        </div>
+      </div>
+
+      <!-- RÉPERTOIRE DES 13 PIÈCES -->
+      <div class="card">
+        <div class="card-title">
+          <span>Nomenclature des 13 pièces</span>
+          <span>Cliquer pour cibler</span>
+        </div>
+        <div id="parts-grid" class="parts-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   1. DONNÉES PÉDAGOGIQUES PFEQ (13 PIÈCES NORMALISÉES ST/ATS 4e SECONDAIRE)
+   ============================================================================ */
+const PARTS_DATA = [
+  {
+    id: 1,
+    name: "Pylône de lancement (« Mechazilla ») et glissières",
+    func: "Supporter l'ensemble de la structure, résister aux contraintes de flexion/compression et guider verticalement le chariot (2).",
+    link: "Liaison d'encastrement au sol ; colonnes en acier haute résistance servant d'organe de guidage en translation."
+  },
+  {
+    id: 2,
+    name: "Chariot élévateur mobile (bâti des bras)",
+    func: "Coulisser verticalement le long du pylône (1) pour positionner les bras-pinces (10) à la hauteur de capture et redéposer la fusée.",
+    link: "Guidage en translation rectiligne verticale sur les 4 colonnes du pylône (1) par des patins à galets."
+  },
+  {
+    id: 3,
+    name: "Pupitre à interrupteur et capteur de fin de course",
+    func: "Fonction de COMMANDE : fermer ou ouvrir le circuit électrique commandant les moteurs de treuillage (6) et de fermeture des pinces (9).",
+    link: "Interrupteur à bascule en liaison pivot ; coupe automatiquement le courant dès que le verrouillage est atteint."
+  },
+  {
+    id: 4,
+    name: "Banc d'accumulateurs haute puissance (CC)",
+    func: "Fonction d'ALIMENTATION : fournir un courant électrique continu de très forte intensité aux moteurs lors de la capture.",
+    link: "Liaison d'encastrement dans la salle électrique au pied du pylône (1)."
+  },
+  {
+    id: 5,
+    name: "Câbles conducteurs blindés et fusible",
+    func: "Fonction de CONDUCTION (acheminer le courant jusqu'au chariot mobile) et de PROTECTION (le fusible fond en cas de surintensité).",
+    link: "Conducteurs en cuivre recouverts d'une gaine isolante souple résistant à la chaleur des tuyères."
+  },
+  {
+    id: 6,
+    name: "Moteur électrique principal de treuillage (stator + rotor)",
+    func: "TRANSFORMATION D'ÉNERGIE : convertir l'énergie électrique en énergie mécanique de rotation rapide.",
+    link: "Stator encastré dans le carter de treuil au pied de la tour ; rotor en liaison pivot."
+  },
+  {
+    id: 7,
+    name: "Réducteur à roue dentée et vis sans fin (Z = 24)",
+    func: "TRANSMISSION DU MOUVEMENT : réduire fortement la vitesse (÷24), multiplier le couple et assurer l'IRRÉVERSIBILITÉ mécanique.",
+    link: "Mécanisme irréversible : la vis sans fin peut entraîner la roue dentée, mais le poids de la fusée (250 tonnes) ne peut pas faire tourner la vis à l'envers."
+  },
+  {
+    id: 8,
+    name: "Poulies à gorge et câbles d'acier de levage",
+    func: "TRANSMISSION DU MOUVEMENT : transmettre la rotation du tambour de treuil (7) jusqu'au sommet du pylône pour lever ou abaisser le chariot (2).",
+    link: "Poulies en liaison pivot au sommet du pylône ; câbles en acier tressé travaillant sous une forte contrainte de TRACTION."
+  },
+  {
+    id: 9,
+    name: "Système vis et écrou à bielles de serrage",
+    func: "TRANSFORMATION DU MOUVEMENT : transformer la rotation de la vis filetée en translation rectiligne de l'écrou pour tirer/pousser les deux bras (10).",
+    link: "Système vis et écrou (écrou mobile guidé en translation) articulé à deux bielles symétriques."
+  },
+  {
+    id: 10,
+    name: "Bras-pinces articulés (« Chopsticks », ×2)",
+    func: "Pivoter horizontalement pour se refermer autour du propulseur (13) et supporter sa masse lors de la récupération en vol.",
+    link: "Liaison pivot (1 degré de liberté en rotation horizontale) sur de grands axes verticaux solidaires du chariot (2)."
+  },
+  {
+    id: 11,
+    name: "Rails d'accostage et patins récepteurs",
+    func: "Recevoir les ergots d'accrochage du propulseur (13) et transmettre la charge verticale vers les ressorts d'amortissement (12).",
+    link: "Guidage en translation verticale à course courte à l'intérieur de la poutre supérieure des bras-pinces (10)."
+  },
+  {
+    id: 12,
+    name: "Ressorts hélicoïdaux de compression (amortisseurs)",
+    func: "Se comprimer lors de l'impact du propulseur (13) pour absorber l'énergie cinétique et éviter la rupture mécanique des bras (10).",
+    link: "Propriété mécanique d'ÉLASTICITÉ : emmagasinent de l'énergie potentielle élastique sous contrainte de compression puis reprennent leur longueur."
+  },
+  {
+    id: 13,
+    name: "Propulseur spatial (Booster Super Heavy à ergots)",
+    func: "Propulser le vaisseau spatial puis revenir se poser verticalement entre les bras-pinces (10) grâce à ses 2 ergots d'accrochage sous les grilles.",
+    link: "Enveloppe en acier inoxydable (résistance thermique et mécanique) ; liaison d'appui sur les rails (11) en fin de capture."
+  }
+];
+
+/* ============================================================================
+   2. INITIALISATION DE LA SCÈNE THREE.JS & STYLE VISUEL "EXAMEN MEQ"
+   ============================================================================ */
+const viewport = document.getElementById('viewport');
+const canvas = document.getElementById('three-canvas');
+const calloutSvg = document.getElementById('callout-svg');
+const calloutLayer = document.getElementById('callout-layer');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 400);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+// Éclairage doux et uniforme sans ombres portées dures (style dessin technique MEQ)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.80);
+scene.add(ambientLight);
+
+const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.30);
+dirLight1.position.set(18, 28, 22);
+scene.add(dirLight1);
+
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.16);
+dirLight2.position.set(-18, 12, -16);
+scene.add(dirLight2);
+
+// Palette monochrome officielle (aucune couleur décorative, uniquement gris techniques + bleu de sélection)
+const PALETTE = {
+  white: 0xfbfbfb,
+  veryLight: 0xf1f1f1,
+  light: 0xe3e3e3,
+  medium: 0xcfcfcf,
+  dark: 0xb5b5b5,
+  darker: 0x969696,
+  cable: 0x7c7c7c,
+  accent: 0x0055cc,
+  edge: 0x111111,
+  siteEdge: 0x444444
+};
+
+const edgeMaterial = new THREE.LineBasicMaterial({ color: PALETTE.edge });
+const siteLineMaterial = new THREE.LineBasicMaterial({ color: PALETTE.siteEdge });
+const dashedGuideMaterial = new THREE.LineDashedMaterial({
+  color: 0x222222,
+  dashSize: 0.32,
+  gapSize: 0.18
+});
+
+const partGroups = {};
+const partMeshes = {};
+const partAnchors = {};
+const partExplodeVectors = {};
+const partBasePositions = {};
+const clickableMeshes = [];
+
+function createTechnicalMaterial(hexColor, isCasing = false) {
+  return new THREE.MeshLambertMaterial({
+    color: hexColor,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+    side: isCasing ? THREE.DoubleSide : THREE.FrontSide
+  });
+}
+
+function addTechnicalMesh(partId, geometry, hexColor, parentGroup, options = {}) {
+  const mat = createTechnicalMaterial(hexColor, options.isCasing || false);
+  mat.userData.baseColor = hexColor;
+  mat.userData.partId = partId;
+  mat.userData.isCutawayHalf = options.isCutawayHalf || false;
+
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.userData.partId = partId;
+
+  const threshold = options.edgeAngle !== undefined ? options.edgeAngle : 20;
+  const edgesGeo = new THREE.EdgesGeometry(geometry, threshold);
+  const lines = new THREE.LineSegments(edgesGeo, edgeMaterial.clone());
+  lines.userData.isEdge = true;
+  mesh.add(lines);
+
+  parentGroup.add(mesh);
+  if (!partMeshes[partId]) partMeshes[partId] = [];
+  partMeshes[partId].push(mesh);
+  clickableMeshes.push(mesh);
+  return mesh;
+}
+
+/* ============================================================================
+   3. ARRIÈRE-PLAN : SITE DE LANCEMENT ORBITAL "STARBASE" EN 3D (STYLE MEQ)
+   ============================================================================ */
+const starbaseSiteGroup = new THREE.Group();
+scene.add(starbaseSiteGroup);
+
+(function buildStarbaseLaunchSiteEnvironment() {
+  const groundY = -5.60;
+
+  // Dalle hexagonale/rectangulaire du complexe de lancement orbital
+  const padGeo = new THREE.BoxGeometry(30, 0.16, 30);
+  padGeo.translate(0, groundY - 0.08, 0.5);
+  const padMat = new THREE.MeshLambertMaterial({
+    color: 0xf8f8f8,
+    polygonOffset: true,
+    polygonOffsetFactor: 2,
+    polygonOffsetUnits: 2
+  });
+  const padMesh = new THREE.Mesh(padGeo, padMat);
+  padMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(padGeo), siteLineMaterial));
+  starbaseSiteGroup.add(padMesh);
+
+  // Table de lancement orbitale (OLM) circulaire sur6 piliers sous la zone des bras-pinces (X = 0, Z = +2.35)
+  const olmRingGeo = new THREE.CylinderGeometry(1.75, 1.85, 0.55, 24);
+  olmRingGeo.translate(0, groundY + 1.35, 2.35);
+  const olmRing = new THREE.Mesh(olmRingGeo, createTechnicalMaterial(PALETTE.light));
+  olmRing.add(new THREE.LineSegments(new THREE.EdgesGeometry(olmRingGeo, 20), siteLineMaterial));
+  starbaseSiteGroup.add(olmRing);
+
+  for (let i = 0; i < 6; i++) {
+    const a = (i * Math.PI * 2) / 6;
+    const legGeo = new THREE.CylinderGeometry(0.18, 0.22, 1.15, 12);
+    legGeo.translate(Math.cos(a) * 1.45, groundY + 0.57, 2.35 + Math.sin(a) * 1.45);
+    const leg = new THREE.Mesh(legGeo, createTechnicalMaterial(PALETTE.medium));
+    leg.add(new THREE.LineSegments(new THREE.EdgesGeometry(legGeo), siteLineMaterial));
+    starbaseSiteGroup.add(leg);
+  }
+
+  // Ferme à ergols cryogéniques (2 réservoirs verticaux + 1 sphère en arrière-plan)
+  for (let i = 0; i < 2; i++) {
+    const tankGeo = new THREE.CylinderGeometry(0.85, 0.85, 3.8, 18);
+    tankGeo.translate(-6.5 - i * 2.2, groundY + 1.9, -4.5);
+    const tank = new THREE.Mesh(tankGeo, createTechnicalMaterial(PALETTE.veryLight));
+    tank.add(new THREE.LineSegments(new THREE.EdgesGeometry(tankGeo, 22), siteLineMaterial));
+    starbaseSiteGroup.add(tank);
+  }
+
+  const sphereGeo = new THREE.SphereGeometry(1.05, 18, 14);
+  sphereGeo.translate(6.8, groundY + 1.45, -4.2);
+  const sphere = new THREE.Mesh(sphereGeo, createTechnicalMaterial(PALETTE.veryLight));
+  sphere.add(new THREE.LineSegments(new THREE.EdgesGeometry(sphereGeo, 24), siteLineMaterial));
+  starbaseSiteGroup.add(sphere);
+
+  // Marquage de sécurité au sol autour du pylône et de la table OLM
+  const circleMark = new THREE.RingGeometry(3.8, 3.95, 36);
+  circleMark.rotateX(-Math.PI / 2);
+  circleMark.translate(0, groundY + 0.015, 2.35);
+  starbaseSiteGroup.add(new THREE.Mesh(circleMark, new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide })));
+})();
+
+/* ============================================================================
+   4. GÉNÉRATEURS DE GÉOMÉTRIES MÉCANIQUES (ENGRENAGES DROITS, RESSORTS)
+   ============================================================================ */
+function createSpurGearGeometry(moduleM, teethCount, thickness, boreRadius) {
+  const pitchRadius = (moduleM * teethCount) / 2;
+  const addendum = moduleM * 0.9;
+  const dedendum = moduleM * 1.1;
+  const outerRadius = pitchRadius + addendum;
+  const rootRadius = Math.max(boreRadius + 0.05, pitchRadius - dedendum);
+
+  const shape = new THREE.Shape();
+  const step = (Math.PI * 2) / teethCount;
+
+  for (let i = 0; i < teethCount; i++) {
+    const a0 = i * step;
+    const a1 = a0 + step * 0.17;
+    const a2 = a0 + step * 0.29;
+    const a3 = a0 + step * 0.51;
+    const a4 = a0 + step * 0.63;
+
+    if (i === 0) shape.moveTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    else shape.lineTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    shape.lineTo(Math.cos(a1) * rootRadius, Math.sin(a1) * rootRadius);
+    shape.lineTo(Math.cos(a2) * outerRadius, Math.sin(a2) * outerRadius);
+    shape.lineTo(Math.cos(a3) * outerRadius, Math.sin(a3) * outerRadius);
+    shape.lineTo(Math.cos(a4) * rootRadius, Math.sin(a4) * rootRadius);
+  }
+  shape.closePath();
+
+  if (boreRadius > 0.02) {
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, boreRadius, 0, Math.PI * 2, false);
+    shape.holes.push(hole);
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 14 });
+  geo.translate(0, 0, -thickness / 2);
+  geo.rotateY(Math.PI / 2); // Axe de rotation aligné sur X
+  return geo;
+}
+
+function createHelicalSpringGeometry(radius, length, coils, wireRadius) {
+  const pts = [];
+  const totalSteps = coils * 16;
+  for (let i = 0; i <= totalSteps; i++) {
+    const t = i / totalSteps;
+    const angle = t * coils * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(angle) * radius, t * length, Math.sin(angle) * radius));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  return new THREE.TubeGeometry(curve, totalSteps * 2, wireRadius, 8, false);
+}
+
+/* ============================================================================
+   5. CONSTRUCTION DES 13 PIÈCES DE LA TOUR MECHAZILLA & DU PROPULSEUR
+   ============================================================================ */
+const mechazillaRoot = new THREE.Group();
+scene.add(mechazillaRoot);
+
+for (let i = 1; i <= 13; i++) {
+  const g = new THREE.Group();
+  g.name = `Piece_${i}`;
+  partGroups[i] = g;
+  partMeshes[i] = [];
+  mechazillaRoot.add(g);
+}
+
+// Coordonnées de référence du pylône et du treuil
+const TOWER_Z = -2.20;
+const WINCH_Z = -4.25;
+const WINCH_Y = -4.45;
+const Z_WORM_WHEEL = 24;
+
+// Groupes cinématiques avec origine STRICTEMENT sur leur axe de rotation ou de translation
+const motorRotorPivot = new THREE.Group();
+motorRotorPivot.position.set(0, WINCH_Y - 0.82, WINCH_Z);
+
+const wormShaftPivot = new THREE.Group();
+wormShaftPivot.position.set(0, WINCH_Y - 0.82, WINCH_Z);
+
+const wormWheelDrumPivot = new THREE.Group();
+wormWheelDrumPivot.position.set(0, WINCH_Y, WINCH_Z);
+
+const topPulleyLeftPivot = new THREE.Group();
+topPulleyLeftPivot.position.set(-0.55, 5.75, TOWER_Z);
+
+const topPulleyRightPivot = new THREE.Group();
+topPulleyRightPivot.position.set(0.55, 5.75, TOWER_Z);
+
+// Groupe d'élévation verticale : déplace ensemble le chariot (2), la vis-écrou (9), les bras-pinces (10), les rails (11) et les ressorts (12)
+let carriageElevationY = 0.65; // Hauteur nominale du chariot sur la tour
+const leadScrewPivot = new THREE.Group();
+const nutSliderGroup = new THREE.Group();
+const leftLinkRodPivot = new THREE.Group();
+const rightLinkRodPivot = new THREE.Group();
+
+// Pivots verticaux des deux bras-pinces "Chopsticks" (10)
+const ARM_HINGE_X = 1.05;
+const ARM_HINGE_Z = -1.15;
+const leftArmPivot = new THREE.Group();
+const rightArmPivot = new THREE.Group();
+
+// Groupes de translation verticale pour les rails amortisseurs (11), les ressorts (12) et le propulseur Super Heavy (13)
+const leftRailDropGroup = new THREE.Group();
+const rightRailDropGroup = new THREE.Group();
+const leftSpringsArray = [];
+const rightSpringsArray = [];
+
+const boosterFlightGroup = new THREE.Group();
+let boosterPlumeMesh = null;
+
+// --- PIÈCE 1 : PYLÔNE DE LANCEMENT (« MECHAZILLA ») ET GLISSIÈRES ---
+(function buildTowerStructure() {
+  const g1 = partGroups[1];
+
+  // Socle massif en béton/acier au sol
+  const baseBlock = new THREE.BoxGeometry(3.2, 0.50, 4.8);
+  baseBlock.translate(0, -5.35, -2.95);
+  addTechnicalMesh(1, baseBlock, PALETTE.dark, g1);
+
+  // 4 Colonnes verticales de guidage en translation (de Y = -5.1 à Y = +6.1)
+  const colPositions = [
+    [-0.95, TOWER_Z - 0.85],
+    [ 0.95, TOWER_Z - 0.85],
+    [-0.95, TOWER_Z + 0.85],
+    [ 0.95, TOWER_Z + 0.85]
+  ];
+  colPositions.forEach(([cx, cz]) => {
+    const colGeo = new THREE.BoxGeometry(0.24, 11.2, 0.24);
+    colGeo.translate(cx, 0.50, cz);
+    addTechnicalMesh(1, colGeo, PALETTE.medium, g1);
+  });
+
+  // Traverses horizontales et croisillons en treillis (K-bracing) sur 5 étages
+  for (let y = -4.2; y <= 4.8; y += 2.25) {
+    const beamFront = new THREE.BoxGeometry(1.9, 0.14, 0.14);
+    beamFront.translate(0, y, TOWER_Z + 0.85);
+    addTechnicalMesh(1, beamFront, PALETTE.light, g1);
+
+    const beamBack = new THREE.BoxGeometry(1.9, 0.14, 0.14);
+    beamBack.translate(0, y, TOWER_Z - 0.85);
+    addTechnicalMesh(1, beamBack, PALETTE.light, g1);
+
+    for (let side of [-0.95, 0.95]) {
+      const beamSide = new THREE.BoxGeometry(0.14, 0.14, 1.7);
+      beamSide.translate(side, y, TOWER_Z);
+      addTechnicalMesh(1, beamSide, PALETTE.light, g1);
+    }
+  }
+
+  // Tête de tour (couronnement supérieur supportant les poulies 8)
+  const crownGeo = new THREE.BoxGeometry(2.35, 0.45, 2.35);
+  crownGeo.translate(0, 6.22, TOWER_Z);
+  addTechnicalMesh(1, crownGeo, PALETTE.dark, g1);
+
+  // Carter du treuil et de la salle des machines à l'arrière du pylône :
+  // Paroi gauche fixe + Paroi droite/dessus coupée (transparente à 85% en "Vue en coupe")
+  const winchWallLeft = new THREE.BoxGeometry(0.16, 2.35, 2.30);
+  winchWallLeft.translate(-1.25, -4.15, WINCH_Z);
+  addTechnicalMesh(1, winchWallLeft, PALETTE.light, g1, { isCasing: true });
+
+  const winchCoverRightCut = new THREE.BoxGeometry(1.35, 2.35, 2.30);
+  winchCoverRightCut.translate(0.55, -4.15, WINCH_Z);
+  addTechnicalMesh(1, winchCoverRightCut, PALETTE.light, g1, { isCasing: true, isCutawayHalf: true });
+
+  // Panneau de carénage latéral droit du pylône (s'ouvre en vue en coupe)
+  const towerRightCladdingCut = new THREE.BoxGeometry(0.08, 10.6, 1.65);
+  towerRightCladdingCut.translate(1.06, 0.50, TOWER_Z);
+  addTechnicalMesh(1, towerRightCladdingCut, PALETTE.veryLight, g1, { isCasing: true, isCutawayHalf: true });
+})();
+
+// --- PIÈCE 2 : CHARIOT ÉLÉVATEUR MOBILE (GUIDÉ EN TRANSLATION VERTICALE) ---
+(function buildCarriage() {
+  const g2 = partGroups[2];
+
+  // Cadre structurel arrière et manchons coulissants autour des 4 colonnes du pylône (1)
+  const backFrame = new THREE.BoxGeometry(2.45, 1.85, 0.28);
+  backFrame.translate(0, 0, TOWER_Z - 1.05);
+  addTechnicalMesh(2, backFrame, PALETTE.medium, g2);
+
+  const frontBridge = new THREE.BoxGeometry(2.55, 1.45, 0.36);
+  frontBridge.translate(0, 0, ARM_HINGE_Z);
+  addTechnicalMesh(2, frontBridge, PALETTE.dark, g2);
+
+  // Bras latéraux du chariot reliant l'arrière à l'avant (le flanc droit devient transparent en coupe pour voir la vis-écrou 9)
+  const leftSideBeam = new THREE.BoxGeometry(0.24, 1.55, 2.15);
+  leftSideBeam.translate(-1.18, 0, TOWER_Z - 0.05);
+  addTechnicalMesh(2, leftSideBeam, PALETTE.medium, g2, { isCasing: true });
+
+  const rightSideBeamCut = new THREE.BoxGeometry(0.24, 1.55, 2.15);
+  rightSideBeamCut.translate(1.18, 0, TOWER_Z - 0.05);
+  addTechnicalMesh(2, rightSideBeamCut, PALETTE.medium, g2, { isCasing: true, isCutawayHalf: true });
+
+  // 8 Galets de guidage en rotation roulant sur les colonnes du pylône
+  for (let sx of [-0.95, 0.95]) {
+    for (let sy of [-0.72, 0.72]) {
+      const roller = new THREE.CylinderGeometry(0.20, 0.20, 0.34, 14);
+      roller.rotateZ(Math.PI / 2);
+      roller.translate(sx, sy, TOWER_Z + 0.85);
+      addTechnicalMesh(2, roller, PALETTE.darker, g2);
+    }
+  }
+})();
+
+// --- PIÈCE 3 : PUPITRE À INTERRUPTEUR ET CAPTEUR DE FIN DE COURSE (COMMANDE) ---
+const switchRockerPivot = new THREE.Group();
+switchRockerPivot.position.set(-1.55, -3.55, -1.25);
+partGroups[3].add(switchRockerPivot);
+
+(function buildControlSwitch() {
+  const g3 = partGroups[3];
+  // Pupitre de commande au pied avant-gauche du pylône
+  const pedestal = new THREE.BoxGeometry(0.55, 1.35, 0.55);
+  pedestal.translate(-1.55, -4.45, -1.25);
+  addTechnicalMesh(3, pedestal, PALETTE.medium, g3);
+
+  const consoleTop = new THREE.BoxGeometry(0.68, 0.35, 0.68);
+  consoleTop.rotateX(0.25);
+  consoleTop.translate(-1.55, -3.72, -1.25);
+  addTechnicalMesh(3, consoleTop, PALETTE.dark, g3);
+
+  // Levier d'interrupteur à bascule cliquable en 3D
+  const lever = new THREE.BoxGeometry(0.28, 0.38, 0.16);
+  lever.translate(0, 0.14, 0);
+  addTechnicalMesh(3, lever, PALETTE.darker, switchRockerPivot);
+})();
+
+// --- PIÈCE 4 : BANC D'ACCUMULATEURS HAUTE PUISSANCE (ALIMENTATION CC) ---
+(function buildBatteryBank() {
+  const g4 = partGroups[4];
+  const cabinet = new THREE.BoxGeometry(1.45, 1.15, 0.95);
+  cabinet.translate(-0.35, -4.52, -3.10);
+  addTechnicalMesh(4, cabinet, PALETTE.dark, g4);
+
+  // Bornes + et - sur le dessus du banc de batteries
+  for (let bx of [-0.65, -0.05]) {
+    const post = new THREE.CylinderGeometry(0.11, 0.11, 0.24, 12);
+    post.translate(bx, -3.82, -3.10);
+    addTechnicalMesh(4, post, PALETTE.darker, g4);
+  }
+})();
+
+// --- PIÈCE 5 : CÂBLES CONDUCTEURS BLINDÉS ET FUSIBLE (CONDUCTION & PROTECTION) ---
+(function buildCablesAndFuse() {
+  const g5 = partGroups[5];
+  // Cartouche fusible industrielle en série
+  const fuseCyl = new THREE.CylinderGeometry(0.16, 0.16, 0.68, 14);
+  fuseCyl.translate(-0.95, -3.55, -2.55);
+  addTechnicalMesh(5, fuseCyl, PALETTE.darker, g5);
+
+  // Câble Batterie (4) -> Fusible -> Pupitre (3) -> Moteur Treuil (6)
+  const curve1 = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.65, -3.82, -3.10),
+    new THREE.Vector3(-0.95, -3.55, -2.55),
+    new THREE.Vector3(-1.55, -3.85, -1.25),
+    new THREE.Vector3(-0.55, -5.05, WINCH_Z)
+  ]);
+  addTechnicalMesh(5, new THREE.TubeGeometry(curve1, 24, 0.06, 8, false), PALETTE.medium, g5);
+
+  // Câble montant le long du pylône vers le moteur de la vis mère (9) sur le chariot
+  const curve2 = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.05, -3.82, -3.10),
+    new THREE.Vector3(-0.65, -2.00, TOWER_Z - 0.75),
+    new THREE.Vector3(-0.65,  0.65, TOWER_Z - 0.55)
+  ]);
+  addTechnicalMesh(5, new THREE.TubeGeometry(curve2, 20, 0.06, 8, false), PALETTE.darker, g5);
+})();
+
+// --- PIÈCE 6 : MOTEUR ÉLECTRIQUE PRINCIPAL DE TREUILLAGE (STATOR + ROTOR) ---
+(function buildWinchMotor() {
+  const g6 = partGroups[6];
+  // Stator demi-ouvert sur le dessus pour voir le rotor tourner
+  const statorGeo = new THREE.CylinderGeometry(0.46, 0.46, 0.95, 20, 1, false, Math.PI * 0.2, Math.PI * 1.6);
+  statorGeo.rotateX(Math.PI / 2);
+  statorGeo.translate(0, WINCH_Y - 0.82, WINCH_Z - 0.85);
+  addTechnicalMesh(6, statorGeo, PALETTE.medium, g6);
+
+  // Rotor à ailettes centré sur motorRotorPivot
+  g6.add(motorRotorPivot);
+  const rotorCore = new THREE.CylinderGeometry(0.30, 0.30, 0.78, 12);
+  rotorCore.rotateX(Math.PI / 2);
+  rotorCore.translate(0, 0, -0.85);
+  addTechnicalMesh(6, rotorCore, PALETTE.light, motorRotorPivot, { edgeAngle: 12 });
+
+  for (let k = 0; k < 6; k++) {
+    const fin = new THREE.BoxGeometry(0.08, 0.68, 0.72);
+    fin.rotateZ((k * Math.PI) / 3);
+    fin.translate(0, 0, -0.85);
+    addTechnicalMesh(6, fin, PALETTE.darker, motorRotorPivot);
+  }
+})();
+
+// --- PIÈCE 7 : RÉDUCTEUR À ROUE DENTÉE ET VIS SANS FIN (IRRÉVERSIBLE, Z = 24) ---
+(function buildWormGearWinch() {
+  const g7 = partGroups[7];
+  g7.add(wormShaftPivot);
+  g7.add(wormWheelDrumPivot);
+
+  // Vis sans fin (axe Z) entraînée directement par le rotor (6)
+  const wormCore = new THREE.CylinderGeometry(0.16, 0.16, 1.35, 14);
+  wormCore.rotateX(Math.PI / 2);
+  wormCore.translate(0, 0, 0.05);
+  addTechnicalMesh(7, wormCore, PALETTE.darker, wormShaftPivot);
+
+  for (let z = -0.36; z <= 0.44; z += 0.16) {
+    const thread = new THREE.TorusGeometry(0.22, 0.05, 8, 16);
+    thread.rotateY(0.26);
+    thread.translate(0, 0, z);
+    addTechnicalMesh(7, thread, PALETTE.dark, wormShaftPivot);
+  }
+
+  // Grande roue dentée (Z = 24, R = 0.60) solidaire du tambour d'enroulement des câbles (axe X)
+  const wormWheelGeo = createSpurGearGeometry(0.05, Z_WORM_WHEEL, 0.28, 0.14);
+  wormWheelGeo.translate(-0.38, 0, 0);
+  addTechnicalMesh(7, wormWheelGeo, PALETTE.medium, wormWheelDrumPivot, { edgeAngle: 15 });
+
+  // Tambour cylindrique rainuré du treuil
+  const drumGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.95, 20);
+  drumGeo.rotateZ(Math.PI / 2);
+  drumGeo.translate(0.18, 0, 0);
+  addTechnicalMesh(7, drumGeo, PALETTE.dark, wormWheelDrumPivot);
+
+  const drumShaft = new THREE.CylinderGeometry(0.14, 0.14, 1.75, 14);
+  drumShaft.rotateZ(Math.PI / 2);
+  addTechnicalMesh(7, drumShaft, PALETTE.darker, wormWheelDrumPivot);
+})();
+
+// --- PIÈCE 8 : POULIES À GORGE ET CÂBLES D'ACIER DE LEVAGE ---
+(function buildPulleysAndHoistCables() {
+  const g8 = partGroups[8];
+  g8.add(topPulleyLeftPivot);
+  g8.add(topPulleyRightPivot);
+
+  [topPulleyLeftPivot, topPulleyRightPivot].forEach(piv => {
+    const wheel = new THREE.CylinderGeometry(0.46, 0.46, 0.18, 20);
+    wheel.rotateZ(Math.PI / 2);
+    addTechnicalMesh(8, wheel, PALETTE.medium, piv);
+
+    const spoke = new THREE.BoxGeometry(0.22, 0.84, 0.12);
+    addTechnicalMesh(8, spoke, PALETTE.darker, piv);
+  });
+
+  // 2 Câbles d'acier verticaux reliant le tambour (7) aux poulies de tête (8) puis au chariot (2)
+  for (let sx of [-0.55, 0.55]) {
+    const cableFront = new THREE.CylinderGeometry(0.038, 0.038, 9.6, 8);
+    cableFront.translate(sx, 0.95, TOWER_Z - 0.35);
+    addTechnicalMesh(8, cableFront, PALETTE.cable, g8);
+
+    const cableBack = new THREE.CylinderGeometry(0.038, 0.038, 10.2, 8);
+    cableBack.rotateX(0.18);
+    cableBack.translate(sx, 0.65, TOWER_Z - 1.25);
+    addTechnicalMesh(8, cableBack, PALETTE.cable, g8);
+  }
+})();
+
+// --- PIÈCE 9 : SYSTÈME VIS ET ÉCROU À BIELLES DE SERRAGE (TRANSFORMATION DU MOUVEMENT) ---
+(function buildLeadScrewAndNutActuator() {
+  const g9 = partGroups[9];
+
+  // Petit moteur auxiliaire M2 entraînant la vis mère
+  const m2Motor = new THREE.CylinderGeometry(0.28, 0.28, 0.58, 16);
+  m2Motor.rotateX(Math.PI / 2);
+  m2Motor.translate(0, 0, TOWER_Z - 0.55);
+  addTechnicalMesh(9, m2Motor, PALETTE.medium, g9);
+
+  // Vis filetée longitudinale (axe Z, tourne sur elle-même sans avancer)
+  leadScrewPivot.position.set(0, 0, TOWER_Z + 0.35);
+  g9.add(leadScrewPivot);
+
+  const screwShaft = new THREE.CylinderGeometry(0.11, 0.11, 1.55, 14);
+  screwShaft.rotateX(Math.PI / 2);
+  addTechnicalMesh(9, screwShaft, PALETTE.darker, leadScrewPivot);
+
+  for (let z = -0.60; z <= 0.60; z += 0.14) {
+    const ring = new THREE.TorusGeometry(0.14, 0.03, 6, 14);
+    ring.translate(0, 0, z);
+    addTechnicalMesh(9, ring, PALETTE.dark, leadScrewPivot);
+  }
+
+  // Écrou mobile guidé en translation le long de la vis filetée + 2 bielles articulées tirant les bras (10)
+  nutSliderGroup.position.set(0, 0, TOWER_Z + 0.35);
+  g9.add(nutSliderGroup);
+
+  const nutBlock = new THREE.BoxGeometry(0.56, 0.38, 0.32);
+  addTechnicalMesh(9, nutBlock, PALETTE.light, nutSliderGroup);
+
+  // Bielle gauche et bielle droite (relient l'écrou aux leviers internes des bras-pinces 10)
+  leftLinkRodPivot.position.set(-0.24, 0, 0);
+  rightLinkRodPivot.position.set( 0.24, 0, 0);
+  nutSliderGroup.add(leftLinkRodPivot);
+  nutSliderGroup.add(rightLinkRodPivot);
+
+  const leftRodGeo = new THREE.BoxGeometry(0.85, 0.12, 0.12);
+  leftRodGeo.translate(-0.42, 0, 0);
+  addTechnicalMesh(9, leftRodGeo, PALETTE.darker, leftLinkRodPivot);
+
+  const rightRodGeo = new THREE.BoxGeometry(0.85, 0.12, 0.12);
+  rightRodGeo.translate(0.42, 0, 0);
+  addTechnicalMesh(9, rightRodGeo, PALETTE.darker, rightLinkRodPivot);
+})();
+
+// --- PIÈCE 10 : BRAS-PINCES ARTICULÉS (« CHOPSTICKS », ×2, LIAISON PIVOT) ---
+(function buildChopstickArms() {
+  const g10 = partGroups[10];
+  leftArmPivot.position.set(-ARM_HINGE_X, 0, ARM_HINGE_Z);
+  rightArmPivot.position.set( ARM_HINGE_X, 0, ARM_HINGE_Z);
+  g10.add(leftArmPivot);
+  g10.add(rightArmPivot);
+
+  function buildSingleChopstick(armGroup, sideSign) {
+    // Gond vertical massif (liaison pivot avec le chariot 2)
+    const hingePin = new THREE.CylinderGeometry(0.24, 0.24, 1.62, 16);
+    addTechnicalMesh(10, hingePin, PALETTE.darker, armGroup);
+
+    // Poutre inférieure et poutre supérieure en treillis s'étendant de Z = 0 à Z = +5.15
+    const lowerChord = new THREE.BoxGeometry(0.32, 0.24, 5.15);
+    lowerChord.translate(0, -0.52, 2.58);
+    addTechnicalMesh(10, lowerChord, PALETTE.medium, armGroup);
+
+    const upperChord = new THREE.BoxGeometry(0.32, 0.22, 5.15);
+    upperChord.translate(0, 0.42, 2.58);
+    addTechnicalMesh(10, upperChord, PALETTE.medium, armGroup);
+
+    // Montants et diagonales de treillis des bras Mechazilla
+    for (let z = 0.65; z <= 4.65; z += 1.0) {
+      const strut = new THREE.BoxGeometry(0.22, 0.94, 0.16);
+      strut.translate(0, -0.05, z);
+      addTechnicalMesh(10, strut, PALETTE.light, armGroup);
+
+      const diag = new THREE.BoxGeometry(0.18, 1.15, 0.12);
+      diag.rotateX(0.65);
+      diag.translate(0, -0.05, z - 0.45);
+      addTechnicalMesh(10, diag, PALETTE.light, armGroup);
+    }
+
+    // Nez conique de guidage à l'extrémité avant de chaque bras
+    const noseBump = new THREE.ConeGeometry(0.24, 0.45, 12);
+    noseBump.rotateX(Math.PI / 2);
+    noseBump.translate(0, -0.05, 5.38);
+    addTechnicalMesh(10, noseBump, PALETTE.dark, armGroup);
+  }
+
+  buildSingleChopstick(leftArmPivot, -1);
+  buildSingleChopstick(rightArmPivot, 1);
+})();
+
+// --- PIÈCE 11 : RAILS D'ACCOSTAGE ET PATINS RÉCEPTEURS (GUIDAGE EN TRANSLATION) ---
+(function buildCatchRails() {
+  // Les rails d'accostage sont situés sur le bord intérieur supérieur des deux bras-pinces (10)
+  // mais appartiennent au groupe de pièce 11 pour la sélection et la nomenclature
+  const g11 = partGroups[11];
+  g11.add(leftRailDropGroup);
+  g11.add(rightRailDropGroup);
+
+  const railLeftGeo = new THREE.BoxGeometry(0.26, 0.18, 3.85);
+  railLeftGeo.translate(0.22, 0.68, 3.35);
+  addTechnicalMesh(11, railLeftGeo, PALETTE.darker, leftRailDropGroup);
+
+  const railRightGeo = new THREE.BoxGeometry(0.26, 0.18, 3.85);
+  railRightGeo.translate(-0.22, 0.68, 3.35);
+  addTechnicalMesh(11, railRightGeo, PALETTE.darker, rightRailDropGroup);
+})();
+
+// --- PIÈCE 12 : RESSORTS HÉLICOÏDAUX DE COMPRESSION (AMORTISSEURS D'IMPACT) ---
+(function buildShockSprings() {
+  const g12 = partGroups[12];
+  // 3 ressorts hélicoïdaux sous le rail gauche et 3 sous le rail droit
+  const zOffsets = [2.05, 3.35, 4.65];
+
+  zOffsets.forEach(zPos => {
+    const sGeoL = createHelicalSpringGeometry(0.11, 0.34, 5, 0.026);
+    const sMeshL = addTechnicalMesh(12, sGeoL, PALETTE.dark, g12, { edgeAngle: 26 });
+    sMeshL.userData.zLocal = zPos;
+    leftSpringsArray.push(sMeshL);
+
+    const sGeoR = createHelicalSpringGeometry(0.11, 0.34, 5, 0.026);
+    const sMeshR = addTechnicalMesh(12, sGeoR, PALETTE.dark, g12, { edgeAngle: 26 });
+    sMeshR.userData.zLocal = zPos;
+    rightSpringsArray.push(sMeshR);
+  });
+})();
+
+// --- PIÈCE 13 : PROPULSEUR SPATIAL (BOOSTER SUPER HEAVY À ERGOTS & GRILLES) ---
+(function buildSuperHeavyBooster() {
+  const g13 = partGroups[13];
+  g13.add(boosterFlightGroup);
+
+  // Demi-fuselage gauche en acier inoxydable (toujours opaque)
+  const hullLeft = new THREE.CylinderGeometry(0.82, 0.82, 6.2, 24, 1, false, Math.PI, Math.PI);
+  addTechnicalMesh(13, hullLeft, PALETTE.veryLight, boosterFlightGroup, { isCasing: true });
+
+  // Demi-fuselage droit (devient transparent à 85% en "Vue en coupe" pour révéler les réservoirs internes LOX / CH4)
+  const hullRightCut = new THREE.CylinderGeometry(0.82, 0.82, 6.2, 24, 1, false, 0, Math.PI);
+  addTechnicalMesh(13, hullRightCut, PALETTE.veryLight, boosterFlightGroup, { isCasing: true, isCutawayHalf: true });
+
+  // Réservoirs cryogéniques internes (Méthane liquide CH4 en haut + Oxygène liquide LOX en bas) visibles en coupe
+  const ch4Tank = new THREE.CylinderGeometry(0.72, 0.72, 2.2, 18);
+  ch4Tank.translate(0, 1.35, 0);
+  addTechnicalMesh(13, ch4Tank, PALETTE.medium, boosterFlightGroup);
+
+  const loxTank = new THREE.CylinderGeometry(0.72, 0.72, 2.5, 18);
+  loxTank.translate(0, -1.25, 0);
+  addTechnicalMesh(13, loxTank, PALETTE.medium, boosterFlightGroup);
+
+  // Anneau inter-étages supérieur ajouré (Hot-staging ring)
+  const hotStageRing = new THREE.CylinderGeometry(0.83, 0.83, 0.42, 24);
+  hotStageRing.translate(0, 3.25, 0);
+  addTechnicalMesh(13, hotStageRing, PALETTE.dark, boosterFlightGroup);
+
+  // 4 Grilles aérodynamiques déployées (Grid Fins) au sommet du propulseur
+  const finAngles = [Math.PI * 0.22, Math.PI * 0.78, -Math.PI * 0.22, -Math.PI * 0.78];
+  finAngles.forEach(a => {
+    const finGeo = new THREE.BoxGeometry(0.62, 0.10, 0.46);
+    finGeo.translate(1.10, 2.65, 0);
+    finGeo.rotateY(a);
+    addTechnicalMesh(13, finGeo, PALETTE.darker, boosterFlightGroup);
+  });
+
+  // 2 Ergots d'accrochage latéraux renforcés (Lifting Pins) sous les grilles qui viennent se poser sur les rails (11)
+  for (let side of [-1, 1]) {
+    const pinGeo = new THREE.BoxGeometry(0.46, 0.20, 0.26);
+    pinGeo.translate(side * 0.96, 2.05, 0);
+    addTechnicalMesh(13, pinGeo, PALETTE.darker, boosterFlightGroup);
+  }
+
+  // Baie de propulsion inférieure (grappe de moteurs Raptor) + panache de décélération
+  for (let r = 0; r < 6; r++) {
+    const a = (r * Math.PI * 2) / 6;
+    const noz = new THREE.ConeGeometry(0.18, 0.42, 12);
+    noz.translate(Math.cos(a) * 0.45, -3.28, Math.sin(a) * 0.45);
+    addTechnicalMesh(13, noz, PALETTE.darker, boosterFlightGroup);
+  }
+  const centerNoz = new THREE.ConeGeometry(0.22, 0.48, 14);
+  centerNoz.translate(0, -3.30, 0);
+  addTechnicalMesh(13, centerNoz, PALETTE.darker, boosterFlightGroup);
+
+  // Cône de poussée de freinage (visible pendant la descente avant l'arrêt des moteurs à la capture)
+  const plumeGeo = new THREE.ConeGeometry(0.55, 2.6, 16);
+  plumeGeo.rotateX(Math.PI);
+  plumeGeo.translate(0, -4.8, 0);
+  boosterPlumeMesh = addTechnicalMesh(13, plumeGeo, PALETTE.veryLight, boosterFlightGroup);
+  boosterPlumeMesh.visible = false;
+})();
+
+/* ============================================================================
+   6. SYNCHRONISATION GÉOMÉTRIQUE DES BRAS, RAILS, RESSORTS & POINTS D'ANCRAGE
+   ============================================================================ */
+// Paramètres d'ouverture des bras-pinces (angle par rapport à l'axe Z, 0.02 rad = fermé sur le booster, 0.34 rad = grand ouvert)
+let armOpenAngle = 0.28;
+let targetArmOpenAngle = 0.28;
+let springCompression = 0; // 0 à 0.22 (écrasement des ressorts sous le poids du booster)
+
+function updateKinematicsTransforms() {
+  // Position verticale du chariot (2) et des organes embarqués (9, 10, 11, 12)
+  const yCar = carriageElevationY;
+  partGroups[2].position.y = yCar + partExplodeVectors[2].y * explodeProgress;
+  partGroups[9].position.y = yCar + partExplodeVectors[9].y * explodeProgress;
+  partGroups[10].position.y = yCar + partExplodeVectors[10].y * explodeProgress;
+  partGroups[11].position.y = yCar + partExplodeVectors[11].y * explodeProgress;
+  partGroups[12].position.y = yCar + partExplodeVectors[12].y * explodeProgress;
+
+  // Translation de l'écrou (9) sur la vis filetée en fonction de l'angle d'ouverture des bras (10)
+  const nutOffsetZ = (armOpenAngle - 0.16) * 1.85;
+  nutSliderGroup.position.z = TOWER_Z + 0.35 + nutOffsetZ;
+
+  // Orientation des bielles de serrage
+  const linkAngle = (armOpenAngle - 0.16) * 1.2;
+  leftLinkRodPivot.rotation.y = linkAngle;
+  rightLinkRodPivot.rotation.y = -linkAngle;
+
+  // Pivotement symétrique des deux bras-pinces "Chopsticks" (10)
+  leftArmPivot.rotation.y = -armOpenAngle;
+  rightArmPivot.rotation.y = armOpenAngle;
+
+  // Les rails d'accostage (11) et les ressorts (12) suivent l'angle des bras + l'enfoncement élastique (springCompression)
+  leftRailDropGroup.position.set(-ARM_HINGE_X, -springCompression, ARM_HINGE_Z);
+  leftRailDropGroup.rotation.y = -armOpenAngle;
+
+  rightRailDropGroup.position.set(ARM_HINGE_X, -springCompression, ARM_HINGE_Z);
+  rightRailDropGroup.rotation.y = armOpenAngle;
+
+  const springScaleY = Math.max(0.35, 1.0 - (springCompression / 0.22) * 0.55);
+
+  leftSpringsArray.forEach(s => {
+    const zL = s.userData.zLocal;
+    const sinA = Math.sin(-armOpenAngle);
+    const cosA = Math.cos(-armOpenAngle);
+    const localX = 0.22;
+    s.position.set(
+      -ARM_HINGE_X + localX * cosA + zL * sinA,
+      0.34,
+      ARM_HINGE_Z - localX * sinA + zL * cosA
+    );
+    s.scale.y = springScaleY;
+  });
+
+  rightSpringsArray.forEach(s => {
+    const zL = s.userData.zLocal;
+    const sinA = Math.sin(armOpenAngle);
+    const cosA = Math.cos(armOpenAngle);
+    const localX = -0.22;
+    s.position.set(
+      ARM_HINGE_X + localX * cosA + zL * sinA,
+      0.34,
+      ARM_HINGE_Z - localX * sinA + zL * cosA
+    );
+    s.scale.y = springScaleY;
+  });
+}
+
+const ANCHOR_COORDS = {
+  1:  new THREE.Vector3(-0.95,  4.50, TOWER_Z + 0.85), // Pylône de lancement
+  2:  new THREE.Vector3(-1.18,  0.20, TOWER_Z - 0.15), // Chariot élévateur
+  3:  new THREE.Vector3(-1.55, -3.65, -1.25),          // Pupitre à interrupteur
+  4:  new THREE.Vector3(-0.35, -4.52, -3.10),          // Banc d'accumulateurs CC
+  5:  new THREE.Vector3(-0.95, -3.55, -2.55),          // Câbles et fusible
+  6:  new THREE.Vector3( 0.00, WINCH_Y - 0.82, WINCH_Z - 0.95), // Moteur électrique treuil
+  7:  new THREE.Vector3( 0.00, WINCH_Y, WINCH_Z),      // Réducteur roue et vis sans fin
+  8:  new THREE.Vector3( 0.55,  5.75, TOWER_Z),        // Poulies et câbles de levage
+  9:  new THREE.Vector3( 0.00,  0.00, TOWER_Z + 0.35), // Vis et écrou à bielles
+  10: new THREE.Vector3(-1.35, -0.35,  2.20),          // Bras-pinces "Chopsticks"
+  11: new THREE.Vector3( 1.15,  0.68,  2.20),          // Rails d'accostage
+  12: new THREE.Vector3(-1.15,  0.48,  3.10),          // Ressorts hélicoïdaux
+  13: new THREE.Vector3( 0.00,  2.65,  2.35)           // Propulseur Super Heavy
+};
+
+const EXPLODE_OFFSETS = {
+  1:  new THREE.Vector3( 0.00,  0.00, -1.80),
+  2:  new THREE.Vector3( 0.00,  0.00, -0.40),
+  3:  new THREE.Vector3(-2.40,  0.00,  0.80),
+  4:  new THREE.Vector3(-2.20, -0.80, -1.80),
+  5:  new THREE.Vector3(-1.80, -0.40, -0.80),
+  6:  new THREE.Vector3( 2.20, -1.20, -2.60),
+  7:  new THREE.Vector3( 0.00, -1.20, -3.40),
+  8:  new THREE.Vector3( 0.00,  2.20, -1.80),
+  9:  new THREE.Vector3( 0.00,  1.20,  0.40),
+  10: new THREE.Vector3( 0.00, -0.60,  1.80),
+  11: new THREE.Vector3( 0.00,  1.45,  2.20),
+  12: new THREE.Vector3( 0.00,  0.55,  2.20),
+  13: new THREE.Vector3( 0.00,  1.80,  4.80)
+};
+
+for (let i = 1; i <= 13; i++) {
+  const anchorObj = new THREE.Object3D();
+  anchorObj.position.copy(ANCHOR_COORDS[i]);
+  partGroups[i].add(anchorObj);
+  partAnchors[i] = anchorObj;
+  partBasePositions[i] = partGroups[i].position.clone();
+  partExplodeVectors[i] = EXPLODE_OFFSETS[i];
+}
+
+// Lignes pointillées d'alignement en Vue éclatée
+const explodeGuideGroup = new THREE.Group();
+explodeGuideGroup.visible = false;
+mechazillaRoot.add(explodeGuideGroup);
+
+(function buildExplodeGuides() {
+  const gPts = [
+    [new THREE.Vector3(0, -6.0, TOWER_Z), new THREE.Vector3(0, 8.8, TOWER_Z)],
+    [new THREE.Vector3(0, 0.65, -5.5), new THREE.Vector3(0, 0.65, 8.2)],
+    [new THREE.Vector3(0, -5.5, 2.35), new THREE.Vector3(0, 8.5, 2.35)]
+  ];
+  gPts.forEach(pair => {
+    const geo = new THREE.BufferGeometry().setFromPoints(pair);
+    const l = new THREE.Line(geo, dashedGuideMaterial);
+    l.computeLineDistances();
+    explodeGuideGroup.add(l);
+  });
+})();
+
+/* ============================================================================
+   7. CRÉATION DES PASTILLES NUMÉROTÉES HTML/SVG & DE LA NOMENCLATURE
+   ============================================================================ */
+const calloutBadges = {};
+const calloutLines = {};
+const partChips = {};
+const partsGridEl = document.getElementById('parts-grid');
+
+PARTS_DATA.forEach((p) => {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('stroke', '#111111');
+  line.setAttribute('stroke-width', '1.4');
+  calloutSvg.appendChild(line);
+  calloutLines[p.id] = line;
+
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('r', '2.8');
+  dot.setAttribute('fill', '#111111');
+  calloutSvg.appendChild(dot);
+  line.anchorDot = dot;
+
+  const badge = document.createElement('div');
+  badge.className = 'callout-badge';
+  badge.innerHTML = `<span class="part-num">${p.id}</span><span class="part-label">${p.name.split('(')[0].trim()}</span>`;
+  badge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectPart(p.id);
+    if (p.id === 3) toggleCaptureSequence();
+    else if (p.id === 9 || p.id === 10) toggleManualClamp();
+    else if (p.id === 7 || p.id === 8) toggleManualWinch();
+  });
+  calloutLayer.appendChild(badge);
+  calloutBadges[p.id] = badge;
+
+  const chip = document.createElement('button');
+  chip.className = 'part-chip';
+  chip.innerHTML = `<b>${p.id}.</b> <span class="chip-text">Pièce ${p.id}</span>`;
+  chip.addEventListener('click', () => selectPart(p.id));
+  partsGridEl.appendChild(chip);
+  partChips[p.id] = chip;
+});
+
+const energyTag = document.createElement('div');
+energyTag.className = 'floating-tag energy-tag';
+energyTag.style.display = 'none';
+energyTag.textContent = '⚡ Électrique (4) → ⚙️ Mécanique (Treuil irréversible 7 & Vis-écrou 9)';
+calloutLayer.appendChild(energyTag);
+
+const springImpactTag = document.createElement('div');
+springImpactTag.className = 'floating-tag';
+springImpactTag.style.display = 'none';
+springImpactTag.textContent = '↓ Choc d’accostage (13) ⇒ Compression élastique des ressorts (12)';
+calloutLayer.appendChild(springImpactTag);
+
+/* ============================================================================
+   8. GESTION DES MODES (EXAMEN / CORRECTION), VUES (1, 2, 3) ET SÉLECTION
+   ============================================================================ */
+let currentMode = 'examen';
+let currentView = 'ext';
+let selectedPartId = 1;
+let explodeProgress = 0;
+let targetExplodeProgress = 0;
+
+function selectPart(partId) {
+  selectedPartId = partId;
+  const data = PARTS_DATA.find(d => d.id === partId);
+
+  for (let i = 1; i <= 13; i++) {
+    const isSel = (i === partId);
+    partMeshes[i].forEach(mesh => {
+      mesh.material.color.setHex(isSel ? PALETTE.accent : mesh.material.userData.baseColor);
+    });
+    calloutBadges[i].classList.toggle('selected', isSel);
+    calloutLines[i].setAttribute('stroke', isSel ? '#0055cc' : '#111111');
+    calloutLines[i].setAttribute('stroke-width', isSel ? '2.2' : '1.3');
+    calloutLines[i].anchorDot.setAttribute('fill', isSel ? '#0055cc' : '#111111');
+    partChips[i].classList.toggle('selected', isSel);
+  }
+
+  updateDetailCard(data);
+}
+
+function updateDetailCard(data) {
+  document.getElementById('detail-num').textContent = data.id;
+  const nameEl = document.getElementById('detail-name');
+  const subEl = document.getElementById('detail-sub');
+  const funcEl = document.getElementById('detail-func');
+  const linkEl = document.getElementById('detail-link');
+
+  if (currentMode === 'examen') {
+    nameEl.textContent = `Pièce n° ${data.id} (À identifier)`;
+    subEl.textContent = `Mode Examen : identifiez le nom, la fonction et le mécanisme de cette pièce.`;
+    funcEl.textContent = `Masqué en mode examen`;
+    funcEl.classList.add('exam-masked');
+    linkEl.textContent = `Masqué en mode examen`;
+    linkEl.classList.add('exam-masked');
+  } else {
+    nameEl.textContent = data.name;
+    subEl.textContent = `Nomenclature officielle ST/ATS — 4e secondaire`;
+    funcEl.textContent = data.func;
+    funcEl.classList.remove('exam-masked');
+    linkEl.textContent = data.link;
+    linkEl.classList.remove('exam-masked');
+  }
+}
+
+function setPedagogicalMode(mode) {
+  currentMode = mode;
+  document.body.className = (mode === 'correction') ? 'mode-correction' : 'mode-examen';
+  document.getElementById('btn-mode-examen').classList.toggle('active', mode === 'examen');
+  document.getElementById('btn-mode-correction').classList.toggle('active', mode === 'correction');
+  document.getElementById('mode-indicator-label').textContent = mode === 'correction' ? 'MODE CORRECTION' : 'MODE EXAMEN';
+
+  PARTS_DATA.forEach(p => {
+    const span = partChips[p.id].querySelector('.chip-text');
+    span.textContent = (mode === 'correction') ? p.name.split('(')[0].trim() : `Pièce ${p.id}`;
+  });
+
+  energyTag.style.display = (mode === 'correction') ? 'block' : 'none';
+  springImpactTag.style.display = (mode === 'correction') ? 'block' : 'none';
+
+  updateDetailCard(PARTS_DATA.find(d => d.id === selectedPartId));
+}
+
+function setViewMode(view) {
+  currentView = view;
+  document.getElementById('btn-view-ext').classList.toggle('active', view === 'ext');
+  document.getElementById('btn-view-cut').classList.toggle('active', view === 'cut');
+  document.getElementById('btn-view-exp').classList.toggle('active', view === 'exp');
+
+  targetExplodeProgress = (view === 'exp') ? 1 : 0;
+  explodeGuideGroup.visible = (view === 'exp');
+
+  // En Vue en coupe, le carter droit du treuil (1), le flanc droit du chariot (2) et la demi-coque droite de la fusée (13) deviennent transparents à 85%
+  [1, 2, 13].forEach(id => {
+    partMeshes[id].forEach(mesh => {
+      if (mesh.material.userData.isCutawayHalf) {
+        if (view === 'cut') {
+          mesh.material.transparent = true;
+          mesh.material.opacity = 0.15;
+          mesh.material.depthWrite = false;
+        } else {
+          mesh.material.transparent = false;
+          mesh.material.opacity = 1.0;
+          mesh.material.depthWrite = true;
+        }
+        mesh.material.needsUpdate = true;
+      }
+    });
+  });
+
+  setTimeout(() => frameModelAutomatically(view === 'exp' ? 1 : 0), 30);
+}
+
+/* ============================================================================
+   9. CONTRÔLES CAMÉRA PAR POINTER EVENTS & CADRAGE AUTOMATIQUE BOX3
+   ============================================================================ */
+let camSpherical = {
+  radius: 26,
+  theta: 0.92,
+  phi: 1.32
+};
+const camTarget = new THREE.Vector3(0, 0.4, 0.2);
+
+function updateCameraFromSpherical() {
+  camSpherical.phi = Math.max(0.18, Math.min(Math.PI * 0.49, camSpherical.phi));
+  camSpherical.radius = Math.max(9, Math.min(80, camSpherical.radius));
+
+  const sinPhi = Math.sin(camSpherical.phi);
+  camera.position.x = camTarget.x + camSpherical.radius * sinPhi * Math.sin(camSpherical.theta);
+  camera.position.y = camTarget.y + camSpherical.radius * Math.cos(camSpherical.phi);
+  camera.position.z = camTarget.z + camSpherical.radius * sinPhi * Math.cos(camSpherical.theta);
+  camera.lookAt(camTarget);
+}
+
+function frameModelAutomatically(simExplodeFactor = targetExplodeProgress) {
+  for (let i = 1; i <= 13; i++) {
+    partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], simExplodeFactor);
+  }
+  updateKinematicsTransforms();
+  mechazillaRoot.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(mechazillaRoot);
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  box.getCenter(center);
+  box.getSize(size);
+
+  camTarget.copy(center);
+
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fovRad = THREE.MathUtils.degToRad(camera.fov);
+  const aspect = Math.max(0.55, camera.aspect || 1.3);
+  const fitHeightDistance = (maxDim / 2) / Math.tan(fovRad / 2);
+  const fitWidthDistance = (maxDim / 2) / (Math.tan(fovRad / 2) * aspect);
+  camSpherical.radius = Math.max(fitHeightDistance, fitWidthDistance) * 1.15;
+
+  updateCameraFromSpherical();
+}
+
+const activePointers = new Map();
+let prevPinchDist = null;
+let pointerDownPos = { x: 0, y: 0 };
+let pointerMoved = false;
+
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (activePointers.size === 1) {
+    pointerDownPos = { x: e.clientX, y: e.clientY };
+    pointerMoved = false;
+  }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!activePointers.has(e.pointerId)) return;
+  const prev = activePointers.get(e.pointerId);
+  const curr = { x: e.clientX, y: e.clientY };
+  activePointers.set(e.pointerId, curr);
+
+  if (activePointers.size === 1) {
+    const dx = curr.x - prev.x;
+    const dy = curr.y - prev.y;
+    if (Math.hypot(curr.x - pointerDownPos.x, curr.y - pointerDownPos.y) > 5) {
+      pointerMoved = true;
+    }
+    camSpherical.theta -= dx * 0.0085;
+    camSpherical.phi -= dy * 0.0085;
+    updateCameraFromSpherical();
+  } else if (activePointers.size === 2) {
+    pointerMoved = true;
+    const pts = Array.from(activePointers.values());
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (prevPinchDist !== null) {
+      const delta = prevPinchDist - dist;
+      camSpherical.radius += delta * 0.045;
+      updateCameraFromSpherical();
+    }
+    prevPinchDist = dist;
+  }
+});
+
+function onPointerUpOrCancel(e) {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) prevPinchDist = null;
+  if (!pointerMoved && e.type === 'pointerup') {
+    handleCanvasTap(e.clientX, e.clientY);
+  }
+}
+
+canvas.addEventListener('pointerup', onPointerUpOrCancel);
+canvas.addEventListener('pointercancel', onPointerUpOrCancel);
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  camSpherical.radius += e.deltaY * 0.016;
+  updateCameraFromSpherical();
+}, { passive: false });
+
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+
+function handleCanvasTap(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointerNDC, camera);
+  const hits = raycaster.intersectObjects(clickableMeshes, false);
+
+  if (hits.length > 0) {
+    let chosenHit = hits[0];
+    if (currentView === 'cut') {
+      const nonTransparentHit = hits.find(h => !h.object.material.userData.isCutawayHalf);
+      if (nonTransparentHit) chosenHit = nonTransparentHit;
+    }
+    const pId = chosenHit.object.userData.partId;
+    if (pId) {
+      selectPart(pId);
+      if (pId === 3) toggleCaptureSequence();
+      else if (pId === 9 || pId === 10) toggleManualClamp();
+      else if (pId === 7 || pId === 8) toggleManualWinch();
+    }
+  }
+}
+
+/* ============================================================================
+   10. PROJECTION 3D -> 2D DES NUMÉROS AVEC ANTI-CHEVAUCHEMENT DYNAMIQUE
+   ============================================================================ */
+const tempProj = new THREE.Vector3();
+
+function updateCallouts2D() {
+  const width = viewport.clientWidth || 640;
+  const height = viewport.clientHeight || 480;
+
+  tempProj.copy(camTarget).project(camera);
+  const centerX = (tempProj.x * 0.5 + 0.5) * width;
+
+  const leftItems = [];
+  const rightItems = [];
+
+  for (let i = 1; i <= 13; i++) {
+    partAnchors[i].getWorldPosition(tempProj);
+    tempProj.project(camera);
+
+    const ax = (tempProj.x * 0.5 + 0.5) * width;
+    const ay = (-tempProj.y * 0.5 + 0.5) * height;
+
+    const item = { id: i, ax, ay, bx: 0, by: ay };
+    if (ax >= centerX) rightItems.push(item);
+    else leftItems.push(item);
+  }
+
+  const minVerticalGap = 30;
+  const marginX = currentMode === 'correction' ? 96 : 34;
+
+  function distributeColumn(list, isRight) {
+    list.sort((a, b) => a.ay - b.ay);
+    const targetX = isRight
+      ? Math.min(width - marginX, centerX + Math.min(width * 0.35, 225))
+      : Math.max(marginX, centerX - Math.min(width * 0.35, 225));
+
+    for (let k = 0; k < list.length; k++) {
+      list[k].bx = targetX;
+      if (k === 0) list[k].by = Math.max(26, list[k].ay);
+      else list[k].by = Math.max(list[k].ay, list[k - 1].by + minVerticalGap);
+    }
+    for (let k = list.length - 1; k >= 0; k--) {
+      if (k === list.length - 1) list[k].by = Math.min(height - 26, list[k].by);
+      else list[k].by = Math.min(list[k].by, list[k + 1].by - minVerticalGap);
+      list[k].by = Math.max(22, list[k].by);
+    }
+  }
+
+  distributeColumn(leftItems, false);
+  distributeColumn(rightItems, true);
+
+  [...leftItems, ...rightItems].forEach(item => {
+    const badge = calloutBadges[item.id];
+    const line = calloutLines[item.id];
+
+    badge.style.left = `${item.bx}px`;
+    badge.style.top = `${item.by}px`;
+
+    line.setAttribute('x1', item.ax.toFixed(1));
+    line.setAttribute('y1', item.ay.toFixed(1));
+    line.setAttribute('x2', item.bx.toFixed(1));
+    line.setAttribute('y2', item.by.toFixed(1));
+
+    line.anchorDot.setAttribute('cx', item.ax.toFixed(1));
+    line.anchorDot.setAttribute('cy', item.ay.toFixed(1));
+  });
+
+  if (currentMode === 'correction') {
+    partAnchors[7].getWorldPosition(tempProj);
+    tempProj.y -= 0.75;
+    tempProj.project(camera);
+    energyTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    energyTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+
+    partAnchors[12].getWorldPosition(tempProj);
+    tempProj.y += 0.85;
+    tempProj.project(camera);
+    springImpactTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    springImpactTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+  }
+}
+
+/* ============================================================================
+   11. SÉQUENCE DE CAPTURE DU BOOSTER, INTERACTIONS & SCHÉMA ÉLECTRIQUE
+   ============================================================================ */
+let isCaptureRunning = false;
+let capturePhaseTime = 0;
+let manualClampClosed = false;
+let manualWinchMoving = false;
+let winchDirection = 1;
+
+const NOMINAL_MOTOR_RPM = 1800;
+let currentMotorRPM = 0;
+
+// Position initiale du propulseur Super Heavy (en approche au-dessus des bras-pinces)
+boosterFlightGroup.position.set(0, 2.55, 2.35);
+
+const btnPower = document.getElementById('btn-power');
+const svgSwMain = document.getElementById('svg-sw-main');
+const svgLedTri = document.getElementById('svg-led-tri');
+const animLoopMain = document.getElementById('anim-loop-main');
+const circuitStateBadge = document.getElementById('circuit-state-badge');
+
+function updateCircuitUI(active) {
+  if (active) {
+    svgSwMain.setAttribute('x2', '172');
+    svgSwMain.setAttribute('y2', '32');
+    svgSwMain.setAttribute('stroke', '#0055cc');
+    animLoopMain.setAttribute('opacity', '1');
+    circuitStateBadge.textContent = 'CIRCUIT FERMÉ (I > 0)';
+    circuitStateBadge.style.color = '#0055cc';
+  } else {
+    svgSwMain.setAttribute('x2', '169');
+    svgSwMain.setAttribute('y2', '15');
+    svgSwMain.setAttribute('stroke', '#111111');
+    animLoopMain.setAttribute('opacity', '0');
+    svgLedTri.setAttribute('fill', '#ffffff');
+    circuitStateBadge.textContent = 'CIRCUIT OUVERT (I = 0)';
+    circuitStateBadge.style.color = '#111111';
+  }
+}
+
+function toggleCaptureSequence() {
+  isCaptureRunning = !isCaptureRunning;
+  btnPower.classList.toggle('running', isCaptureRunning);
+  btnPower.textContent = isCaptureRunning ? '4. Capture Booster : EN COURS' : '4. Capture Booster : ARRÊT';
+
+  if (isCaptureRunning) {
+    capturePhaseTime = 0;
+    manualWinchMoving = false;
+  } else {
+    boosterPlumeMesh.visible = false;
+  }
+  updateCircuitUI(isCaptureRunning);
+}
+
+function toggleManualClamp() {
+  manualClampClosed = !manualClampClosed;
+  targetArmOpenAngle = manualClampClosed ? 0.025 : 0.28;
+  document.getElementById('btn-clamp').classList.toggle('active', manualClampClosed);
+  updateCircuitUI(manualClampClosed || isCaptureRunning || manualWinchMoving);
+}
+
+function toggleManualWinch() {
+  manualWinchMoving = !manualWinchMoving;
+  document.getElementById('btn-winch').classList.toggle('active', manualWinchMoving);
+  updateCircuitUI(manualClampClosed || isCaptureRunning || manualWinchMoving);
+}
+
+document.getElementById('btn-mode-examen').addEventListener('click', () => setPedagogicalMode('examen'));
+document.getElementById('btn-mode-correction').addEventListener('click', () => setPedagogicalMode('correction'));
+document.getElementById('btn-view-ext').addEventListener('click', () => setViewMode('ext'));
+document.getElementById('btn-view-cut').addEventListener('click', () => setViewMode('cut'));
+document.getElementById('btn-view-exp').addEventListener('click', () => setViewMode('exp'));
+document.getElementById('btn-power').addEventListener('click', toggleCaptureSequence);
+document.getElementById('btn-clamp').addEventListener('click', toggleManualClamp);
+document.getElementById('btn-winch').addEventListener('click', toggleManualWinch);
+
+let siteVisible = true;
+document.getElementById('btn-site-toggle').addEventListener('click', (e) => {
+  siteVisible = !siteVisible;
+  starbaseSiteGroup.visible = siteVisible;
+  e.target.classList.toggle('active', siteVisible);
+  e.target.textContent = siteVisible ? 'Site : OUI' : 'Site : NON';
+});
+
+document.getElementById('btn-reset-cam').addEventListener('click', () => {
+  camSpherical.theta = 0.92;
+  camSpherical.phi = 1.32;
+  frameModelAutomatically();
+});
+
+svgSwMain.addEventListener('click', () => {
+  selectPart(3);
+  toggleCaptureSequence();
+});
+
+/* ============================================================================
+   12. BOUCLE D'ANIMATION (CAPTURE SPACEX, VIS-ÉCROU, VIS SANS FIN, RESSORTS)
+   ============================================================================ */
+let lastTime = performance.now();
+let svgDashOffset = 0;
+
+const elW1 = document.getElementById('kin-w1');
+const elW2 = document.getElementById('kin-w2');
+const elAngle = document.getElementById('kin-angle');
+const elClampState = document.getElementById('kin-clamp-state');
+const elSpring = document.getElementById('kin-spring');
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  if (canvas.width !== viewport.clientWidth || canvas.height !== viewport.clientHeight) {
+    onWindowResize();
+  }
+
+  // Bascule visuelle du levier d'interrupteur (3)
+  const anyActive = isCaptureRunning || manualClampClosed || manualWinchMoving;
+  const targetLeverRot = anyActive ? 0.35 : -0.35;
+  switchRockerPivot.rotation.x += (targetLeverRot - switchRockerPivot.rotation.x) * Math.min(1, dt * 10);
+
+  // 1. SÉQUENCE AUTOMATIQUE DE CAPTURE DU PROPULSEUR SUPER HEAVY (cycle de 9 secondes)
+  let targetBoosterY = 1.95;
+  let targetSpringComp = 0;
+
+  if (isCaptureRunning) {
+    capturePhaseTime = (capturePhaseTime + dt) % 9.5;
+
+    if (capturePhaseTime < 3.0) {
+      // Phase 1 : Approche finale du propulseur (panache Raptor allumé, bras-pinces grands ouverts)
+      const p = capturePhaseTime / 3.0;
+      targetArmOpenAngle = 0.30 - p * 0.08;
+      targetBoosterY = 3.25 - p * 1.95; // Descend de +3.25 vers +1.30
+      boosterPlumeMesh.visible = true;
+      boosterPlumeMesh.scale.set(1, 0.85 + Math.sin(now * 0.04) * 0.18, 1);
+      targetSpringComp = 0;
+      svgLedTri.setAttribute('fill', '#ffffff');
+    } else if (capturePhaseTime < 5.2) {
+      // Phase 2 : Fermeture rapide des bras-pinces "Chopsticks" par le système vis-écrou (9) + accostage sur les rails (11)
+      const p = (capturePhaseTime - 3.0) / 2.2;
+      targetArmOpenAngle = 0.022; // Les deux bras enserrent le propulseur
+      targetBoosterY = 1.30 - Math.min(1, p * 1.5) * 0.92; // Les ergots touchent les rails à Y ≈ 0.38
+      boosterPlumeMesh.visible = (p < 0.45);
+      // Les ressorts hélicoïdaux (12) se compriment sous l'impact
+      targetSpringComp = Math.min(1, Math.max(0, (p - 0.25) * 1.5)) * 0.20;
+      svgLedTri.setAttribute('fill', '#0055cc'); // DEL témoin de verrouillage allumée
+    } else if (capturePhaseTime < 8.0) {
+      // Phase 3 : Maintien stable en suspension (irréversibilité de la roue et vis sans fin 7) + léger ajustement du treuil
+      targetArmOpenAngle = 0.022;
+      targetBoosterY = 0.38;
+      boosterPlumeMesh.visible = false;
+      targetSpringComp = 0.16;
+      svgLedTri.setAttribute('fill', '#0055cc');
+    } else {
+      // Phase 4 : Réouverture des pinces pour relancer le cycle de démonstration
+      targetArmOpenAngle = 0.30;
+      targetBoosterY = 3.25;
+      boosterPlumeMesh.visible = false;
+      targetSpringComp = 0;
+      svgLedTri.setAttribute('fill', '#ffffff');
+    }
+  } else {
+    // En mode manuel : si les pinces sont fermées, le propulseur repose sur les rails et comprime les ressorts
+    if (manualClampClosed) {
+      targetBoosterY = 0.38;
+      targetSpringComp = 0.16;
+      svgLedTri.setAttribute('fill', '#0055cc');
+    } else {
+      targetBoosterY = 1.85;
+      targetSpringComp = 0;
+      svgLedTri.setAttribute('fill', '#ffffff');
+    }
+  }
+
+  // 2. Animation fluide du système vis et écrou (9) et des bras-pinces (10)
+  const prevArmAngle = armOpenAngle;
+  armOpenAngle += (targetArmOpenAngle - armOpenAngle) * Math.min(1, dt * 5.5);
+  const deltaArm = armOpenAngle - prevArmAngle;
+
+  // La vis filetée (9) tourne proportionnellement au déplacement de l'écrou
+  leadScrewPivot.rotation.z += deltaArm * 42;
+
+  // Compression élastique des 6 ressorts hélicoïdaux (12)
+  springCompression += (targetSpringComp - springCompression) * Math.min(1, dt * 8);
+
+  // Position verticale du propulseur Super Heavy (13)
+  const targetAbsBoosterY = carriageElevationY - 0.65 + targetBoosterY - springCompression;
+  boosterFlightGroup.position.y += (targetAbsBoosterY - boosterFlightGroup.position.y) * Math.min(1, dt * 6.5);
+
+  // 3. Animation du treuil à roue et vis sans fin (7) et des poulies (8)
+  const isWinchActive = manualWinchMoving || (isCaptureRunning && capturePhaseTime > 5.2 && capturePhaseTime < 7.8);
+  const targetRPM = isWinchActive ? NOMINAL_MOTOR_RPM : 0;
+  currentMotorRPM += (targetRPM - currentMotorRPM) * Math.min(1, dt * 4.0);
+  if (Math.abs(currentMotorRPM) < 0.5 && !isWinchActive) currentMotorRPM = 0;
+
+  if (currentMotorRPM > 1) {
+    // Le chariot monte et descend doucement entre Y = -0.35 et Y = +1.45
+    carriageElevationY += winchDirection * (currentMotorRPM / NOMINAL_MOTOR_RPM) * 0.55 * dt;
+    if (carriageElevationY > 1.45) {
+      carriageElevationY = 1.45;
+      winchDirection = -1;
+    } else if (carriageElevationY < -0.35) {
+      carriageElevationY = -0.35;
+      winchDirection = 1;
+    }
+  }
+
+  // Rotation de la vis sans fin (6-7) et de la roue dentée du tambour (rapport 1/24)
+  const visualScale = 0.025;
+  const omegaWormRad = (currentMotorRPM * 2 * Math.PI / 60) * visualScale * winchDirection;
+  const omegaWheelRad = omegaWormRad / Z_WORM_WHEEL;
+
+  motorRotorPivot.rotation.z += omegaWormRad * dt;
+  wormShaftPivot.rotation.z += omegaWormRad * dt;
+  wormWheelDrumPivot.rotation.x += omegaWheelRad * dt;
+  topPulleyLeftPivot.rotation.x += omegaWheelRad * dt;
+  topPulleyRightPivot.rotation.x += omegaWheelRad * dt;
+
+  // 4. Interpolation de la Vue éclatée
+  if (Math.abs(targetExplodeProgress - explodeProgress) > 0.001) {
+    explodeProgress += (targetExplodeProgress - explodeProgress) * Math.min(1, dt * 8);
+    for (let i = 1; i <= 13; i++) {
+      partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], explodeProgress);
+    }
+  }
+
+  updateKinematicsTransforms();
+
+  // 5. Mise à jour des valeurs en direct dans le panneau latéral et animation du courant
+  elW1.textContent = Math.round(currentMotorRPM);
+  elW2.textContent = Math.round(currentMotorRPM / Z_WORM_WHEEL);
+  const degOpen = Math.round(THREE.MathUtils.radToDeg(armOpenAngle * 2));
+  elAngle.textContent = degOpen;
+  elClampState.textContent = (armOpenAngle < 0.06) ? 'VERROUILLÉS' : 'OUVERTS';
+  elSpring.textContent = Math.round((springCompression / 0.20) * 180);
+
+  if (anyActive) {
+    svgDashOffset -= dt * 55;
+    animLoopMain.setAttribute('stroke-dashoffset', svgDashOffset.toFixed(1));
+  }
+
+  renderer.render(scene, camera);
+  updateCallouts2D();
+}
+
+function onWindowResize() {
+  const w = Math.max(300, viewport.clientWidth || window.innerWidth - 395);
+  const h = Math.max(300, viewport.clientHeight || window.innerHeight - 60);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+  frameModelAutomatically();
+}
+
+window.addEventListener('resize', onWindowResize);
+
+// Initialisation
+onWindowResize();
+selectPart(10);
+setPedagogicalMode('examen');
+setViewMode('ext');
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

@@ -818,6 +818,10 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
   .topic-btn.active{border-left-color:transparent;border-bottom-color:var(--accent);}
   .topic-content{padding:20px;}
 }
+.section-tabs{display:flex;gap:4px;margin:8px 0 10px;padding:3px;border:1px solid var(--line);border-radius:8px}
+.section-tabs a{flex:1;text-align:center;padding:6px 4px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-dim);text-decoration:none}
+.section-tabs a.active{background:var(--accent);color:#fff}
+.section-tabs a:not(.active):hover{color:var(--ink);background:var(--line)}
 </style>
 
 <div id="homeScreen">
@@ -922,6 +926,10 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
+      <nav class="section-tabs" aria-label="Sections">
+        <a class="active" href="./" aria-current="page">Objets quotidiens</a>
+        <a href="industriels/">Objets industriels</a>
+      </nav>
       <div class="bank-progress">
         <span>OBJ.</span>
         <div class="bar"><i id="bankBar" style="width:0%"></i></div>
