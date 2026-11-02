@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Rover d'Exploration Perseverance (Contexte Lunaire & Martien) — Examen ST/ATS 4e sec. (MEQ)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --ink: #111111;
+      --paper: #ffffff;
+      --panel-bg: #f6f6f6;
+      --border: #1a1a1a;
+      --accent: #0055cc;
+      --accent-soft: #e6f0ff;
+      --muted: #555555;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 620px;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+      min-height: 620px;
+    }
+
+    /* EN-TÊTE STYLE CAHIER D'EXAMEN MEQ */
+    header {
+      border-bottom: 2px solid var(--border);
+      background: var(--paper);
+      padding: 7px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .exam-title-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .meq-badge {
+      border: 2px solid var(--border);
+      font-weight: 800;
+      padding: 3px 7px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .exam-title {
+      font-weight: 700;
+      font-size: 13.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .exam-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .btn-group {
+      display: inline-flex;
+      border: 1.5px solid var(--border);
+      background: var(--paper);
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--paper);
+      color: var(--ink);
+      padding: 5px 9px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    button:last-child {
+      border-right: none;
+    }
+
+    button:hover {
+      background: #eaeaea;
+    }
+
+    button.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    button.power-btn {
+      border: 1.5px solid var(--border);
+      font-weight: 700;
+    }
+
+    button.power-btn.running {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* ZONE PRINCIPALE */
+    #workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 395px;
+      grid-template-rows: minmax(460px, 1fr);
+      min-height: 460px;
+      position: relative;
+    }
+
+    #viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      background: #ffffff;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      display: block;
+    }
+
+    /* CALQUE SVG + HTML POUR LES REPÈRES NUMÉROTÉS */
+    #callout-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #callout-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .callout-badge {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #ffffff;
+      border: 1.8px solid #111111;
+      border-radius: 14px;
+      padding: 2px 7px;
+      min-width: 24px;
+      height: 24px;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #111111;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      white-space: nowrap;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .callout-badge:hover {
+      border-color: var(--accent);
+    }
+
+    .callout-badge.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      z-index: 10;
+    }
+
+    .callout-badge .part-label {
+      font-weight: 600;
+      font-size: 11px;
+      display: none;
+    }
+
+    body.mode-correction .callout-badge .part-label {
+      display: inline;
+    }
+
+    /* ÉTIQUETTES PÉDAGOGIQUES FLOTTANTES */
+    .floating-tag {
+      position: absolute;
+      pointer-events: none;
+      background: #ffffff;
+      border: 1.5px solid var(--ink);
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      transform: translate(-50%, -50%);
+      z-index: 7;
+      white-space: nowrap;
+    }
+
+    .floating-tag.energy-tag {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* AIDE NAVIGATION BAS GAUCHE */
+    #viewport-hud {
+      position: absolute;
+      left: 10px;
+      bottom: 8px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--border);
+      padding: 5px 8px;
+      font-size: 11px;
+      line-height: 1.3;
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    /* PANNEAU LATÉRAL (SCHÉMA ÉLECTRIQUE, CINÉMATIQUE, FICHE PIÈCE) */
+    #side-panel {
+      border-left: 2px solid var(--border);
+      background: var(--panel-bg);
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1.5px solid var(--border);
+      padding: 9px 10px;
+    }
+
+    .card-title {
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .part-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .part-num-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.8px solid var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .part-num-circle.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dotted #cccccc;
+      padding: 3px 0;
+      font-size: 12px;
+      gap: 8px;
+    }
+
+    .kv-row:last-child {
+      border-bottom: none;
+    }
+
+    .kv-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .kv-val {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .exam-masked {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .formula-box {
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: #f0f0f0;
+      border-left: 3px solid var(--ink);
+      font-family: "Courier New", monospace;
+      font-size: 11.2px;
+      line-height: 1.38;
+    }
+
+    /* LISTE DES 13 PIÈCES CLIQUABLES */
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+
+    .part-chip {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      padding: 4px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-align: left;
+    }
+
+    .part-chip.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .part-chip b {
+      display: inline-block;
+      min-width: 16px;
+    }
+
+    /* RESPONSIVE MOBILE */
+    @media (max-width: 880px) {
+      #workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(360px, 55vh) 1fr;
+      }
+      #viewport, #three-canvas {
+        min-height: 360px;
+      }
+      #side-panel {
+        border-left: none;
+        border-top: 2px solid var(--border);
+      }
+      .exam-subtitle, #viewport-hud {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="mode-examen">
+<div id="app">
+  <header>
+    <div class="exam-title-block">
+      <span class="meq-badge">MEQ • ST / ATS 4e SEC.</span>
+      <div>
+        <div class="exam-title">Analyse technologique — Rover « Perseverance » (Contexte Lunaire & Martien)</div>
+        <div class="exam-subtitle">Suspension Rocker-Bogie • Engrenages droits • Bras robotisé 5 DDL • Vis-écrou & Foreuse carotteuse</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="btn-group" aria-label="Mode pédagogique">
+        <button id="btn-mode-examen" class="active" title="Affiche uniquement les numéros">Mode Examen</button>
+        <button id="btn-mode-correction" title="Affiche les noms, fonctions, liaisons et énergies">Mode Correction</button>
+      </div>
+
+      <div class="btn-group" aria-label="Modes de vue">
+        <button id="btn-view-ext" class="active">1. Vue extérieure</button>
+        <button id="btn-view-cut">2. Vue en coupe</button>
+        <button id="btn-view-exp">3. Vue éclatée</button>
+      </div>
+
+      <button id="btn-power" class="power-btn" title="Actionner le relais (6) et faire rouler le rover">4. Roulement : ARRÊT</button>
+      <button id="btn-drill" class="power-btn" title="Déployer le bras robotisé (10), avancer la glissière vis-écrou (11) et forer (12)">Forer échantillon</button>
+      <button id="btn-env" class="active" style="border:1.5px solid #1a1a1a;" title="Basculer entre le contexte Lunaire, Martien ou Sans décor">Décor : LUNE</button>
+      <button id="btn-reset-cam" style="border:1.5px solid #1a1a1a;" title="Recadrer sur le rover">Recadrer</button>
+    </div>
+  </header>
+
+  <div id="workspace">
+    <!-- VUE 3D INTERACTIVE -->
+    <div id="viewport">
+      <canvas id="three-canvas"></canvas>
+      <svg id="callout-svg"></svg>
+      <div id="callout-layer"></div>
+      <div id="viewport-hud">
+        <strong>Contrôles 3D :</strong> Glisser (1 doigt / souris) = Orienter • Pincer / Molette = Zoomer • Cliquer roues <b>(4)</b>, bras <b>(10)</b> ou foreuse <b>(12)</b>
+      </div>
+    </div>
+
+    <!-- PANNEAU TECHNIQUE LATÉRAL -->
+    <div id="side-panel">
+      <!-- FICHE DE LA PIÈCE SÉLECTIONNÉE -->
+      <div class="card">
+        <div class="card-title">
+          <span>Pièce sélectionnée</span>
+          <span id="mode-indicator-label">MODE EXAMEN</span>
+        </div>
+        <div class="part-detail-header">
+          <span id="detail-num" class="part-num-circle active">1</span>
+          <div>
+            <div id="detail-name" style="font-weight:700; font-size:13px;">Pièce n° 1 (Mode Examen)</div>
+            <div id="detail-sub" style="font-size:11px; color:var(--muted);">Cliquez sur « Mode Correction » pour révéler la nomenclature</div>
+          </div>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Fonction technique :</span>
+          <span id="detail-func" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Liaison / Guidage / Mécanisme :</span>
+          <span id="detail-link" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+      </div>
+
+      <!-- CIRCUIT ÉLECTRIQUE NORMALISÉ PFEQ -->
+      <div class="card">
+        <div class="card-title">
+          <span>Schéma de principes — Traction & Forage</span>
+          <span id="circuit-state-badge" style="font-weight:700;">CIRCUITS OUVERTS</span>
+        </div>
+        <svg id="circuit-svg" viewBox="0 0 340 175" width="100%" height="158" style="background:#ffffff; border:1px solid #ccc; display:block;">
+          <!-- Alimentation MMRTG + Batterie (5) + Fusible (6) -->
+          <line x1="42" y1="32" x2="72" y2="32" stroke="#111" stroke-width="2.2" />
+          <rect x="72" y="25" width="28" height="14" fill="#fff" stroke="#111" stroke-width="2" />
+          <line x1="72" y1="32" x2="100" y2="32" stroke="#111" stroke-width="1.4" />
+          <text x="86" y="20" font-size="9" font-weight="700" text-anchor="middle" fill="#111">Fusible (6)</text>
+
+          <line x1="100" y1="32" x2="292" y2="32" stroke="#111" stroke-width="2.2" />
+
+          <!-- BRANCHE 1 : Interrupteur Mobilité (6) -> Moteurs de roues M1 (7) -->
+          <line x1="165" y1="32" x2="165" y2="46" stroke="#111" stroke-width="2.2" />
+          <circle cx="165" cy="48" r="3" fill="#fff" stroke="#111" stroke-width="2" />
+          <circle cx="165" cy="76" r="3" fill="#fff" stroke="#111" stroke-width="2" />
+          <line id="svg-sw-drive" x1="164" y1="50" x2="148" y2="73" stroke="#111" stroke-width="2.4" stroke-linecap="round" style="cursor:pointer;" />
+          <line x1="165" y1="79" x2="165" y2="90" stroke="#111" stroke-width="2.2" />
+          <circle cx="165" cy="107" r="17" fill="#fff" stroke="#111" stroke-width="2.2" />
+          <text x="165" y="112" font-size="12" font-weight="800" text-anchor="middle" fill="#111">M₁</text>
+          <line x1="165" y1="124" x2="165" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- BRANCHE 2 : Interrupteur Forage -> Moteur de foreuse et vis-écrou M2 (11-12) -->
+          <line x1="292" y1="32" x2="292" y2="46" stroke="#111" stroke-width="2.2" />
+          <circle cx="292" cy="48" r="3" fill="#fff" stroke="#111" stroke-width="2" />
+          <circle cx="292" cy="76" r="3" fill="#fff" stroke="#111" stroke-width="2" />
+          <line id="svg-sw-drill" x1="291" y1="50" x2="275" y2="73" stroke="#111" stroke-width="2.4" stroke-linecap="round" style="cursor:pointer;" />
+          <line x1="292" y1="79" x2="292" y2="90" stroke="#111" stroke-width="2.2" />
+          <circle cx="292" cy="107" r="17" fill="#fff" stroke="#111" stroke-width="2.2" />
+          <text x="292" y="112" font-size="12" font-weight="800" text-anchor="middle" fill="#111">M₂</text>
+          <line x1="292" y1="124" x2="292" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Retour conducteur (6) -->
+          <line x1="292" y1="138" x2="42" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Source CC : MMRTG + Accumulateurs (5) -->
+          <line x1="42" y1="32" x2="42" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="42" y1="94" x2="42" y2="138" stroke="#111" stroke-width="2.2" />
+          <line x1="27" y1="68" x2="57" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="75" x2="50" y2="75" stroke="#111" stroke-width="3.6" />
+          <line x1="27" y1="84" x2="57" y2="84" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="91" x2="50" y2="91" stroke="#111" stroke-width="3.6" />
+          <text x="17" y="67" font-size="11" font-weight="700" fill="#111">+</text>
+          <text x="18" y="98" font-size="12" font-weight="700" fill="#111">−</text>
+
+          <!-- Animation du courant électrique -->
+          <rect id="anim-loop-drive" x="42" y="32" width="123" height="106" fill="none" stroke="#0055cc" stroke-width="2.5" stroke-dasharray="6 10" opacity="0" />
+          <rect id="anim-loop-drill" x="42" y="32" width="250" height="106" fill="none" stroke="#0055cc" stroke-width="2.5" stroke-dasharray="6 10" opacity="0" />
+
+          <g font-size="9.2" font-weight="700" fill="#111">
+            <text x="6" y="153">(5) Alimentation (MMRTG)</text>
+            <text x="142" y="64" text-anchor="end">(6) Relais</text>
+            <text x="270" y="64" text-anchor="end">(11) Forage</text>
+            <text x="165" y="153" text-anchor="middle">(7) Roues M₁</text>
+            <text x="285" y="153" text-anchor="middle">(12) Foreuse M₂</text>
+            <text x="175" y="167" font-weight="400" fill="#555" text-anchor="middle">Thermique → Électrique (5) → Mécanique de rotation (7, 12)</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- CINÉMATIQUE & MÉCANISMES (PFEQ) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Cinématique & Mécanismes PFEQ</span>
+          <span>Temps réel</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Engrenages droits (7) (Z₁=12 → Z₂=36) :</span>
+          <span class="kv-val">r = 1/3 | ω_roue = <span id="kin-w2">0</span> tr/min</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Suspension Rocker-Bogie (2-3) :</span>
+          <span class="kv-val">Oscillation = <span id="kin-rocker">0.0</span>°</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Glissière Vis et Écrou (11) :</span>
+          <span class="kv-val">Avance foreuse = <span id="kin-feed">0</span> / 45 mm</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Foreuse à ressort (12) :</span>
+          <span class="kv-val">ω_forage = <span id="kin-drill-rpm">0</span> tr/min</span>
+        </div>
+        <div class="formula-box">
+          <strong>1. Transmission (Engrenages droits 7) :</strong><br/>
+          ω_roue = ω_moteur × (12 / 36) = ω_moteur / 3 (couple ×3 pour franchir les cratères).<br/>
+          <strong>2. Suspension différentielle (2-3) :</strong><br/>
+          Liaisons pivots et bielles inversant l'angle gauche/droite pour garder le châssis (1) horizontal.<br/>
+          <strong>3. Transformation (Vis-écrou 11) & Foreuse (12) :</strong><br/>
+          Rotation de la vis → Translation de la foreuse vers le régolithe (13).
+        </div>
+      </div>
+
+      <!-- RÉPERTOIRE DES 13 PIÈCES -->
+      <div class="card">
+        <div class="card-title">
+          <span>Nomenclature des 13 pièces</span>
+          <span>Cliquer pour cibler</span>
+        </div>
+        <div id="parts-grid" class="parts-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   1. DONNÉES PÉDAGOGIQUES PFEQ (13 PIÈCES NORMALISÉES ST/ATS 4e SECONDAIRE)
+   ============================================================================ */
+const PARTS_DATA = [
+  {
+    id: 1,
+    name: "Châssis thermique étanche (carter avionique)",
+    func: "Protéger l'électronique de bord contre le vide/froid spatial et supporter la suspension, le mât et le bras robotisé.",
+    link: "Liaison d'encastrement entre les panneaux d'aluminium et d'isolant thermique doré."
+  },
+  {
+    id: 2,
+    name: "Suspension articulée « Rocker-Bogie » (balanciers)",
+    func: "Maintenir les 6 roues (4) en contact permanent avec le sol accidenté des cratères sans ressort de suspension vertical.",
+    link: "Liaison pivot du balancier principal (Rocker) sur le châssis (1) et liaison pivot secondaire avec le bogie avant."
+  },
+  {
+    id: 3,
+    name: "Palonnier différentiel et bielles d'équilibrage",
+    func: "Relier mécaniquement les balanciers gauche et droit pour que la montée d'un côté provoque l'abaissement symétrique de l'autre.",
+    link: "Liaison pivot centrale sur le toit du châssis (1) et liaisons rotules/pivots avec les deux bielles latérales."
+  },
+  {
+    id: 4,
+    name: "Roues motrices et directrices à crampons (×6)",
+    func: "Assurer la propulsion par adhérence dans le régolithe lunaire/martien et orienter la trajectoire du véhicule.",
+    link: "Guidage en rotation (liaison pivot) sur chaque moyeu ; chapes de braquage vertical sur les 4 roues d'extrémité."
+  },
+  {
+    id: 5,
+    name: "Générateur thermoélectrique (MMRTG) et batteries",
+    func: "Fonction d'ALIMENTATION : transformer la chaleur radioactive en énergie électrique continue (CC) et la stocker.",
+    link: "Liaison d'encastrement à l'arrière du châssis (1) ; ailettes radiales de dissipation thermique."
+  },
+  {
+    id: 6,
+    name: "Faisceau de câbles blindés, fusible et relais (commande)",
+    func: "Fonctions de CONDUCTION (acheminer le courant), PROTECTION (fusible) et COMMANDE (relais/interrupteurs de puissance).",
+    link: "Conducteurs en cuivre sous gaine isolante spatiale reliant le MMRTG (5) aux moteurs (7, 10, 12)."
+  },
+  {
+    id: 7,
+    name: "Moteurs de traction et engrenages droits (Z₁=12, Z₂=36)",
+    func: "TRANSFORMATION D'ÉNERGIE (électrique → mécanique) et TRANSMISSION DU MOUVEMENT (réduction ÷3, couple ×3).",
+    link: "Roues dentées droites en prise directe ; sens de rotation inversé entre le pignon moteur et la roue menée."
+  },
+  {
+    id: 8,
+    name: "Mât de télédétection et tourelle optique (SuperCam)",
+    func: "Explorer visuellement le cratère sur 360° et analyser la composition des roches à distance par tir laser.",
+    link: "Deux liaisons pivots motorisées (azimut et élévation) entraînées par un mécanisme irréversible à roue et vis sans fin."
+  },
+  {
+    id: 9,
+    name: "Antenne parabolique à grand gain (communication Terre)",
+    func: "Émettre et recevoir les ondes radio directement vers la Terre visible à l'horizon.",
+    link: "Liaison pivot à deux degrés de liberté sur le pont supérieur arrière."
+  },
+  {
+    id: 10,
+    name: "Bras robotisé articulé (5 degrés de liberté)",
+    func: "Positionner avec précision la tourelle de forage (11-12) au-dessus d'une cible rocheuse d'intérêt scientifique.",
+    link: "Liaisons pivots en série (épaule, coude, poignet) verrouillables par réducteurs irréversibles à roue et vis sans fin."
+  },
+  {
+    id: 11,
+    name: "Tourelle porte-outils et glissière à vis-écrou",
+    func: "TRANSFORMATION DU MOUVEMENT : convertir la rotation de la vis filetée en translation rectiligne pour descendre la foreuse dans la roche.",
+    link: "Système vis et écrou ; le chariot de la foreuse (12) est guidé en translation sur les rails de la tourelle."
+  },
+  {
+    id: 12,
+    name: "Foreuse-carotteuse rotative à ressort de percussion",
+    func: "Percer et découper un cylindre de roche intact grâce à la rotation du trépan combinée à la percussion d'un ressort hélicoïdal.",
+    link: "Liaison pivot (rotation du foret) + ressort hélicoïdal travaillant en compression élastique."
+  },
+  {
+    id: 13,
+    name: "Carotte de roche extraite et tubes d'échantillons",
+    func: "Conserver hermétiquement les échantillons géologiques du cratère pour leur retour futur vers les laboratoires terrestres.",
+    link: "Tubes cylindriques en titane logés dans le carrousel interne sous l'avant du châssis (1)."
+  }
+];
+
+/* ============================================================================
+   2. INITIALISATION DE LA SCÈNE THREE.JS & STYLE VISUEL "EXAMEN MEQ"
+   ============================================================================ */
+const viewport = document.getElementById('viewport');
+const canvas = document.getElementById('three-canvas');
+const calloutSvg = document.getElementById('callout-svg');
+const calloutLayer = document.getElementById('callout-layer');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 350);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.80);
+scene.add(ambientLight);
+
+const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.30);
+dirLight1.position.set(16, 26, 20);
+scene.add(dirLight1);
+
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.16);
+dirLight2.position.set(-16, 12, -14);
+scene.add(dirLight2);
+
+// Palette monochrome officielle MEQ (gris techniques + bleu unique de sélection)
+const PALETTE = {
+  white: 0xfbfbfb,
+  veryLight: 0xf1f1f1,
+  light: 0xe3e3e3,
+  medium: 0xcfcfcf,
+  dark: 0xb5b5b5,
+  darker: 0x969696,
+  wheel: 0x7e7e7e,
+  accent: 0x0055cc,
+  edge: 0x111111,
+  envEdge: 0x444444
+};
+
+const edgeMaterial = new THREE.LineBasicMaterial({ color: PALETTE.edge });
+const envLineMaterial = new THREE.LineBasicMaterial({ color: PALETTE.envEdge });
+const dashedGuideMaterial = new THREE.LineDashedMaterial({
+  color: 0x222222,
+  dashSize: 0.28,
+  gapSize: 0.16
+});
+
+const partGroups = {};
+const partMeshes = {};
+const partAnchors = {};
+const partExplodeVectors = {};
+const partBasePositions = {};
+const clickableMeshes = [];
+
+function createTechnicalMaterial(hexColor, isCasing = false) {
+  return new THREE.MeshLambertMaterial({
+    color: hexColor,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+    side: isCasing ? THREE.DoubleSide : THREE.FrontSide
+  });
+}
+
+function addTechnicalMesh(partId, geometry, hexColor, parentGroup, options = {}) {
+  const mat = createTechnicalMaterial(hexColor, options.isCasing || false);
+  mat.userData.baseColor = hexColor;
+  mat.userData.partId = partId;
+  mat.userData.isCutawayHalf = options.isCutawayHalf || false;
+
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.userData.partId = partId;
+
+  const threshold = options.edgeAngle !== undefined ? options.edgeAngle : 20;
+  const edgesGeo = new THREE.EdgesGeometry(geometry, threshold);
+  const lines = new THREE.LineSegments(edgesGeo, edgeMaterial.clone());
+  lines.userData.isEdge = true;
+  mesh.add(lines);
+
+  parentGroup.add(mesh);
+  if (!partMeshes[partId]) partMeshes[partId] = [];
+  partMeshes[partId].push(mesh);
+  clickableMeshes.push(mesh);
+  return mesh;
+}
+
+/* ============================================================================
+   3. ARRIÈRE-PLAN 3D : CONTEXTE LUNAIRE (CRATÈRES, MODULE LUNAIRE, TERRE) & MARTIEN
+   ============================================================================ */
+const environmentRoot = new THREE.Group();
+scene.add(environmentRoot);
+
+const lunarContextGroup = new THREE.Group();
+const martianContextGroup = new THREE.Group();
+martianContextGroup.visible = false;
+environmentRoot.add(lunarContextGroup);
+environmentRoot.add(martianContextGroup);
+
+const scrollingTrackMarks = [];
+
+(function buildPlanetaryEnvironments() {
+  const groundY = -1.65;
+
+  // Dalle du sol régolithique commune
+  const groundSlabGeo = new THREE.BoxGeometry(30, 0.16, 30);
+  groundSlabGeo.translate(0, groundY - 0.08, 0);
+  const groundSlabMat = new THREE.MeshLambertMaterial({
+    color: 0xf8f8f8,
+    polygonOffset: true,
+    polygonOffsetFactor: 2,
+    polygonOffsetUnits: 2
+  });
+  const groundSlab = new THREE.Mesh(groundSlabGeo, groundSlabMat);
+  groundSlab.add(new THREE.LineSegments(new THREE.EdgesGeometry(groundSlabGeo), envLineMaterial));
+  environmentRoot.add(groundSlab);
+
+  // Traces de roues parallèles dans le régolithe (défilent lorsque le rover roule)
+  for (let z = -11; z <= 11; z += 1.1) {
+    for (let sx of [-1.75, 1.75]) {
+      const treadGeo = new THREE.PlaneGeometry(0.46, 0.28);
+      treadGeo.rotateX(-Math.PI / 2);
+      const treadMesh = new THREE.Mesh(treadGeo, new THREE.MeshBasicMaterial({ color: 0x555555 }));
+      treadMesh.position.set(sx, groundY + 0.015, z);
+      environmentRoot.add(treadMesh);
+      scrollingTrackMarks.push(treadMesh);
+    }
+  }
+
+  // --- A. ÉLÉMENTS SPÉCIFIQUES AU CONTEXTE LUNAIRE (PAR DÉFAUT) ---
+  // 1. Grand cratère d'impact lunaire à rebord annulaire + piton central (arrière-plan gauche)
+  const craterRimGeo = new THREE.TorusGeometry(3.4, 0.38, 10, 28);
+  craterRimGeo.rotateX(Math.PI / 2);
+  craterRimGeo.scale(1, 0.45, 1);
+  craterRimGeo.translate(-6.2, groundY + 0.08, -6.5);
+  const craterRim = new THREE.Mesh(craterRimGeo, createTechnicalMaterial(PALETTE.veryLight));
+  craterRim.add(new THREE.LineSegments(new THREE.EdgesGeometry(craterRimGeo, 18), envLineMaterial));
+  lunarContextGroup.add(craterRim);
+
+  const craterPeakGeo = new THREE.ConeGeometry(0.55, 0.45, 12);
+  craterPeakGeo.translate(-6.2, groundY + 0.22, -6.5);
+  const craterPeak = new THREE.Mesh(craterPeakGeo, createTechnicalMaterial(PALETTE.light));
+  craterPeak.add(new THREE.LineSegments(new THREE.EdgesGeometry(craterPeakGeo), envLineMaterial));
+  lunarContextGroup.add(craterPeak);
+
+  // Second cratère lunaire secondaire à droite
+  const smallCraterGeo = new THREE.TorusGeometry(1.65, 0.22, 8, 22);
+  smallCraterGeo.rotateX(Math.PI / 2);
+  smallCraterGeo.scale(1, 0.4, 1);
+  smallCraterGeo.translate(5.8, groundY + 0.05, 3.2);
+  const smallCrater = new THREE.Mesh(smallCraterGeo, createTechnicalMaterial(PALETTE.veryLight));
+  smallCrater.add(new THREE.LineSegments(new THREE.EdgesGeometry(smallCraterGeo, 18), envLineMaterial));
+  lunarContextGroup.add(smallCrater);
+
+  // 2. Module d'alunissage (Lunar Lander à 4 jambes déployées) posé en arrière-plan
+  const landerGroup = new THREE.Group();
+  landerGroup.position.set(6.5, groundY, -7.2);
+  lunarContextGroup.add(landerGroup);
+
+  const descentStageGeo = new THREE.CylinderGeometry(1.15, 1.25, 0.95, 8);
+  descentStageGeo.translate(0, 1.15, 0);
+  const descentStage = new THREE.Mesh(descentStageGeo, createTechnicalMaterial(PALETTE.light));
+  descentStage.add(new THREE.LineSegments(new THREE.EdgesGeometry(descentStageGeo), envLineMaterial));
+  landerGroup.add(descentStage);
+
+  const ascentCabinGeo = new THREE.CylinderGeometry(0.75, 0.95, 1.10, 6);
+  ascentCabinGeo.translate(0, 2.15, 0);
+  const ascentCabin = new THREE.Mesh(ascentCabinGeo, createTechnicalMaterial(PALETTE.veryLight));
+  ascentCabin.add(new THREE.LineSegments(new THREE.EdgesGeometry(ascentCabinGeo), envLineMaterial));
+  landerGroup.add(ascentCabin);
+
+  for (let i = 0; i < 4; i++) {
+    const a = (i * Math.PI) / 2 + Math.PI / 4;
+    const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.65, 8);
+    legGeo.rotateZ(-0.55);
+    legGeo.rotateY(a);
+    legGeo.translate(Math.cos(a) * 1.45, 0.58, Math.sin(a) * 1.45);
+    const leg = new THREE.Mesh(legGeo, createTechnicalMaterial(PALETTE.medium));
+    leg.add(new THREE.LineSegments(new THREE.EdgesGeometry(legGeo), envLineMaterial));
+    landerGroup.add(leg);
+
+    const padFootGeo = new THREE.CylinderGeometry(0.28, 0.32, 0.08, 12);
+    padFootGeo.translate(Math.cos(a) * 1.88, 0.04, Math.sin(a) * 1.88);
+    const padFoot = new THREE.Mesh(padFootGeo, createTechnicalMaterial(PALETTE.dark));
+    padFoot.add(new THREE.LineSegments(new THREE.EdgesGeometry(padFootGeo), envLineMaterial));
+    landerGroup.add(padFoot);
+  }
+
+  // 3. Globe de la Terre suspendu dans le ciel lunaire + faisceau radio pointillé depuis l'antenne (9)
+  const earthGlobeGeo = new THREE.SphereGeometry(1.35, 16, 12);
+  earthGlobeGeo.translate(-6.5, 6.2, -10.5);
+  const earthGlobe = new THREE.Mesh(earthGlobeGeo, createTechnicalMaterial(PALETTE.white));
+  earthGlobe.add(new THREE.LineSegments(new THREE.EdgesGeometry(earthGlobeGeo, 10), envLineMaterial));
+  lunarContextGroup.add(earthGlobe);
+
+  const commBeamGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-0.75, 1.45, -1.65),
+    new THREE.Vector3(-6.5, 6.2, -10.5)
+  ]);
+  const commBeam = new THREE.Line(commBeamGeo, dashedGuideMaterial);
+  commBeam.computeLineDistances();
+  lunarContextGroup.add(commBeam);
+
+  // --- B. ÉLÉMENTS SPÉCIFIQUES AU CONTEXTE MARTIEN (CRATÈRE JEZERO & HÉLICOPTÈRE INGENUITY) ---
+  // Butte rocheuse stratifiée de delta martien + hélicoptère Ingenuity en vol stationnaire
+  const mesaGeo = new THREE.CylinderGeometry(2.2, 3.4, 2.2, 7);
+  mesaGeo.translate(-6.8, groundY + 1.1, -7.5);
+  const mesa = new THREE.Mesh(mesaGeo, createTechnicalMaterial(PALETTE.light));
+  mesa.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesaGeo), envLineMaterial));
+  martianContextGroup.add(mesa);
+
+  const heliGroup = new THREE.Group();
+  heliGroup.position.set(4.2, 3.2, -4.5);
+  martianContextGroup.add(heliGroup);
+
+  const heliBox = new THREE.BoxGeometry(0.45, 0.38, 0.45);
+  const heliMesh = new THREE.Mesh(heliBox, createTechnicalMaterial(PALETTE.medium));
+  heliMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(heliBox), envLineMaterial));
+  heliGroup.add(heliMesh);
+
+  for (let r = 0; r < 2; r++) {
+    const blade = new THREE.BoxGeometry(2.1, 0.04, 0.16);
+    blade.rotateY((r * Math.PI) / 2 + 0.3);
+    blade.translate(0, 0.32 + r * 0.14, 0);
+    const bMesh = new THREE.Mesh(blade, createTechnicalMaterial(PALETTE.dark));
+    bMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(blade), envLineMaterial));
+    heliGroup.add(bMesh);
+  }
+})();
+
+/* ============================================================================
+   4. GÉNÉRATEURS DE GÉOMÉTRIES MÉCANIQUES (ENGRENAGES DROITS, RESSORTS)
+   ============================================================================ */
+function createSpurGearGeometry(moduleM, teethCount, thickness, boreRadius) {
+  const pitchRadius = (moduleM * teethCount) / 2;
+  const addendum = moduleM * 0.9;
+  const dedendum = moduleM * 1.1;
+  const outerRadius = pitchRadius + addendum;
+  const rootRadius = Math.max(boreRadius + 0.04, pitchRadius - dedendum);
+
+  const shape = new THREE.Shape();
+  const step = (Math.PI * 2) / teethCount;
+
+  for (let i = 0; i < teethCount; i++) {
+    const a0 = i * step;
+    const a1 = a0 + step * 0.17;
+    const a2 = a0 + step * 0.29;
+    const a3 = a0 + step * 0.51;
+    const a4 = a0 + step * 0.63;
+
+    if (i === 0) shape.moveTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    else shape.lineTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    shape.lineTo(Math.cos(a1) * rootRadius, Math.sin(a1) * rootRadius);
+    shape.lineTo(Math.cos(a2) * outerRadius, Math.sin(a2) * outerRadius);
+    shape.lineTo(Math.cos(a3) * outerRadius, Math.sin(a3) * outerRadius);
+    shape.lineTo(Math.cos(a4) * rootRadius, Math.sin(a4) * rootRadius);
+  }
+  shape.closePath();
+
+  if (boreRadius > 0.02) {
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, boreRadius, 0, Math.PI * 2, false);
+    shape.holes.push(hole);
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 12 });
+  geo.translate(0, 0, -thickness / 2);
+  geo.rotateY(Math.PI / 2);
+  return geo;
+}
+
+function createHelicalSpringGeometry(radius, length, coils, wireRadius) {
+  const pts = [];
+  const totalSteps = coils * 14;
+  for (let i = 0; i <= totalSteps; i++) {
+    const t = i / totalSteps;
+    const angle = t * coils * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(angle) * radius, t * length, Math.sin(angle) * radius));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  return new THREE.TubeGeometry(curve, totalSteps * 2, wireRadius, 8, false);
+}
+
+/* ============================================================================
+   5. CONSTRUCTION DES 13 PIÈCES DU ROVER PERSEVERANCE (AXES DE ROTATION EXACTS)
+   ============================================================================ */
+const roverRoot = new THREE.Group();
+scene.add(roverRoot);
+
+for (let i = 1; i <= 13; i++) {
+  const g = new THREE.Group();
+  g.name = `Piece_${i}`;
+  partGroups[i] = g;
+  partMeshes[i] = [];
+  roverRoot.add(g);
+}
+
+// Coordonnées et constantes mécaniques
+const WHEEL_X = 1.75;
+const WHEEL_Y = -1.07; // Rayon de roue = 0.58 => touche exactement le sol à Y = -1.65
+const Z_FRONT = 2.05;
+const Z_MID   = -0.15;
+const Z_REAR  = -2.15;
+
+// Pivots de la suspension Rocker-Bogie (2) et de la barre différentielle (3)
+const leftRockerPivot = new THREE.Group();
+leftRockerPivot.position.set(-1.32, 0.15, -0.35);
+const rightRockerPivot = new THREE.Group();
+rightRockerPivot.position.set(1.32, 0.15, -0.35);
+
+const diffBarPivot = new THREE.Group();
+diffBarPivot.position.set(0, 0.76, -0.35);
+
+// Pivots des 6 roues (4) et chapes de direction sur les 4 roues de coin
+const wheelSpinPivots = [];
+const cornerSteerPivots = [];
+
+// Pivots du train d'engrenages droits (7) logé dans la transmission
+const Z_PINION = 12;
+const Z_GEAR = 36;
+const GEAR_MOD = 0.042;
+const R_PIN = (GEAR_MOD * Z_PINION) / 2; // 0.252
+const R_GR  = (GEAR_MOD * Z_GEAR) / 2;   // 0.756
+const motorRotorPivot = new THREE.Group();
+const drivePinionPivot = new THREE.Group();
+const driveGearPivot = new THREE.Group();
+
+// Pivots du mât SuperCam (8) et de l'antenne grand gain (9)
+const mastAzimuthPivot = new THREE.Group();
+mastAzimuthPivot.position.set(0.68, 0.72, 1.35);
+const hgaDishPivot = new THREE.Group();
+hgaDishPivot.position.set(-0.75, 0.85, -1.65);
+
+// Chaîne cinématique du bras robotisé (10), de la glissière vis-écrou (11), de la foreuse (12) et de la carotte (13)
+const ARM_BASE_POS = new THREE.Vector3(0.0, 0.10, 1.95);
+const armFollowers = {};
+[10, 11, 12, 13].forEach(id => {
+  const base = new THREE.Group();
+  base.position.copy(ARM_BASE_POS);
+  partGroups[id].add(base);
+
+  const shoulder = new THREE.Group();
+  base.add(shoulder);
+
+  const elbow = new THREE.Group();
+  elbow.position.set(0, 0, 1.35);
+  shoulder.add(elbow);
+
+  const wrist = new THREE.Group();
+  wrist.position.set(0, 0, 1.15);
+  elbow.add(wrist);
+
+  armFollowers[id] = { base, shoulder, elbow, wrist };
+});
+
+const leadScrewPivot = new THREE.Group();
+const drillCarriageGroup = new THREE.Group();
+const drillBitSpinPivot = new THREE.Group();
+let percussionSpringMesh = null;
+let extractedCoreMesh = null;
+
+// --- PIÈCE 1 : CHÂSSIS THERMIQUE ÉTANCHE (CARTER AVIONIQUE) ---
+(function buildChassisCasing() {
+  const g1 = partGroups[1];
+
+  // Demi-carter gauche (X < 0) — toujours opaque
+  const leftHull = new THREE.BoxGeometry(1.12, 0.92, 3.65);
+  leftHull.translate(-0.56, 0.22, -0.10);
+  addTechnicalMesh(1, leftHull, PALETTE.light, g1, { isCasing: true });
+
+  // Demi-carter droit (X > 0) — devient transparent à 85% en mode "2. Vue en coupe" pour voir les engrenages (7) et batteries (5)
+  const rightHullCut = new THREE.BoxGeometry(1.12, 0.92, 3.65);
+  rightHullCut.translate(0.56, 0.22, -0.10);
+  addTechnicalMesh(1, rightHullCut, PALETTE.light, g1, { isCasing: true, isCutawayHalf: true });
+
+  // Pare-chocs / berceau avant du bras robotisé
+  const frontBulkhead = new THREE.BoxGeometry(1.95, 0.65, 0.32);
+  frontBulkhead.translate(0, 0.15, 1.82);
+  addTechnicalMesh(1, frontBulkhead, PALETTE.medium, g1);
+
+  // Châssis informatique interne (visible en coupe)
+  const internalRack = new THREE.BoxGeometry(0.95, 0.52, 1.35);
+  internalRack.translate(-0.15, 0.20, 0.65);
+  addTechnicalMesh(1, internalRack, PALETTE.dark, g1);
+})();
+
+// --- PIÈCE 2 : SUSPENSION ARTICULÉE « ROCKER-BOGIE » (BALANCIERS ET BOGIES) ---
+(function buildRockerBogie() {
+  const g2 = partGroups[2];
+  g2.add(leftRockerPivot);
+  g2.add(rightRockerPivot);
+
+  [leftRockerPivot, rightRockerPivot].forEach((rockerPiv, idx) => {
+    const sideSign = idx === 0 ? -1 : 1;
+    const xOut = sideSign * 0.22;
+
+    // Axe d'articulation principal du balancier sur le châssis
+    const mainJournal = new THREE.CylinderGeometry(0.18, 0.18, 0.42, 16);
+    mainJournal.rotateZ(Math.PI / 2);
+    addTechnicalMesh(2, mainJournal, PALETTE.darker, rockerPiv);
+
+    // Jambe arrière du Rocker allant jusqu'à la roue arrière (Z_REAR = -2.15, donc deltaZ = -1.80)
+    const rearLegCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(xOut, 0, 0),
+      new THREE.Vector3(xOut * 1.6, 0.15, -0.95),
+      new THREE.Vector3(sideSign * (WHEEL_X - 1.32), WHEEL_Y - 0.15, Z_REAR + 0.35)
+    ]);
+    addTechnicalMesh(2, new THREE.TubeGeometry(rearLegCurve, 16, 0.095, 10, false), PALETTE.medium, rockerPiv);
+
+    // Jambe avant du Rocker allant jusqu'au pivot du Bogie avant (à Z = +0.95, donc deltaZ = +1.30)
+    const frontArmCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(xOut, 0, 0),
+      new THREE.Vector3(xOut * 1.5, 0.18, 0.65),
+      new THREE.Vector3(xOut * 1.8, -0.25, 1.30)
+    ]);
+    addTechnicalMesh(2, new THREE.TubeGeometry(frontArmCurve, 16, 0.095, 10, false), PALETTE.medium, rockerPiv);
+
+    // Articulation pivot du Bogie secondaire (relie la roue centrale Z_MID et la roue avant Z_FRONT)
+    const bogiePin = new THREE.CylinderGeometry(0.14, 0.14, 0.32, 14);
+    bogiePin.rotateZ(Math.PI / 2);
+    bogiePin.translate(xOut * 1.8, -0.25, 1.30);
+    addTechnicalMesh(2, bogiePin, PALETTE.darker, rockerPiv);
+
+    const bogieArc = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(sideSign * (WHEEL_X - 1.32), WHEEL_Y - 0.15, Z_MID + 0.35),
+      new THREE.Vector3(xOut * 1.8, -0.25, 1.30),
+      new THREE.Vector3(sideSign * (WHEEL_X - 1.32), WHEEL_Y - 0.15, Z_FRONT + 0.35)
+    ]);
+    addTechnicalMesh(2, new THREE.TubeGeometry(bogieArc, 18, 0.085, 10, false), PALETTE.dark, rockerPiv);
+  });
+})();
+
+// --- PIÈCE 3 : PALONNIER DIFFÉRENTIEL ET BIELLES D'ÉQUILIBRAGE ---
+(function buildDifferentialMechanism() {
+  const g3 = partGroups[3];
+  g3.add(diffBarPivot);
+
+  // Pivot central sur le pont supérieur du châssis
+  const centerHub = new THREE.CylinderGeometry(0.22, 0.22, 0.22, 16);
+  addTechnicalMesh(3, centerHub, PALETTE.darker, diffBarPivot);
+
+  // Poutre transversale du palonnier différentiel
+  const crossBeam = new THREE.BoxGeometry(2.45, 0.12, 0.18);
+  addTechnicalMesh(3, crossBeam, PALETTE.dark, diffBarPivot);
+
+  // 2 Bielles de liaison reliant les extrémités du palonnier aux balanciers gauche et droit (2)
+  for (let sideSign of [-1, 1]) {
+    const rod = new THREE.CylinderGeometry(0.055, 0.055, 0.68, 10);
+    rod.translate(sideSign * 1.18, -0.32, 0);
+    addTechnicalMesh(3, rod, PALETTE.medium, diffBarPivot);
+  }
+})();
+
+// --- PIÈCE 4 : ROUES MOTRICES ET DIRECTRICES À CRAMPONS (×6) ---
+(function buildArticulatedWheels() {
+  const g4 = partGroups[4];
+  const wheelCoords = [
+    { x: -WHEEL_X, z: Z_FRONT, steerable: true  },
+    { x:  WHEEL_X, z: Z_FRONT, steerable: true  },
+    { x: -WHEEL_X - 0.12, z: Z_MID, steerable: false },
+    { x:  WHEEL_X + 0.12, z: Z_MID, steerable: false },
+    { x: -WHEEL_X, z: Z_REAR,  steerable: true  },
+    { x:  WHEEL_X, z: Z_REAR,  steerable: true  }
+  ];
+
+  wheelCoords.forEach((wc) => {
+    const steerGroup = new THREE.Group();
+    steerGroup.position.set(wc.x, WHEEL_Y, wc.z);
+    g4.add(steerGroup);
+
+    if (wc.steerable) {
+      cornerSteerPivots.push({ group: steerGroup, zSign: wc.z > 0 ? 1 : -1 });
+      // Chape de direction verticale (liaison pivot d'orientation de la roue)
+      const yoke = new THREE.BoxGeometry(0.18, 0.55, 0.18);
+      yoke.translate(0, 0.52, 0);
+      addTechnicalMesh(4, yoke, PALETTE.dark, steerGroup);
+    }
+
+    const spinGroup = new THREE.Group();
+    steerGroup.add(spinGroup);
+    wheelSpinPivots.push(spinGroup);
+
+    // Jante cylindrique en aluminium (R = 0.58)
+    const rim = new THREE.CylinderGeometry(0.58, 0.58, 0.44, 24);
+    rim.rotateZ(Math.PI / 2);
+    addTechnicalMesh(4, rim, PALETTE.wheel, spinGroup);
+
+    // Moyeu et rayons courbes absorbeurs de chocs
+    const hub = new THREE.CylinderGeometry(0.20, 0.20, 0.48, 16);
+    hub.rotateZ(Math.PI / 2);
+    addTechnicalMesh(4, hub, PALETTE.light, spinGroup);
+
+    for (let s = 0; s < 6; s++) {
+      const spoke = new THREE.BoxGeometry(0.46, 1.05, 0.07);
+      spoke.rotateX((s * Math.PI) / 3);
+      addTechnicalMesh(4, spoke, PALETTE.medium, spinGroup);
+    }
+
+    // 12 Crampons transversaux (grousers) pour mordre dans le régolithe lunaire/martien
+    for (let c = 0; c < 12; c++) {
+      const ang = (c * Math.PI * 2) / 12;
+      const cleat = new THREE.BoxGeometry(0.45, 0.06, 0.06);
+      cleat.rotateX(ang);
+      cleat.translate(0, Math.sin(ang) * 0.59, Math.cos(ang) * 0.59);
+      addTechnicalMesh(4, cleat, PALETTE.darker, spinGroup);
+    }
+  });
+})();
+
+// --- PIÈCE 5 : GÉNÉRATEUR THERMOÉLECTRIQUE (MMRTG) ET BATTERIES LI-ION ---
+(function buildPowerSourceMMRTG() {
+  const g5 = partGroups[5];
+  const rtgHolder = new THREE.Group();
+  rtgHolder.position.set(0, 0.35, -2.25);
+  rtgHolder.rotation.x = 0.48; // Incliné vers le haut à l'arrière du rover
+  g5.add(rtgHolder);
+
+  const coreCyl = new THREE.CylinderGeometry(0.32, 0.32, 1.15, 18);
+  coreCyl.rotateX(Math.PI / 2);
+  addTechnicalMesh(5, coreCyl, PALETTE.white, rtgHolder);
+
+  // 8 Ailettes radiales de refroidissement du MMRTG
+  for (let f = 0; f < 8; f++) {
+    const fin = new THREE.BoxGeometry(0.05, 0.92, 1.05);
+    fin.rotateZ((f * Math.PI) / 4);
+    addTechnicalMesh(5, fin, PALETTE.medium, rtgHolder);
+  }
+
+  // 2 Accumulateurs Lithium-ion internes visibles dans le châssis en mode Coupe
+  const battPack = new THREE.BoxGeometry(0.65, 0.45, 1.15);
+  battPack.translate(0.38, 0.12, 0.55);
+  addTechnicalMesh(5, battPack, PALETTE.dark, g5);
+})();
+
+// --- PIÈCE 6 : FAISCEAU DE CÂBLES BLINDÉS, FUSIBLE ET RELAIS (COMMANDE) ---
+const relaySwitchPivot = new THREE.Group();
+relaySwitchPivot.position.set(-0.62, 0.72, 0.35);
+partGroups[6].add(relaySwitchPivot);
+
+(function buildWiringAndRelay() {
+  const g6 = partGroups[6];
+  // Boîtier de relais principal + fusible sur le pont
+  const relayBox = new THREE.BoxGeometry(0.38, 0.24, 0.46);
+  relayBox.translate(-0.62, 0.65, 0.35);
+  addTechnicalMesh(6, relayBox, PALETTE.dark, g6);
+
+  const lever = new THREE.BoxGeometry(0.14, 0.26, 0.14);
+  lever.translate(0, 0.12, 0);
+  addTechnicalMesh(6, lever, PALETTE.darker, relaySwitchPivot);
+
+  const fuseCyl = new THREE.CylinderGeometry(0.10, 0.10, 0.45, 12);
+  fuseCyl.rotateX(Math.PI / 2);
+  fuseCyl.translate(-0.62, 0.62, -0.35);
+  addTechnicalMesh(6, fuseCyl, PALETTE.darker, g6);
+
+  // Câbles blindés reliant le MMRTG (5), les batteries, le relais (6) et le moteur (7)
+  const c1 = new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.00, 0.35, -1.85),
+    new THREE.Vector3(-0.62, 0.62, -0.35),
+    new THREE.Vector3(-0.62, 0.65,  0.35),
+    new THREE.Vector3( 0.35, 0.25, -0.65)
+  ]);
+  addTechnicalMesh(6, new THREE.TubeGeometry(c1, 20, 0.045, 8, false), PALETTE.medium, g6);
+})();
+
+// --- PIÈCE 7 : MOTEURS DE TRACTION ET ENGRENAGES DROITS (Z₁=12 → Z₂=36) ---
+(function buildMotorsAndSpurGears() {
+  const g7 = partGroups[7];
+
+  // Logés dans la moitié droite du châssis pour être parfaitement visibles en mode "2. Vue en coupe" !
+  const gZ1 = -0.65;
+  const gY1 = 0.25;
+  const gZ2 = gZ1 - (R_PIN + R_GR); // Entraxe exact R1 + R2 = 1.008 => pas de chevauchement
+
+  // Stator du moteur électrique
+  const stator = new THREE.CylinderGeometry(0.28, 0.28, 0.56, 18);
+  stator.rotateZ(Math.PI / 2);
+  stator.translate(0.15, gY1, gZ1);
+  addTechnicalMesh(7, stator, PALETTE.medium, g7);
+
+  motorRotorPivot.position.set(0.52, gY1, gZ1);
+  g7.add(motorRotorPivot);
+  const shaft = new THREE.CylinderGeometry(0.08, 0.08, 0.65, 12);
+  shaft.rotateZ(Math.PI / 2);
+  addTechnicalMesh(7, shaft, PALETTE.darker, motorRotorPivot);
+
+  // Pignon moteur (Z₁ = 12 dents)
+  drivePinionPivot.position.set(0.68, gY1, gZ1);
+  g7.add(drivePinionPivot);
+  const pinGeo = createSpurGearGeometry(GEAR_MOD, Z_PINION, 0.20, 0.08);
+  addTechnicalMesh(7, pinGeo, PALETTE.darker, drivePinionPivot, { edgeAngle: 15 });
+
+  // Grande roue dentée de sortie (Z₂ = 36 dents, rapport 1/3)
+  driveGearPivot.position.set(0.68, gY1, gZ2);
+  g7.add(driveGearPivot);
+  const grGeo = createSpurGearGeometry(GEAR_MOD, Z_GEAR, 0.20, 0.12);
+  addTechnicalMesh(7, grGeo, PALETTE.medium, driveGearPivot, { edgeAngle: 15 });
+
+  drivePinionPivot.rotation.x = Math.PI / Z_PINION;
+})();
+
+// --- PIÈCE 8 : MÂT DE TÉLÉDÉTECTION ET TOURELLE OPTIQUE (SUPERCAM) ---
+(function buildSuperCamMast() {
+  const g8 = partGroups[8];
+  g8.add(mastAzimuthPivot);
+
+  // Embase à roue et vis sans fin d'orientation azimutale
+  const baseRing = new THREE.CylinderGeometry(0.24, 0.26, 0.18, 18);
+  addTechnicalMesh(8, baseRing, PALETTE.dark, mastAzimuthPivot);
+
+  const mastCol = new THREE.CylinderGeometry(0.12, 0.14, 1.35, 16);
+  mastCol.translate(0, 0.68, 0);
+  addTechnicalMesh(8, mastCol, PALETTE.light, mastAzimuthPivot);
+
+  // Tête caméra cyclope (SuperCam + objectif laser circulaire + caméras stéréo Navcam)
+  const headBox = new THREE.BoxGeometry(0.68, 0.38, 0.36);
+  headBox.translate(0, 1.45, 0);
+  addTechnicalMesh(8, headBox, PALETTE.veryLight, mastAzimuthPivot);
+
+  const laserLens = new THREE.CylinderGeometry(0.13, 0.13, 0.14, 16);
+  laserLens.rotateX(Math.PI / 2);
+  laserLens.translate(0.12, 1.48, 0.18);
+  addTechnicalMesh(8, laserLens, PALETTE.darker, mastAzimuthPivot);
+})();
+
+// --- PIÈCE 9 : ANTENNE PARABOLIQUE À GRAND GAIN (COMMUNICATION TERRE) ---
+(function buildHighGainAntenna() {
+  const g9 = partGroups[9];
+  g9.add(hgaDishPivot);
+
+  const pedestal = new THREE.CylinderGeometry(0.08, 0.10, 0.38, 12);
+  pedestal.translate(-0.75, 0.72, -1.65);
+  addTechnicalMesh(9, pedestal, PALETTE.dark, g9);
+
+  // Parabole orientée vers le globe de la Terre dans le ciel lunaire
+  const dishGeo = new THREE.SphereGeometry(0.42, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.45);
+  dishGeo.rotateX(-Math.PI * 0.72);
+  dishGeo.rotateZ(0.35);
+  addTechnicalMesh(9, dishGeo, PALETTE.veryLight, hgaDishPivot);
+})();
+
+// --- PIÈCE 10 : BRAS ROBOTISÉ ARTICULÉ (5 DEGRÉS DE LIBERTÉ) ---
+(function buildRoboticArm5DOF() {
+  const af10 = armFollowers[10];
+
+  // Tourelle d'épaule (liaison pivot)
+  const shoulderJoint = new THREE.CylinderGeometry(0.22, 0.22, 0.38, 16);
+  shoulderJoint.rotateZ(Math.PI / 2);
+  addTechnicalMesh(10, shoulderJoint, PALETTE.darker, af10.shoulder);
+
+  // Bras supérieur (segment 1 : L = 1.35)
+  const upperArm = new THREE.BoxGeometry(0.22, 0.22, 1.35);
+  upperArm.translate(0, 0, 0.675);
+  addTechnicalMesh(10, upperArm, PALETTE.light, af10.shoulder);
+
+  // Articulation du coude (liaison pivot)
+  const elbowJoint = new THREE.CylinderGeometry(0.18, 0.18, 0.34, 16);
+  elbowJoint.rotateZ(Math.PI / 2);
+  addTechnicalMesh(10, elbowJoint, PALETTE.darker, af10.elbow);
+
+  // Avant-bras (segment 2 : L = 1.15)
+  const forearm = new THREE.BoxGeometry(0.18, 0.18, 1.15);
+  forearm.translate(0, 0, 0.575);
+  addTechnicalMesh(10, forearm, PALETTE.medium, af10.elbow);
+
+  // Articulation du poignet
+  const wristJoint = new THREE.CylinderGeometry(0.16, 0.16, 0.30, 14);
+  wristJoint.rotateZ(Math.PI / 2);
+  addTechnicalMesh(10, wristJoint, PALETTE.darker, af10.wrist);
+})();
+
+// --- PIÈCE 11 : TOURELLE PORTE-OUTILS ET GLISSIÈRE À VIS-ÉCROU ---
+(function buildTurretAndLeadScrewSlide() {
+  const af11 = armFollowers[11];
+
+  // Bâti de la tourelle avec 2 colonnes de guidage en translation
+  const turretPlate = new THREE.BoxGeometry(0.58, 0.85, 0.16);
+  turretPlate.translate(0, -0.25, 0.22);
+  addTechnicalMesh(11, turretPlate, PALETTE.medium, af11.wrist);
+
+  // Vis filetée verticale (système vis et écrou) qui tourne pour faire descendre la foreuse (12)
+  leadScrewPivot.position.set(0, -0.25, 0.35);
+  af11.wrist.add(leadScrewPivot);
+
+  const screwRod = new THREE.CylinderGeometry(0.055, 0.055, 0.78, 12);
+  addTechnicalMesh(11, screwRod, PALETTE.darker, leadScrewPivot);
+
+  for (let y = -0.30; y <= 0.30; y += 0.12) {
+    const th = new THREE.TorusGeometry(0.075, 0.018, 6, 12);
+    th.rotateX(Math.PI / 2);
+    th.translate(0, y, 0);
+    addTechnicalMesh(11, th, PALETTE.dark, leadScrewPivot);
+  }
+})();
+
+// --- PIÈCE 12 : FOREUSE-CAROTTEUSE ROTATIVE À RESSORT DE PERCUSSION ---
+(function buildRotaryCoringDrill() {
+  const af12 = armFollowers[12];
+  drillCarriageGroup.position.set(0, -0.10, 0.48);
+  af12.wrist.add(drillCarriageGroup);
+
+  // Écrou-chariot porte-foreuse guidé en translation verticale sur la vis (11)
+  const nutCarriage = new THREE.BoxGeometry(0.44, 0.34, 0.38);
+  addTechnicalMesh(12, nutCarriage, PALETTE.dark, drillCarriageGroup);
+
+  // Ressort hélicoïdal de percussion/amortissement
+  const spGeo = createHelicalSpringGeometry(0.12, 0.32, 5, 0.024);
+  percussionSpringMesh = addTechnicalMesh(12, spGeo, PALETTE.medium, drillCarriageGroup, { edgeAngle: 26 });
+  percussionSpringMesh.position.set(0, -0.42, 0);
+
+  // Mandrin et trépan carotteur tournant à haute vitesse
+  drillBitSpinPivot.position.set(0, -0.45, 0);
+  drillCarriageGroup.add(drillBitSpinPivot);
+
+  const bitBarrel = new THREE.CylinderGeometry(0.09, 0.09, 0.55, 14);
+  addTechnicalMesh(12, bitBarrel, PALETTE.darker, drillBitSpinPivot);
+
+  const flute = new THREE.BoxGeometry(0.20, 0.45, 0.05);
+  addTechnicalMesh(12, flute, PALETTE.light, drillBitSpinPivot);
+
+  const crownTip = new THREE.CylinderGeometry(0.11, 0.07, 0.14, 12);
+  crownTip.translate(0, -0.32, 0);
+  addTechnicalMesh(12, crownTip, PALETTE.darker, drillBitSpinPivot);
+})();
+
+// --- PIÈCE 13 : CAROTTE DE ROCHE EXTRAITE, ROCHE CIBLE & TUBES D'ÉCHANTILLONS ---
+(function buildSampleCoreAndTargetRock() {
+  const g13 = partGroups[13];
+
+  // Carrousel de tubes d'échantillons en titane sous l'avant du châssis
+  const cacheDrum = new THREE.CylinderGeometry(0.42, 0.42, 0.26, 18);
+  cacheDrum.translate(0, -0.35, 1.15);
+  addTechnicalMesh(13, cacheDrum, PALETTE.medium, g13);
+
+  for (let t = 0; t < 6; t++) {
+    const a = (t * Math.PI) / 3;
+    const tube = new THREE.CylinderGeometry(0.055, 0.055, 0.32, 10);
+    tube.translate(Math.cos(a) * 0.28, -0.42, 1.15 + Math.sin(a) * 0.28);
+    addTechnicalMesh(13, tube, PALETTE.veryLight, g13);
+  }
+
+  // Bloc rocheux lunaire/martien cible placé juste devant le rover sous la foreuse (à Z = +3.55)
+  const targetRockGeo = new THREE.CylinderGeometry(0.55, 0.78, 0.52, 9);
+  targetRockGeo.translate(0, -1.39, 3.55);
+  addTechnicalMesh(13, targetRockGeo, PALETTE.light, g13);
+
+  // Carotte cylindrique de roche extraite par le trépan (12)
+  const coreGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.34, 12);
+  extractedCoreMesh = addTechnicalMesh(13, coreGeo, PALETTE.dark, g13);
+  extractedCoreMesh.position.set(0, -1.15, 3.55);
+})();
+
+/* ============================================================================
+   6. POINTS D'ANCRAGE 3D DES 13 REPÈRES & VECTEURS DE VUE ÉCLATÉE
+   ============================================================================ */
+const ANCHOR_COORDS = {
+  1:  new THREE.Vector3(-0.65,  0.65, -0.85), // Châssis thermique étanche
+  2:  new THREE.Vector3(-1.55, -0.10,  0.55), // Suspension Rocker-Bogie
+  3:  new THREE.Vector3( 0.00,  0.82, -0.35), // Palonnier différentiel
+  4:  new THREE.Vector3(-1.75, -1.07,  2.05), // Roues motrices à crampons
+  5:  new THREE.Vector3( 0.00,  0.65, -2.55), // Générateur MMRTG et batteries
+  6:  new THREE.Vector3(-0.62,  0.75,  0.35), // Câbles, fusible et relais
+  7:  new THREE.Vector3( 0.68,  0.25, -0.65), // Moteurs et engrenages droits
+  8:  new THREE.Vector3( 0.68,  2.15,  1.35), // Mât optique SuperCam
+  9:  new THREE.Vector3(-0.75,  1.25, -1.65), // Antenne parabolique grand gain
+  10: new THREE.Vector3( 0.00,  0.75,  2.65), // Bras robotisé articulé 5 DDL
+  11: new THREE.Vector3( 0.00,  0.35,  3.45), // Tourelle et vis-écrou
+  12: new THREE.Vector3( 0.00, -0.45,  3.55), // Foreuse-carotteuse à ressort
+  13: new THREE.Vector3( 0.00, -1.25,  3.55)  // Carotte de roche et tubes d'échantillons
+};
+
+const EXPLODE_OFFSETS = {
+  1:  new THREE.Vector3( 0.00,  0.40,  0.00),
+  2:  new THREE.Vector3(-1.60, -0.30,  0.00),
+  3:  new THREE.Vector3( 0.00,  1.95, -0.35),
+  4:  new THREE.Vector3( 0.00, -1.35,  0.00),
+  5:  new THREE.Vector3( 0.00,  0.55, -2.60),
+  6:  new THREE.Vector3(-1.90,  0.85,  0.00),
+  7:  new THREE.Vector3( 2.10,  0.20, -0.65),
+  8:  new THREE.Vector3( 1.10,  2.35,  1.10),
+  9:  new THREE.Vector3(-1.35,  1.85, -1.80),
+  10: new THREE.Vector3( 0.00,  0.65,  1.95),
+  11: new THREE.Vector3( 0.00,  1.35,  3.10),
+  12: new THREE.Vector3( 0.00, -0.20,  3.80),
+  13: new THREE.Vector3( 0.00, -1.55,  2.20)
+};
+
+for (let i = 1; i <= 13; i++) {
+  const anchorObj = new THREE.Object3D();
+  anchorObj.position.copy(ANCHOR_COORDS[i]);
+  partGroups[i].add(anchorObj);
+  partAnchors[i] = anchorObj;
+  partBasePositions[i] = partGroups[i].position.clone();
+  partExplodeVectors[i] = EXPLODE_OFFSETS[i];
+}
+
+const explodeGuideGroup = new THREE.Group();
+explodeGuideGroup.visible = false;
+roverRoot.add(explodeGuideGroup);
+
+(function buildExplodeGuides() {
+  const gPts = [
+    [new THREE.Vector3(0, 0.25, -5.2), new THREE.Vector3(0, 0.25, 7.5)],
+    [new THREE.Vector3(-3.8, 0.15, -0.35), new THREE.Vector3(3.8, 0.15, -0.35)],
+    [new THREE.Vector3(0, -3.0, -0.35), new THREE.Vector3(0, 3.2, -0.35)]
+  ];
+  gPts.forEach(pair => {
+    const geo = new THREE.BufferGeometry().setFromPoints(pair);
+    const l = new THREE.Line(geo, dashedGuideMaterial);
+    l.computeLineDistances();
+    explodeGuideGroup.add(l);
+  });
+})();
+
+/* ============================================================================
+   7. CRÉATION DES PASTILLES NUMÉROTÉES HTML/SVG & DE LA NOMENCLATURE
+   ============================================================================ */
+const calloutBadges = {};
+const calloutLines = {};
+const partChips = {};
+const partsGridEl = document.getElementById('parts-grid');
+
+PARTS_DATA.forEach((p) => {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('stroke', '#111111');
+  line.setAttribute('stroke-width', '1.4');
+  calloutSvg.appendChild(line);
+  calloutLines[p.id] = line;
+
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('r', '2.8');
+  dot.setAttribute('fill', '#111111');
+  calloutSvg.appendChild(dot);
+  line.anchorDot = dot;
+
+  const badge = document.createElement('div');
+  badge.className = 'callout-badge';
+  badge.innerHTML = `<span class="part-num">${p.id}</span><span class="part-label">${p.name.split('(')[0].trim()}</span>`;
+  badge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectPart(p.id);
+    if (p.id === 4 || p.id === 6 || p.id === 7) toggleDrivePower();
+    else if (p.id >= 10 && p.id <= 13) toggleDrillSequence();
+  });
+  calloutLayer.appendChild(badge);
+  calloutBadges[p.id] = badge;
+
+  const chip = document.createElement('button');
+  chip.className = 'part-chip';
+  chip.innerHTML = `<b>${p.id}.</b> <span class="chip-text">Pièce ${p.id}</span>`;
+  chip.addEventListener('click', () => selectPart(p.id));
+  partsGridEl.appendChild(chip);
+  partChips[p.id] = chip;
+});
+
+const energyTag = document.createElement('div');
+energyTag.className = 'floating-tag energy-tag';
+energyTag.style.display = 'none';
+energyTag.textContent = '⚡ Thermique/Électrique (MMRTG 5) → ⚙️ Engrenages (7) & Roues (4)';
+calloutLayer.appendChild(energyTag);
+
+const drillMechTag = document.createElement('div');
+drillMechTag.className = 'floating-tag';
+drillMechTag.style.display = 'none';
+drillMechTag.textContent = '↻ Vis-écrou (11) → ↓ Avance de la foreuse-carotteuse (12)';
+calloutLayer.appendChild(drillMechTag);
+
+/* ============================================================================
+   8. GESTION DES MODES (EXAMEN / CORRECTION), VUES (1, 2, 3) ET SÉLECTION
+   ============================================================================ */
+let currentMode = 'examen';
+let currentView = 'ext';
+let selectedPartId = 1;
+let isDriveRunning = false;
+let isDrillRunning = false;
+let explodeProgress = 0;
+let targetExplodeProgress = 0;
+
+function selectPart(partId) {
+  selectedPartId = partId;
+  const data = PARTS_DATA.find(d => d.id === partId);
+
+  for (let i = 1; i <= 13; i++) {
+    const isSel = (i === partId);
+    partMeshes[i].forEach(mesh => {
+      mesh.material.color.setHex(isSel ? PALETTE.accent : mesh.material.userData.baseColor);
+    });
+    calloutBadges[i].classList.toggle('selected', isSel);
+    calloutLines[i].setAttribute('stroke', isSel ? '#0055cc' : '#111111');
+    calloutLines[i].setAttribute('stroke-width', isSel ? '2.2' : '1.3');
+    calloutLines[i].anchorDot.setAttribute('fill', isSel ? '#0055cc' : '#111111');
+    partChips[i].classList.toggle('selected', isSel);
+  }
+
+  updateDetailCard(data);
+}
+
+function updateDetailCard(data) {
+  document.getElementById('detail-num').textContent = data.id;
+  const nameEl = document.getElementById('detail-name');
+  const subEl = document.getElementById('detail-sub');
+  const funcEl = document.getElementById('detail-func');
+  const linkEl = document.getElementById('detail-link');
+
+  if (currentMode === 'examen') {
+    nameEl.textContent = `Pièce n° ${data.id} (À identifier)`;
+    subEl.textContent = `Mode Examen : identifiez le nom, la fonction et le mécanisme de cette pièce.`;
+    funcEl.textContent = `Masqué en mode examen`;
+    funcEl.classList.add('exam-masked');
+    linkEl.textContent = `Masqué en mode examen`;
+    linkEl.classList.add('exam-masked');
+  } else {
+    nameEl.textContent = data.name;
+    subEl.textContent = `Nomenclature officielle ST/ATS — 4e secondaire`;
+    funcEl.textContent = data.func;
+    funcEl.classList.remove('exam-masked');
+    linkEl.textContent = data.link;
+    linkEl.classList.remove('exam-masked');
+  }
+}
+
+function setPedagogicalMode(mode) {
+  currentMode = mode;
+  document.body.className = (mode === 'correction') ? 'mode-correction' : 'mode-examen';
+  document.getElementById('btn-mode-examen').classList.toggle('active', mode === 'examen');
+  document.getElementById('btn-mode-correction').classList.toggle('active', mode === 'correction');
+  document.getElementById('mode-indicator-label').textContent = mode === 'correction' ? 'MODE CORRECTION' : 'MODE EXAMEN';
+
+  PARTS_DATA.forEach(p => {
+    const span = partChips[p.id].querySelector('.chip-text');
+    span.textContent = (mode === 'correction') ? p.name.split('(')[0].trim() : `Pièce ${p.id}`;
+  });
+
+  energyTag.style.display = (mode === 'correction') ? 'block' : 'none';
+  drillMechTag.style.display = (mode === 'correction') ? 'block' : 'none';
+
+  updateDetailCard(PARTS_DATA.find(d => d.id === selectedPartId));
+}
+
+function setViewMode(view) {
+  currentView = view;
+  document.getElementById('btn-view-ext').classList.toggle('active', view === 'ext');
+  document.getElementById('btn-view-cut').classList.toggle('active', view === 'cut');
+  document.getElementById('btn-view-exp').classList.toggle('active', view === 'exp');
+
+  targetExplodeProgress = (view === 'exp') ? 1 : 0;
+  explodeGuideGroup.visible = (view === 'exp');
+
+  partMeshes[1].forEach(mesh => {
+    if (mesh.material.userData.isCutawayHalf) {
+      if (view === 'cut') {
+        mesh.material.transparent = true;
+        mesh.material.opacity = 0.15;
+        mesh.material.depthWrite = false;
+      } else {
+        mesh.material.transparent = false;
+        mesh.material.opacity = 1.0;
+        mesh.material.depthWrite = true;
+      }
+      mesh.material.needsUpdate = true;
+    }
+  });
+
+  setTimeout(() => frameModelAutomatically(view === 'exp' ? 1 : 0), 30);
+}
+
+/* ============================================================================
+   9. CONTRÔLES CAMÉRA PAR POINTER EVENTS & CADRAGE AUTOMATIQUE BOX3
+   ============================================================================ */
+let camSpherical = {
+  radius: 15.5,
+  theta: 0.85,
+  phi: 1.18
+};
+const camTarget = new THREE.Vector3(0, 0.1, 0.25);
+
+function updateCameraFromSpherical() {
+  camSpherical.phi = Math.max(0.18, Math.min(Math.PI * 0.49, camSpherical.phi));
+  camSpherical.radius = Math.max(6, Math.min(60, camSpherical.radius));
+
+  const sinPhi = Math.sin(camSpherical.phi);
+  camera.position.x = camTarget.x + camSpherical.radius * sinPhi * Math.sin(camSpherical.theta);
+  camera.position.y = camTarget.y + camSpherical.radius * Math.cos(camSpherical.phi);
+  camera.position.z = camTarget.z + camSpherical.radius * sinPhi * Math.cos(camSpherical.theta);
+  camera.lookAt(camTarget);
+}
+
+function frameModelAutomatically(simExplodeFactor = targetExplodeProgress) {
+  for (let i = 1; i <= 13; i++) {
+    partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], simExplodeFactor);
+  }
+  roverRoot.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(roverRoot);
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  box.getCenter(center);
+  box.getSize(size);
+
+  if (size.lengthSq() > 0.01) {
+    camTarget.copy(center);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fovRad = THREE.MathUtils.degToRad(camera.fov);
+    const aspect = Math.max(0.50, camera.aspect || 1.2);
+    const fitHeightDistance = (maxDim / 2) / Math.tan(fovRad / 2);
+    const fitWidthDistance = (maxDim / 2) / (Math.tan(fovRad / 2) * aspect);
+    const marginFactor = aspect < 0.95 ? 1.32 : 1.18;
+    camSpherical.radius = Math.max(fitHeightDistance, fitWidthDistance) * marginFactor;
+  }
+
+  updateCameraFromSpherical();
+}
+
+const activePointers = new Map();
+let prevPinchDist = null;
+let pointerDownPos = { x: 0, y: 0 };
+let pointerMoved = false;
+
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (activePointers.size === 1) {
+    pointerDownPos = { x: e.clientX, y: e.clientY };
+    pointerMoved = false;
+  }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!activePointers.has(e.pointerId)) return;
+  const prev = activePointers.get(e.pointerId);
+  const curr = { x: e.clientX, y: e.clientY };
+  activePointers.set(e.pointerId, curr);
+
+  if (activePointers.size === 1) {
+    const dx = curr.x - prev.x;
+    const dy = curr.y - prev.y;
+    if (Math.hypot(curr.x - pointerDownPos.x, curr.y - pointerDownPos.y) > 5) {
+      pointerMoved = true;
+    }
+    camSpherical.theta -= dx * 0.0085;
+    camSpherical.phi -= dy * 0.0085;
+    updateCameraFromSpherical();
+  } else if (activePointers.size === 2) {
+    pointerMoved = true;
+    const pts = Array.from(activePointers.values());
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (prevPinchDist !== null) {
+      const delta = prevPinchDist - dist;
+      camSpherical.radius += delta * 0.045;
+      updateCameraFromSpherical();
+    }
+    prevPinchDist = dist;
+  }
+});
+
+function onPointerUpOrCancel(e) {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) prevPinchDist = null;
+  if (!pointerMoved && e.type === 'pointerup') {
+    handleCanvasTap(e.clientX, e.clientY);
+  }
+}
+
+canvas.addEventListener('pointerup', onPointerUpOrCancel);
+canvas.addEventListener('pointercancel', onPointerUpOrCancel);
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  camSpherical.radius += e.deltaY * 0.015;
+  updateCameraFromSpherical();
+}, { passive: false });
+
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+
+function handleCanvasTap(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointerNDC, camera);
+  const hits = raycaster.intersectObjects(clickableMeshes, false);
+
+  if (hits.length > 0) {
+    let chosenHit = hits[0];
+    if (currentView === 'cut') {
+      const nonTransparentHit = hits.find(h => !h.object.material.userData.isCutawayHalf);
+      if (nonTransparentHit) chosenHit = nonTransparentHit;
+    }
+    const pId = chosenHit.object.userData.partId;
+    if (pId) {
+      selectPart(pId);
+      if (pId === 4 || pId === 6 || pId === 7) toggleDrivePower();
+      else if (pId >= 10 && pId <= 13) toggleDrillSequence();
+    }
+  }
+}
+
+/* ============================================================================
+   10. PROJECTION 3D -> 2D DES NUMÉROS AVEC ANTI-CHEVAUCHEMENT DYNAMIQUE
+   ============================================================================ */
+const tempProj = new THREE.Vector3();
+
+function updateCallouts2D() {
+  const width = lastCssWidth || viewport.clientWidth || 640;
+  const height = lastCssHeight || viewport.clientHeight || 460;
+
+  tempProj.copy(camTarget).project(camera);
+  const centerX = (tempProj.x * 0.5 + 0.5) * width;
+
+  const leftItems = [];
+  const rightItems = [];
+
+  for (let i = 1; i <= 13; i++) {
+    partAnchors[i].getWorldPosition(tempProj);
+    tempProj.project(camera);
+
+    const ax = (tempProj.x * 0.5 + 0.5) * width;
+    const ay = (-tempProj.y * 0.5 + 0.5) * height;
+
+    const item = { id: i, ax, ay, bx: 0, by: ay };
+    if (ax >= centerX) rightItems.push(item);
+    else leftItems.push(item);
+  }
+
+  const minVerticalGap = 27;
+  const marginX = currentMode === 'correction' ? 92 : 30;
+
+  function distributeColumn(list, isRight) {
+    list.sort((a, b) => a.ay - b.ay);
+    const targetX = isRight
+      ? Math.min(width - marginX, centerX + Math.min(width * 0.36, 220))
+      : Math.max(marginX, centerX - Math.min(width * 0.36, 220));
+
+    for (let k = 0; k < list.length; k++) {
+      list[k].bx = targetX;
+      if (k === 0) list[k].by = Math.max(22, list[k].ay);
+      else list[k].by = Math.max(list[k].ay, list[k - 1].by + minVerticalGap);
+    }
+    for (let k = list.length - 1; k >= 0; k--) {
+      if (k === list.length - 1) list[k].by = Math.min(height - 24, list[k].by);
+      else list[k].by = Math.min(list[k].by, list[k + 1].by - minVerticalGap);
+      list[k].by = Math.max(20, list[k].by);
+    }
+  }
+
+  distributeColumn(leftItems, false);
+  distributeColumn(rightItems, true);
+
+  [...leftItems, ...rightItems].forEach(item => {
+    const badge = calloutBadges[item.id];
+    const line = calloutLines[item.id];
+
+    badge.style.left = `${item.bx}px`;
+    badge.style.top = `${item.by}px`;
+
+    line.setAttribute('x1', item.ax.toFixed(1));
+    line.setAttribute('y1', item.ay.toFixed(1));
+    line.setAttribute('x2', item.bx.toFixed(1));
+    line.setAttribute('y2', item.by.toFixed(1));
+
+    line.anchorDot.setAttribute('cx', item.ax.toFixed(1));
+    line.anchorDot.setAttribute('cy', item.ay.toFixed(1));
+  });
+
+  if (currentMode === 'correction') {
+    partAnchors[7].getWorldPosition(tempProj);
+    tempProj.y += 0.85;
+    tempProj.project(camera);
+    energyTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    energyTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+
+    partAnchors[12].getWorldPosition(tempProj);
+    tempProj.y -= 0.65;
+    tempProj.project(camera);
+    drillMechTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    drillMechTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+  }
+}
+
+/* ============================================================================
+   11. INTERACTION ROULEMENT, FORAGE & BASCULE DU DÉCOR LUNAIRE / MARTIEN
+   ============================================================================ */
+const btnPower = document.getElementById('btn-power');
+const btnDrill = document.getElementById('btn-drill');
+const svgSwDrive = document.getElementById('svg-sw-drive');
+const svgSwDrill = document.getElementById('svg-sw-drill');
+const animLoopDrive = document.getElementById('anim-loop-drive');
+const animLoopDrill = document.getElementById('anim-loop-drill');
+const circuitStateBadge = document.getElementById('circuit-state-badge');
+
+function updateCircuitUI() {
+  if (isDriveRunning && isDrillRunning) {
+    circuitStateBadge.textContent = 'TRACTION + FORAGE ACTIFS';
+    circuitStateBadge.style.color = '#0055cc';
+  } else if (isDriveRunning) {
+    circuitStateBadge.textContent = 'BRANCHE M₁ (ROUES) FERMÉE';
+    circuitStateBadge.style.color = '#0055cc';
+  } else if (isDrillRunning) {
+    circuitStateBadge.textContent = 'BRANCHE M₂ (FOREUSE) FERMÉE';
+    circuitStateBadge.style.color = '#0055cc';
+  } else {
+    circuitStateBadge.textContent = 'CIRCUITS OUVERTS (I = 0)';
+    circuitStateBadge.style.color = '#111111';
+  }
+}
+
+function toggleDrivePower() {
+  isDriveRunning = !isDriveRunning;
+  btnPower.classList.toggle('running', isDriveRunning);
+  btnPower.textContent = isDriveRunning ? '4. Roulement : EN MARCHE' : '4. Roulement : ARRÊT';
+
+  if (isDriveRunning) {
+    svgSwDrive.setAttribute('x2', '165');
+    svgSwDrive.setAttribute('y2', '76');
+    svgSwDrive.setAttribute('stroke', '#0055cc');
+    animLoopDrive.setAttribute('opacity', '1');
+  } else {
+    svgSwDrive.setAttribute('x2', '148');
+    svgSwDrive.setAttribute('y2', '73');
+    svgSwDrive.setAttribute('stroke', '#111111');
+    animLoopDrive.setAttribute('opacity', '0');
+  }
+  updateCircuitUI();
+}
+
+function toggleDrillSequence() {
+  isDrillRunning = !isDrillRunning;
+  btnDrill.classList.toggle('running', isDrillRunning);
+  btnDrill.textContent = isDrillRunning ? 'Forage : EN COURS' : 'Forer échantillon';
+
+  if (isDrillRunning) {
+    svgSwDrill.setAttribute('x2', '292');
+    svgSwDrill.setAttribute('y2', '76');
+    svgSwDrill.setAttribute('stroke', '#0055cc');
+    animLoopDrill.setAttribute('opacity', '1');
+  } else {
+    svgSwDrill.setAttribute('x2', '275');
+    svgSwDrill.setAttribute('y2', '73');
+    svgSwDrill.setAttribute('stroke', '#111111');
+    animLoopDrill.setAttribute('opacity', '0');
+  }
+  updateCircuitUI();
+}
+
+// Sélecteur de contexte planétaire : LUNE (par défaut) -> MARS -> AUCUN
+let envState = 'lune';
+document.getElementById('btn-env').addEventListener('click', (e) => {
+  if (envState === 'lune') {
+    envState = 'mars';
+    environmentRoot.visible = true;
+    lunarContextGroup.visible = false;
+    martianContextGroup.visible = true;
+    e.target.textContent = 'Décor : MARS';
+    e.target.classList.add('active');
+  } else if (envState === 'mars') {
+    envState = 'aucun';
+    environmentRoot.visible = false;
+    e.target.textContent = 'Décor : NON';
+    e.target.classList.remove('active');
+  } else {
+    envState = 'lune';
+    environmentRoot.visible = true;
+    lunarContextGroup.visible = true;
+    martianContextGroup.visible = false;
+    e.target.textContent = 'Décor : LUNE';
+    e.target.classList.add('active');
+  }
+});
+
+document.getElementById('btn-mode-examen').addEventListener('click', () => setPedagogicalMode('examen'));
+document.getElementById('btn-mode-correction').addEventListener('click', () => setPedagogicalMode('correction'));
+document.getElementById('btn-view-ext').addEventListener('click', () => setViewMode('ext'));
+document.getElementById('btn-view-cut').addEventListener('click', () => setViewMode('cut'));
+document.getElementById('btn-view-exp').addEventListener('click', () => setViewMode('exp'));
+document.getElementById('btn-power').addEventListener('click', toggleDrivePower);
+document.getElementById('btn-drill').addEventListener('click', toggleDrillSequence);
+
+document.getElementById('btn-reset-cam').addEventListener('click', () => {
+  camSpherical.theta = 0.85;
+  camSpherical.phi = 1.18;
+  frameModelAutomatically();
+});
+
+svgSwDrive.addEventListener('click', () => {
+  selectPart(6);
+  toggleDrivePower();
+});
+
+svgSwDrill.addEventListener('click', () => {
+  selectPart(12);
+  toggleDrillSequence();
+});
+
+/* ============================================================================
+   12. BOUCLE D'ANIMATION (ROCKER-BOGIE, ENGRENAGES, BRAS 5 DDL & VIS-ÉCROU)
+   ============================================================================ */
+let lastTime = performance.now();
+let svgDashOffset = 0;
+let lastCssWidth = 0;
+let lastCssHeight = 0;
+
+let currentWheelRPM = 0;
+let rockerPhase = 0;
+let drillProgress = 0; // 0 = bras replié/haut, 1 = bras abaissé et foreuse enfoncée dans la roche
+
+const elW2 = document.getElementById('kin-w2');
+const elRocker = document.getElementById('kin-rocker');
+const elFeed = document.getElementById('kin-feed');
+const elDrillRpm = document.getElementById('kin-drill-rpm');
+
+function syncViewportSize(reframe = false) {
+  const rect = viewport.getBoundingClientRect();
+  const w = Math.max(300, Math.round(rect.width || viewport.clientWidth || (window.innerWidth - 395)));
+  const h = Math.max(360, Math.round(rect.height || viewport.clientHeight || (window.innerHeight - 60)));
+
+  if (Math.abs(w - lastCssWidth) > 1 || Math.abs(h - lastCssHeight) > 1) {
+    lastCssWidth = w;
+    lastCssHeight = h;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+    if (reframe) {
+      frameModelAutomatically();
+    } else {
+      updateCameraFromSpherical();
+    }
+  }
+}
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  syncViewportSize(false);
+
+  // Bascule du relais (6)
+  const targetRelay = (isDriveRunning || isDrillRunning) ? 0.35 : -0.35;
+  relaySwitchPivot.rotation.x += (targetRelay - relaySwitchPivot.rotation.x) * Math.min(1, dt * 10);
+
+  // 1. Cinématique de mobilité : Moteur (7) -> Engrenages droits (Z1=12, Z2=36) -> 6 Roues (4) + Rocker-Bogie (2-3)
+  const targetWheelRPM = isDriveRunning ? 18 : 0;
+  currentWheelRPM += (targetWheelRPM - currentWheelRPM) * Math.min(1, dt * 3.5);
+  if (currentWheelRPM < 0.2 && !isDriveRunning) currentWheelRPM = 0;
+
+  const omegaWheelRad = (currentWheelRPM * 2 * Math.PI) / 60;
+  const omegaMotorRad = -omegaWheelRad * (Z_GEAR / Z_PINION); // Rapport ×3, sens inverse
+
+  motorRotorPivot.rotation.x += omegaMotorRad * dt;
+  drivePinionPivot.rotation.x += omegaMotorRad * dt;
+  driveGearPivot.rotation.x += omegaWheelRad * dt;
+
+  wheelSpinPivots.forEach(w => {
+    w.rotation.x += omegaWheelRad * dt;
+  });
+
+  // Articulation différentielle du système Rocker-Bogie (2) et de la barre d'équilibrage (3) sur le relief
+  if (currentWheelRPM > 0.5) {
+    rockerPhase += dt * 2.4;
+    const roadSpeed = (currentWheelRPM / 18) * 1.4;
+    scrollingTrackMarks.forEach(tread => {
+      tread.position.z -= roadSpeed * dt;
+      if (tread.position.z < -11.5) tread.position.z += 23.0;
+    });
+  } else {
+    rockerPhase *= Math.max(0, 1 - dt * 4);
+  }
+
+  const rockerTilt = Math.sin(rockerPhase) * 0.14; // Balanciers gauche et droit en opposition grâce au différentiel (3)
+  leftRockerPivot.rotation.x = rockerTilt;
+  rightRockerPivot.rotation.x = -rockerTilt;
+  diffBarPivot.rotation.y = rockerTilt * 0.85;
+
+  // Léger braquage coordonné des 4 roues de coin
+  const steerAng = Math.sin(rockerPhase * 0.5) * 0.22;
+  cornerSteerPivots.forEach(sp => {
+    sp.group.rotation.y = steerAng * sp.zSign;
+  });
+
+  // Balayage panoramique lent du mât SuperCam (8) et pointage de l'antenne (9)
+  mastAzimuthPivot.rotation.y = Math.sin(now * 0.0008) * 0.35;
+
+  // 2. Cinématique du bras robotisé (10), de la glissière vis-écrou (11), de la foreuse (12) et de la carotte (13)
+  const targetDrillProg = isDrillRunning ? 1.0 : 0.0;
+  const prevDrillProg = drillProgress;
+  drillProgress += (targetDrillProg - drillProgress) * Math.min(1, dt * 2.2);
+
+  // Déploiement des articulations d'épaule, coude et poignet (de 0 à 0.55)
+  const armDeploy = Math.min(1.0, drillProgress / 0.55);
+  const shoulderRotX = -0.35 + armDeploy * 0.62;
+  const elbowRotX    =  0.75 - armDeploy * 0.52;
+  const wristRotX    = -0.40 - armDeploy * 0.10;
+
+  [10, 11, 12, 13].forEach(id => {
+    armFollowers[id].shoulder.rotation.x = shoulderRotX;
+    armFollowers[id].elbow.rotation.x = elbowRotX;
+    armFollowers[id].wrist.rotation.x = wristRotX;
+  });
+
+  // Avance rectiligne de la glissière vis-écrou (11) et rotation de la foreuse (12) (de 0.55 à 1.0)
+  const feedFactor = Math.max(0, (drillProgress - 0.50) / 0.50);
+  drillCarriageGroup.position.y = -0.10 - feedFactor * 0.36;
+
+  const deltaFeed = drillProgress - prevDrillProg;
+  if (Math.abs(deltaFeed) > 0.0001 || isDrillRunning) {
+    leadScrewPivot.rotation.y += dt * (isDrillRunning ? 12 : -8);
+  }
+
+  const activeDrillRPM = (isDrillRunning && drillProgress > 0.45) ? 950 : 0;
+  if (activeDrillRPM > 0) {
+    drillBitSpinPivot.rotation.y += dt * 22;
+    // Vibration du ressort hélicoïdal de percussion (12)
+    percussionSpringMesh.scale.y = 0.85 + Math.sin(now * 0.05) * 0.12;
+  } else {
+    percussionSpringMesh.scale.y = 1.0;
+  }
+
+  // Extraction de la carotte de roche (13)
+  extractedCoreMesh.position.y = -1.15 + feedFactor * 0.22;
+
+  // 3. Interpolation de la Vue éclatée
+  if (Math.abs(targetExplodeProgress - explodeProgress) > 0.001) {
+    explodeProgress += (targetExplodeProgress - explodeProgress) * Math.min(1, dt * 8);
+    for (let i = 1; i <= 13; i++) {
+      partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], explodeProgress);
+    }
+  }
+
+  // 4. Mise à jour des valeurs en direct dans le panneau latéral et animation du courant
+  elW2.textContent = Math.round(currentWheelRPM);
+  elRocker.textContent = THREE.MathUtils.radToDeg(Math.abs(rockerTilt)).toFixed(1);
+  elFeed.textContent = Math.round(feedFactor * 45);
+  elDrillRpm.textContent = activeDrillRPM;
+
+  if (isDriveRunning || isDrillRunning) {
+    svgDashOffset -= dt * 55;
+    animLoopDrive.setAttribute('stroke-dashoffset', svgDashOffset.toFixed(1));
+    animLoopDrill.setAttribute('stroke-dashoffset', svgDashOffset.toFixed(1));
+  }
+
+  renderer.render(scene, camera);
+  updateCallouts2D();
+}
+
+window.addEventListener('resize', () => syncViewportSize(true));
+
+syncViewportSize(true);
+frameModelAutomatically();
+selectPart(2);
+setPedagogicalMode('examen');
+setViewMode('ext');
+setTimeout(() => syncViewportSize(true), 120);
+setTimeout(() => syncViewportSize(true), 450);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

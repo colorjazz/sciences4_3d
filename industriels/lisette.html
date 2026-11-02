@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tunnelier « Lisette » (Projet Ligne Bleue STM) — Modèle d'Examen ST/ATS 4e sec. (MEQ)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --ink: #111111;
+      --paper: #ffffff;
+      --panel-bg: #f6f6f6;
+      --border: #1a1a1a;
+      --accent: #0055cc;
+      --accent-soft: #e6f0ff;
+      --muted: #555555;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 620px;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+      min-height: 620px;
+    }
+
+    /* EN-TÊTE STYLE CAHIER D'EXAMEN MEQ */
+    header {
+      border-bottom: 2px solid var(--border);
+      background: var(--paper);
+      padding: 7px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .exam-title-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .meq-badge {
+      border: 2px solid var(--border);
+      font-weight: 800;
+      padding: 3px 7px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .exam-title {
+      font-weight: 700;
+      font-size: 13.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .exam-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .btn-group {
+      display: inline-flex;
+      border: 1.5px solid var(--border);
+      background: var(--paper);
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--paper);
+      color: var(--ink);
+      padding: 5px 9px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    button:last-child {
+      border-right: none;
+    }
+
+    button:hover {
+      background: #eaeaea;
+    }
+
+    button.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    button.power-btn {
+      border: 1.5px solid var(--border);
+      font-weight: 700;
+    }
+
+    button.power-btn.running {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* ZONE PRINCIPALE */
+    #workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 395px;
+      grid-template-rows: minmax(460px, 1fr);
+      min-height: 460px;
+      position: relative;
+    }
+
+    #viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      background: #ffffff;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      display: block;
+    }
+
+    /* CALQUE SVG + HTML POUR LES REPÈRES NUMÉROTÉS */
+    #callout-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #callout-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .callout-badge {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #ffffff;
+      border: 1.8px solid #111111;
+      border-radius: 14px;
+      padding: 2px 7px;
+      min-width: 24px;
+      height: 24px;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #111111;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      white-space: nowrap;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .callout-badge:hover {
+      border-color: var(--accent);
+    }
+
+    .callout-badge.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      z-index: 10;
+    }
+
+    .callout-badge .part-label {
+      font-weight: 600;
+      font-size: 11px;
+      display: none;
+    }
+
+    body.mode-correction .callout-badge .part-label {
+      display: inline;
+    }
+
+    /* ÉTIQUETTES PÉDAGOGIQUES FLOTTANTES */
+    .floating-tag {
+      position: absolute;
+      pointer-events: none;
+      background: #ffffff;
+      border: 1.5px solid var(--ink);
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      transform: translate(-50%, -50%);
+      z-index: 7;
+      white-space: nowrap;
+    }
+
+    .floating-tag.energy-tag {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* AIDE NAVIGATION BAS GAUCHE */
+    #viewport-hud {
+      position: absolute;
+      left: 10px;
+      bottom: 8px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--border);
+      padding: 5px 8px;
+      font-size: 11px;
+      line-height: 1.3;
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    /* PANNEAU LATÉRAL (SCHÉMA ÉLECTRIQUE, CINÉMATIQUE, FICHE PIÈCE) */
+    #side-panel {
+      border-left: 2px solid var(--border);
+      background: var(--panel-bg);
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1.5px solid var(--border);
+      padding: 9px 10px;
+    }
+
+    .card-title {
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .part-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .part-num-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.8px solid var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .part-num-circle.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dotted #cccccc;
+      padding: 3px 0;
+      font-size: 12px;
+      gap: 8px;
+    }
+
+    .kv-row:last-child {
+      border-bottom: none;
+    }
+
+    .kv-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .kv-val {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .exam-masked {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .formula-box {
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: #f0f0f0;
+      border-left: 3px solid var(--ink);
+      font-family: "Courier New", monospace;
+      font-size: 11.2px;
+      line-height: 1.38;
+    }
+
+    /* LISTE DES 13 PIÈCES CLIQUABLES */
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+
+    .part-chip {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      padding: 4px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-align: left;
+    }
+
+    .part-chip.selected {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .part-chip b {
+      display: inline-block;
+      min-width: 16px;
+    }
+
+    /* RESPONSIVE MOBILE */
+    @media (max-width: 880px) {
+      #workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(360px, 55vh) 1fr;
+      }
+      #viewport, #three-canvas {
+        min-height: 360px;
+      }
+      #side-panel {
+        border-left: none;
+        border-top: 2px solid var(--border);
+      }
+      .exam-subtitle, #viewport-hud {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="mode-examen">
+<div id="app">
+  <header>
+    <div class="exam-title-block">
+      <span class="meq-badge">MEQ • ST / ATS 4e SEC.</span>
+      <div>
+        <div class="exam-title">Analyse technologique — Tunnelier « Lisette » (Projet Ligne Bleue STM)</div>
+        <div class="exam-subtitle">Roue de coupe 9,7 m (flèche STM) • Vis d'extraction inclinée • Vérins de poussée • Érecteur & Chariots</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="btn-group" aria-label="Mode pédagogique">
+        <button id="btn-mode-examen" class="active" title="Affiche uniquement les numéros">Mode Examen</button>
+        <button id="btn-mode-correction" title="Affiche les noms, fonctions, liaisons et énergies">Mode Correction</button>
+      </div>
+
+      <div class="btn-group" aria-label="Modes de vue">
+        <button id="btn-view-ext">1. Vue extérieure</button>
+        <button id="btn-view-cut" class="active">2. Vue en coupe</button>
+        <button id="btn-view-exp">3. Vue éclatée</button>
+      </div>
+
+      <div class="btn-group" aria-label="Angles rapides">
+        <button id="btn-cam-side" title="Vue longitudinale de côté (comme l'infographie PLB)">Profil</button>
+        <button id="btn-cam-front" title="Vue de face de la roue de coupe de 9,7 m avec flèche STM">Face (Flèche)</button>
+      </div>
+
+      <button id="btn-power" class="power-btn" title="Actionner le creusement, la vis d'extraction (9) et le convoyeur (13)">4. Creusement : ARRÊT</button>
+      <button id="btn-env" class="active" style="border:1.5px solid #1a1a1a;" title="Développer, réduire ou faire le vide autour du tunnelier">Contexte : MONTRÉAL</button>
+      <button id="btn-scale" style="border:1.5px solid #1a1a1a;" title="Ajuster l'échelle d'affichage">Taille : 100%</button>
+    </div>
+  </header>
+
+  <div id="workspace">
+    <!-- VUE 3D INTERACTIVE -->
+    <div id="viewport">
+      <canvas id="three-canvas"></canvas>
+      <svg id="callout-svg"></svg>
+      <div id="callout-layer"></div>
+      <div id="viewport-hud">
+        <strong>Contrôles 3D :</strong> Glisser = Orienter • Pincer / Molette = Zoomer • Cliquer roue <b>(1)</b>, cabine <b>(4)</b> ou vis <b>(9)</b>
+      </div>
+    </div>
+
+    <!-- PANNEAU TECHNIQUE LATÉRAL -->
+    <div id="side-panel">
+      <!-- FICHE DE LA PIÈCE SÉLECTIONNÉE -->
+      <div class="card">
+        <div class="card-title">
+          <span>Pièce sélectionnée</span>
+          <span id="mode-indicator-label">MODE EXAMEN</span>
+        </div>
+        <div class="part-detail-header">
+          <span id="detail-num" class="part-num-circle active">1</span>
+          <div>
+            <div id="detail-name" style="font-weight:700; font-size:13px;">Pièce n° 1 (Mode Examen)</div>
+            <div id="detail-sub" style="font-size:11px; color:var(--muted);">Cliquez sur « Mode Correction » pour révéler la nomenclature</div>
+          </div>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Fonction technique :</span>
+          <span id="detail-func" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Liaison / Guidage / Mécanisme :</span>
+          <span id="detail-link" class="kv-val exam-masked">Masqué en mode examen</span>
+        </div>
+      </div>
+
+      <!-- CIRCUIT ÉLECTRIQUE NORMALISÉ PFEQ -->
+      <div class="card">
+        <div class="card-title">
+          <span>Schéma de principes — Usine souterraine</span>
+          <span id="circuit-state-badge" style="font-weight:700;">CIRCUIT OUVERT</span>
+        </div>
+        <svg id="circuit-svg" viewBox="0 0 340 175" width="100%" height="156" style="background:#ffffff; border:1px solid #ccc; display:block;">
+          <!-- Alimentation (5) + Fusible (5) + Interrupteur Cabine de pilotage (4) -->
+          <line x1="42" y1="32" x2="72" y2="32" stroke="#111" stroke-width="2.2" />
+          <rect x="72" y="25" width="28" height="14" fill="#fff" stroke="#111" stroke-width="2" />
+          <line x1="72" y1="32" x2="100" y2="32" stroke="#111" stroke-width="1.4" />
+          <text x="86" y="20" font-size="9" font-weight="700" text-anchor="middle" fill="#111">Fusible (5)</text>
+
+          <line x1="100" y1="32" x2="134" y2="32" stroke="#111" stroke-width="2.2" />
+          <circle cx="137" cy="32" r="3.2" fill="#fff" stroke="#111" stroke-width="2" />
+          <circle cx="176" cy="32" r="3.2" fill="#fff" stroke="#111" stroke-width="2" />
+          <line id="svg-sw-main" x1="140" y1="31" x2="173" y2="15" stroke="#111" stroke-width="2.5" stroke-linecap="round" style="cursor:pointer;" />
+          <text x="157" y="12" font-size="9.5" font-weight="700" text-anchor="middle" fill="#111">(4) Cabine</text>
+
+          <line x1="179" y1="32" x2="295" y2="32" stroke="#111" stroke-width="2.2" />
+
+          <!-- Branche M1 : Moteurs de la roue de coupe (7) -->
+          <line x1="222" y1="32" x2="222" y2="58" stroke="#111" stroke-width="2.2" />
+          <circle cx="222" cy="76" r="17" fill="#fff" stroke="#111" stroke-width="2.2" />
+          <text x="222" y="81" font-size="12" font-weight="800" text-anchor="middle" fill="#111">M₁</text>
+          <line x1="222" y1="93" x2="222" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Branche M2 : Vis d'extraction (9) & Convoyeur (13) + DEL témoin -->
+          <line x1="295" y1="32" x2="295" y2="58" stroke="#111" stroke-width="2.2" />
+          <circle cx="295" cy="76" r="17" fill="#fff" stroke="#111" stroke-width="2.2" />
+          <text x="295" y="81" font-size="12" font-weight="800" text-anchor="middle" fill="#111">M₂</text>
+          <line x1="295" y1="93" x2="295" y2="108" stroke="#111" stroke-width="2.2" />
+          <polygon id="svg-led-tbm" points="287,108 303,108 295,122" fill="#fff" stroke="#111" stroke-width="2" />
+          <line x1="286" y1="122" x2="304" y2="122" stroke="#111" stroke-width="2.2" />
+          <line x1="295" y1="122" x2="295" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Retour conducteur (6) -->
+          <line x1="295" y1="138" x2="42" y2="138" stroke="#111" stroke-width="2.2" />
+
+          <!-- Source CC / Alimentation du tunnelier (5) -->
+          <line x1="42" y1="32" x2="42" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="42" y1="94" x2="42" y2="138" stroke="#111" stroke-width="2.2" />
+          <line x1="27" y1="68" x2="57" y2="68" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="75" x2="50" y2="75" stroke="#111" stroke-width="3.6" />
+          <line x1="27" y1="84" x2="57" y2="84" stroke="#111" stroke-width="2.2" />
+          <line x1="34" y1="91" x2="50" y2="91" stroke="#111" stroke-width="3.6" />
+          <text x="17" y="67" font-size="11" font-weight="700" fill="#111">+</text>
+          <text x="18" y="98" font-size="12" font-weight="700" fill="#111">−</text>
+
+          <rect id="anim-loop-main" x="42" y="32" width="253" height="106" fill="none" stroke="#0055cc" stroke-width="2.5" stroke-dasharray="6 10" opacity="0" />
+
+          <g font-size="9.2" font-weight="700" fill="#111">
+            <text x="6" y="153">(5) Alimentation</text>
+            <text x="130" y="131" text-anchor="middle">(6) Conduction</text>
+            <text x="218" y="153" text-anchor="middle">(7) Coupe M₁</text>
+            <text x="292" y="153" text-anchor="middle">(9, 13) Évacuation M₂</text>
+            <text x="175" y="167" font-weight="400" fill="#555" text-anchor="middle">Énergie électrique → mécanique (forage du roc et transport)</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- CINÉMATIQUE & MÉCANISMES (PFEQ) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Cinématique & Caractéristiques PLB</span>
+          <span>Temps réel</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Roue de coupe (1) (Ø 9,7 m) :</span>
+          <span class="kv-val">Z₁=12 → Z₂=48 (r = 1/4) | ω = <span id="kin-rpm">0.0</span> tr/min</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Vérins de poussée (8) (×16) :</span>
+          <span class="kv-val">Course Δx = <span id="kin-jack">0</span> / 1500 mm</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Vis d'extraction inclinée (9) :</span>
+          <span class="kv-val">Rotation → Translation de la terre broyée</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Érecteur (10) & Chariots (12) :</span>
+          <span class="kv-val">Longueur totale usine = 150 m</span>
+        </div>
+        <div class="formula-box">
+          <strong>1. Transmission (Engrenages droits 7) :</strong><br/>
+          ω_roue = ω_moteur × (12 / 48) = ω_moteur / 4 (réduction de vitesse ⇒ multiplication du couple par 4 pour broyer le calcaire).<br/>
+          <strong>2. Transformation (Vis d'Archimède inclinée 9) :</strong><br/>
+          La vis sans fin puise le roc dans la chambre d'extraction (3) et le monte vers le convoyeur (13).<br/>
+          <strong>3. Guidage en translation (Vérins 8 & Chariots 12) :</strong><br/>
+          Les vérins prennent appui sur les voussoirs (11) pour faire avancer le bouclier (2).
+        </div>
+      </div>
+
+      <!-- RÉPERTOIRE DES 13 PIÈCES -->
+      <div class="card">
+        <div class="card-title">
+          <span>Nomenclature officielle (13 pièces)</span>
+          <span>Cliquer pour cibler</span>
+        </div>
+        <div id="parts-grid" class="parts-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   1. DONNÉES PÉDAGOGIQUES PFEQ & INFOGRAPHIE PROJET LIGNE BLEUE (13 PIÈCES)
+   ============================================================================ */
+const PARTS_DATA = [
+  {
+    id: 1,
+    name: "Roue de coupe frontale (Ø 9,7 m, molettes et flèche STM)",
+    func: "Forer et broyer le roc calcaire montréalais grâce à ses molettes en carbure et laisser entrer la terre broyée par ses ouvertures.",
+    link: "Liaison pivot (guidage en rotation) à l'avant du bouclier (2) ; arbore la flèche emblématique du Projet ligne bleue."
+  },
+  {
+    id: 2,
+    name: "Bouclier en acier et cloison étanche",
+    func: "Soutenir la cavité fraîchement excavée, protéger les travailleurs et isoler la chambre d'extraction sous pression (3).",
+    link: "Cylindre d'acier haute résistance en liaison glissière (guidé en translation) dans le tunnel rocheux."
+  },
+  {
+    id: 3,
+    name: "Chambre d'extraction (front de taille)",
+    func: "Recueillir et brasser la roche et la terre broyées derrière la roue de coupe (1) avant leur évacuation par la vis (9).",
+    link: "Compartiment avant délimité par la roue de coupe (1) et la cloison étanche du bouclier (2)."
+  },
+  {
+    id: 4,
+    name: "Cabine de pilotage et pupitre de commande",
+    func: "Fonction de COMMANDE : contrôler le guidage numérique de l'avancée du tunnelier, la sécurité et fermer le circuit électrique.",
+    link: "Liaison d'encastrement sur le pont supérieur de la remorque-usine ; contient l'interrupteur principal."
+  },
+  {
+    id: 5,
+    name: "Poste d'alimentation électrique et fusible",
+    func: "Fonctions d'ALIMENTATION (fournir l'énergie électrique aux moteurs) et de PROTECTION (couper le circuit en cas de surcharge).",
+    link: "Transformateurs et armoires encastrés sur la remorque arrière de 150 m."
+  },
+  {
+    id: 6,
+    name: "Câbles conducteurs haute puissance (conduction)",
+    func: "Fonction de CONDUCTION : acheminer le courant électrique du poste d'alimentation (5) vers la cabine (4) et les moteurs (7).",
+    link: "Conducteurs en cuivre sous gaine isolante blindée courant le long des passerelles."
+  },
+  {
+    id: 7,
+    name: "Moteurs électriques et engrenages droits (Z₁=12, Z₂=48)",
+    func: "TRANSFORMATION D'ÉNERGIE (électrique → mécanique) et TRANSMISSION DU MOUVEMENT (réduction ÷4 pour un couple géant).",
+    link: "Pignon moteur engrenant sur la grande couronne dentée solidaire de la roue de coupe (1)."
+  },
+  {
+    id: 8,
+    name: "Couronne de vérins de poussée hydrauliques (×16)",
+    func: "S'appuyer sur le dernier anneau de voussoirs en béton (11) pour propulser tout le tunnelier vers l'avant en translation.",
+    link: "Guidage en translation rectiligne ; disposés en cage circulaire derrière la cloison étanche (2)."
+  },
+  {
+    id: 9,
+    name: "Vis d'extraction inclinée (vis d'Archimède)",
+    func: "TRANSFORMATION DU MOUVEMENT : extraire les déblais rocheux du bas de la chambre (3) et les monter jusqu'au convoyeur (13).",
+    link: "Vis sans fin hélicoïdale en liaison pivot dans un tube incliné traversant la cloison étanche (2)."
+  },
+  {
+    id: 10,
+    name: "Érecteur rotatif de voussoirs (bras robotisé)",
+    func: "Saisir les segments de béton préfabriqués amenés par le chariot (12) et les assembler en cercle pour former le tunnel (11).",
+    link: "Liaison pivot centrale (couronne tournante sur 360°) combinée à un vérin de translation radiale."
+  },
+  {
+    id: 11,
+    name: "Anneaux de voussoirs en béton préfabriqué",
+    func: "Constituer le revêtement définitif et étanche des parois du tunnel du métro et reprendre la poussée des vérins (8).",
+    link: "Liaison d'encastrement entre les segments arqués boulonnés en anneaux successifs."
+  },
+  {
+    id: 12,
+    name: "Chariots sur rails (approvisionnement en voussoirs)",
+    func: "Circuler au niveau inférieur du train-usine pour amener les voussoirs de béton préfabriqués jusqu'à l'érecteur (10).",
+    link: "Guidage en translation rectiligne sur les rails inférieurs par des roues à boudin en liaison pivot."
+  },
+  {
+    id: 13,
+    name: "Convoyeur à bande supérieur (évacuation des déblais)",
+    func: "TRANSMISSION DU MOUVEMENT (poulies et courroie sans fin) : évacuer la terre broyée reçue de la vis (9) vers l'arrière du tunnel.",
+    link: "Bande transporteuse souple entraînée par des tambours moteurs et supportée par des rouleaux."
+  }
+];
+
+/* ============================================================================
+   2. INITIALISATION DE LA SCÈNE THREE.JS & STYLE VISUEL "EXAMEN MEQ"
+   ============================================================================ */
+const viewport = document.getElementById('viewport');
+const canvas = document.getElementById('three-canvas');
+const calloutSvg = document.getElementById('callout-svg');
+const calloutLayer = document.getElementById('callout-layer');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 450);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.82);
+scene.add(ambientLight);
+
+const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.30);
+dirLight1.position.set(16, 28, 24);
+scene.add(dirLight1);
+
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.16);
+dirLight2.position.set(-18, -10, -16);
+scene.add(dirLight2);
+
+// Palette monochrome officielle MEQ (gris techniques + bleu unique de sélection)
+const PALETTE = {
+  white: 0xfbfbfb,
+  veryLight: 0xf2f2f2,
+  light: 0xe4e4e4,
+  medium: 0xd0d0d0,
+  dark: 0xb6b6b6,
+  darker: 0x969696,
+  charcoal: 0x787878,
+  accent: 0x0055cc,
+  edge: 0x111111,
+  ctxEdge: 0x555555
+};
+
+const edgeMaterial = new THREE.LineBasicMaterial({ color: PALETTE.edge });
+const ctxLineMaterial = new THREE.LineBasicMaterial({ color: PALETTE.ctxEdge });
+const dashedGuideMaterial = new THREE.LineDashedMaterial({
+  color: 0x222222,
+  dashSize: 0.32,
+  gapSize: 0.18
+});
+
+const globalScaleRoot = new THREE.Group();
+scene.add(globalScaleRoot);
+
+const tbmRoot = new THREE.Group();
+globalScaleRoot.add(tbmRoot);
+
+const partGroups = {};
+const partMeshes = {};
+const partAnchors = {};
+const partExplodeVectors = {};
+const partBasePositions = {};
+const clickableMeshes = [];
+
+for (let i = 1; i <= 13; i++) {
+  const g = new THREE.Group();
+  g.name = `Piece_${i}`;
+  partGroups[i] = g;
+  partMeshes[i] = [];
+  tbmRoot.add(g);
+}
+
+function createTechnicalMaterial(hexColor, isCasing = false) {
+  return new THREE.MeshLambertMaterial({
+    color: hexColor,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+    side: isCasing ? THREE.DoubleSide : THREE.FrontSide
+  });
+}
+
+function addTechnicalMesh(partId, geometry, hexColor, parentGroup, options = {}) {
+  const mat = createTechnicalMaterial(hexColor, options.isCasing || false);
+  mat.userData.baseColor = hexColor;
+  mat.userData.partId = partId;
+  mat.userData.isCutawayHalf = options.isCutawayHalf || false;
+
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.userData.partId = partId;
+
+  const threshold = options.edgeAngle !== undefined ? options.edgeAngle : 20;
+  const edgesGeo = new THREE.EdgesGeometry(geometry, threshold);
+  const lines = new THREE.LineSegments(edgesGeo, edgeMaterial.clone());
+  lines.userData.isEdge = true;
+  mesh.add(lines);
+
+  parentGroup.add(mesh);
+  if (!partMeshes[partId]) partMeshes[partId] = [];
+  partMeshes[partId].push(mesh);
+  clickableMeshes.push(mesh);
+  return mesh;
+}
+
+/* ============================================================================
+   3. CONTEXTE MONTRÉALAIS AUTOUR DE LISETTE (RÉDUCTIBLE / COMMUTABLE)
+   ============================================================================
+   - Massif rocheux calcaire en coupe + fosse de départ voûtée (Image 4)
+   - Surface urbaine au-dessus (Rue Jean-Talon, voitures, arbres, édifices et
+     Mât incliné du Stade olympique à l'horizon comme sur l'Image 3 !)
+   ============================================================================ */
+const contextRoot = new THREE.Group();
+globalScaleRoot.add(contextRoot);
+
+const rockStratumGroup = new THREE.Group();
+const urbanSurfaceGroup = new THREE.Group();
+contextRoot.add(rockStratumGroup);
+contextRoot.add(urbanSurfaceGroup);
+
+(function buildMontrealContextEnvironment() {
+  function addContextMesh(geo, hexColor, parent) {
+    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
+      color: hexColor,
+      polygonOffset: true,
+      polygonOffsetFactor: 2,
+      polygonOffsetUnits: 2,
+      side: THREE.DoubleSide
+    }));
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 22), ctxLineMaterial));
+    parent.add(m);
+    return m;
+  }
+
+  // 1. MASSIF ROCHEUX SOUTERRAIN EN COUPE & FOSSE DE LANCEMENT (Image 1, 2, 4)
+  // Demi-voûte rocheuse arrière (Z < 0) enveloppant le tunnel de X = -7.5 à X = +7.0
+  const rockBackGeo = new THREE.CylinderGeometry(2.38, 2.38, 14.5, 28, 1, true, Math.PI * 0.5, Math.PI);
+  rockBackGeo.rotateZ(Math.PI / 2);
+  rockBackGeo.translate(-0.25, 0, 0);
+  addContextMesh(rockBackGeo, PALETTE.veryLight, rockStratumGroup);
+
+  // Front de taille rocheux devant la roue de coupe (à X = -5.75)
+  const rockFaceGeo = new THREE.BoxGeometry(1.6, 6.8, 5.4);
+  rockFaceGeo.translate(-6.45, 0.35, -0.35);
+  addContextMesh(rockFaceGeo, PALETTE.light, rockStratumGroup);
+
+  // Strates géologiques horizontales en arrière-plan (Z = -2.65)
+  const backWallGeo = new THREE.BoxGeometry(15.6, 6.8, 0.35);
+  backWallGeo.translate(0.1, 0.35, -2.65);
+  addContextMesh(backWallGeo, PALETTE.veryLight, rockStratumGroup);
+
+  // Arche en béton de la fosse de départ (comme sur la photo de face Image 4) + rails de lancement
+  const portalArchGeo = new THREE.CylinderGeometry(2.55, 2.55, 0.85, 24, 1, false, 0, Math.PI);
+  portalArchGeo.rotateZ(Math.PI / 2);
+  portalArchGeo.translate(-4.65, 0.25, 0);
+  addContextMesh(portalArchGeo, PALETTE.medium, rockStratumGroup);
+
+  // Socle de présentation "Projet ligne bleue" au pied de la roue de coupe (Image 4)
+  const plbPlinthGeo = new THREE.BoxGeometry(0.85, 0.34, 2.25);
+  plbPlinthGeo.translate(-6.05, -1.95, 0);
+  addContextMesh(plbPlinthGeo, PALETTE.dark, rockStratumGroup);
+
+  // 2. SURFACE URBAINE DE MONTRÉAL AU-DESSUS DU TUNNEL (Y = +3.75, Image 3)
+  const streetY = 3.75;
+  const streetSlabGeo = new THREE.BoxGeometry(15.6, 0.18, 5.6);
+  streetSlabGeo.translate(0.1, streetY, -0.2);
+  addContextMesh(streetSlabGeo, PALETTE.white, urbanSurfaceGroup);
+
+  // Marquage des voies de la rue Jean-Talon + terre-plein central arboré
+  const medianGeo = new THREE.BoxGeometry(14.8, 0.12, 0.55);
+  medianGeo.translate(0.1, streetY + 0.12, -0.2);
+  addContextMesh(medianGeo, PALETTE.light, urbanSurfaceGroup);
+
+  for (let tx = -5.5; tx <= 5.5; tx += 2.75) {
+    const trunkGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.55, 8);
+    trunkGeo.translate(tx, streetY + 0.42, -0.2);
+    addContextMesh(trunkGeo, PALETTE.darker, urbanSurfaceGroup);
+
+    const crownGeo = new THREE.SphereGeometry(0.42, 10, 8);
+    crownGeo.translate(tx, streetY + 0.88, -0.2);
+    addContextMesh(crownGeo, PALETTE.light, urbanSurfaceGroup);
+  }
+
+  // Petits véhicules stylisés circulant sur la chaussée en surface (Image 3)
+  [-3.2, 1.8, 4.6].forEach((cx, idx) => {
+    const zLane = (idx % 2 === 0) ? 1.15 : -1.55;
+    const carBody = new THREE.BoxGeometry(0.85, 0.26, 0.44);
+    carBody.translate(cx, streetY + 0.24, zLane);
+    addContextMesh(carBody, PALETTE.medium, urbanSurfaceGroup);
+
+    const carCabin = new THREE.BoxGeometry(0.46, 0.20, 0.38);
+    carCabin.translate(cx - 0.05, streetY + 0.44, zLane);
+    addContextMesh(carCabin, PALETTE.veryLight, urbanSurfaceGroup);
+  });
+
+  // Édifices montréalais en arrière-plan (Z = -2.1)
+  const bldgSpecs = [
+    { x: -2.2, w: 1.6, h: 1.4 },
+    { x:  0.4, w: 1.3, h: 2.3 },
+    { x:  3.2, w: 2.2, h: 1.2 },
+    { x:  6.0, w: 1.5, h: 1.7 }
+  ];
+  bldgSpecs.forEach(b => {
+    const bGeo = new THREE.BoxGeometry(b.w, b.h, 0.85);
+    bGeo.translate(b.x, streetY + b.h / 2 + 0.09, -2.15);
+    addContextMesh(bGeo, PALETTE.veryLight, urbanSurfaceGroup);
+  });
+
+  // MÂT INCLINÉ DU STADE OLYMPIQUE DE MONTRÉAL À L'HORIZON GAUCHE (Image 3 !)
+  const stadiumBaseGeo = new THREE.CylinderGeometry(1.15, 1.45, 0.55, 16);
+  stadiumBaseGeo.translate(-6.2, streetY + 0.36, -2.05);
+  addContextMesh(stadiumBaseGeo, PALETTE.light, urbanSurfaceGroup);
+
+  const mastCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-6.85, streetY + 0.35, -2.05),
+    new THREE.Vector3(-6.25, streetY + 1.45, -2.05),
+    new THREE.Vector3(-5.35, streetY + 2.85, -2.05)
+  ]);
+  const stadiumTowerGeo = new THREE.TubeGeometry(mastCurve, 16, 0.22, 8, false);
+  addContextMesh(stadiumTowerGeo, PALETTE.medium, urbanSurfaceGroup);
+
+  // Câbles de suspension du toit du Stade olympique
+  const cablePts = [
+    new THREE.Vector3(-5.35, streetY + 2.80, -2.05), new THREE.Vector3(-6.10, streetY + 0.62, -2.05),
+    new THREE.Vector3(-5.45, streetY + 2.55, -2.05), new THREE.Vector3(-5.75, streetY + 0.62, -2.05),
+    new THREE.Vector3(-5.60, streetY + 2.30, -2.05), new THREE.Vector3(-5.40, streetY + 0.62, -2.05)
+  ];
+  urbanSurfaceGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(cablePts), ctxLineMaterial));
+})();
+
+/* ============================================================================
+   4. GÉNÉRATEURS MÉCANIQUES (ENGRENAGES DROITS, VIS D'ARCHIMÈDE)
+   ============================================================================ */
+function createSpurGearGeometry(moduleM, teethCount, thickness, boreRadius) {
+  const pitchRadius = (moduleM * teethCount) / 2;
+  const addendum = moduleM * 0.9;
+  const dedendum = moduleM * 1.1;
+  const outerRadius = pitchRadius + addendum;
+  const rootRadius = Math.max(boreRadius + 0.04, pitchRadius - dedendum);
+
+  const shape = new THREE.Shape();
+  const step = (Math.PI * 2) / teethCount;
+
+  for (let i = 0; i < teethCount; i++) {
+    const a0 = i * step;
+    const a1 = a0 + step * 0.17;
+    const a2 = a0 + step * 0.29;
+    const a3 = a0 + step * 0.51;
+    const a4 = a0 + step * 0.63;
+
+    if (i === 0) shape.moveTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    else shape.lineTo(Math.cos(a0) * rootRadius, Math.sin(a0) * rootRadius);
+    shape.lineTo(Math.cos(a1) * rootRadius, Math.sin(a1) * rootRadius);
+    shape.lineTo(Math.cos(a2) * outerRadius, Math.sin(a2) * outerRadius);
+    shape.lineTo(Math.cos(a3) * outerRadius, Math.sin(a3) * outerRadius);
+    shape.lineTo(Math.cos(a4) * rootRadius, Math.sin(a4) * rootRadius);
+  }
+  shape.closePath();
+
+  if (boreRadius > 0.02) {
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, boreRadius, 0, Math.PI * 2, false);
+    shape.holes.push(hole);
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 14 });
+  geo.translate(0, 0, -thickness / 2);
+  geo.rotateY(Math.PI / 2); // Axe de rotation aligné sur X (axe du tunnel)
+  return geo;
+}
+
+function createArchimedesScrewGeometry(radius, length, coils, wireRadius) {
+  const pts = [];
+  const steps = coils * 24;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = (t - 0.5) * length;
+    const angle = t * coils * Math.PI * 2;
+    pts.push(new THREE.Vector3(x, Math.cos(angle) * radius, Math.sin(angle) * radius));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  return new THREE.TubeGeometry(curve, steps, wireRadius, 8, false);
+}
+
+/* ============================================================================
+   5. CONSTRUCTION DÉTAILLÉE DES 13 PIÈCES DU TUNNELIER « LISETTE »
+   ============================================================================ */
+// Groupes cinématiques avec origine STRICTEMENT sur leur axe de rotation ou translation
+const cutterHeadPivot = new THREE.Group();
+cutterHeadPivot.position.set(-5.30, 0, 0);
+
+const Z_PINION = 12;
+const Z_RING_GEAR = 48;
+const GEAR_MOD = 0.048;
+const R_PINION = (GEAR_MOD * Z_PINION) / 2;     // 0.288
+const R_RING_GEAR = (GEAR_MOD * Z_RING_GEAR) / 2; // 1.152
+const MOTOR_Y = R_PINION + R_RING_GEAR;         // 1.440 exact
+
+const motorPinionPivot = new THREE.Group();
+motorPinionPivot.position.set(-3.95, MOTOR_Y, 0);
+
+const mainRingGearPivot = new THREE.Group();
+mainRingGearPivot.position.set(-3.95, 0, 0);
+
+const thrustJacksMovingGroup = new THREE.Group();
+
+// Vis d'extraction inclinée (9) : part du bas de la cloison étanche (-3.85, -1.25, 0) et monte à (-0.55, +0.52, 0)
+const screwAssemblyHolder = new THREE.Group();
+screwAssemblyHolder.position.set(-2.20, -0.36, 0);
+screwAssemblyHolder.rotation.z = 0.49; // Inclinaison de 28° fidèle aux Images 2 et 3
+const screwHelixPivot = new THREE.Group();
+screwAssemblyHolder.add(screwHelixPivot);
+
+// Érecteur rotatif de voussoirs (10)
+const erectorWheelPivot = new THREE.Group();
+erectorWheelPivot.position.set(-1.15, 0, 0);
+
+// Chariots à voussoirs (12) et déblais sur le convoyeur (13)
+const segmentCartsGroup = new THREE.Group();
+const conveyorRocksArray = [];
+
+// --- PIÈCE 1 : ROUE DE COUPE FRONTALE (Ø 9,7 m, MOLETTES ET FLÈCHE STM — Image 4) ---
+(function buildCutterheadFace() {
+  const g1 = partGroups[1];
+  g1.add(cutterHeadPivot);
+
+  // Couronne périphérique blanche à godets d'excavation
+  const outerRim = new THREE.CylinderGeometry(1.94, 1.94, 0.56, 32);
+  outerRim.rotateZ(Math.PI / 2);
+  addTechnicalMesh(1, outerRim, PALETTE.white, cutterHeadPivot, { edgeAngle: 15 });
+
+  // Plateau circulaire en retrait (fond du bouclier de coupe)
+  const facePlate = new THREE.CylinderGeometry(1.62, 1.62, 0.60, 32);
+  facePlate.rotateZ(Math.PI / 2);
+  facePlate.translate(-0.04, 0, 0);
+  addTechnicalMesh(1, facePlate, PALETTE.medium, cutterHeadPivot);
+
+  // Anneau circulaire du logo STM / Projet ligne bleue en relief sur la face avant (X = -0.35)
+  const logoRing = new THREE.TorusGeometry(1.36, 0.15, 10, 32);
+  logoRing.rotateY(Math.PI / 2);
+  logoRing.translate(-0.34, 0, 0);
+  addTechnicalMesh(1, logoRing, PALETTE.dark, cutterHeadPivot);
+
+  // GRANDE FLÈCHE VERS LE BAS DU LOGO STM / PROJET LIGNE BLEUE (Image 4 !)
+  // Fût vertical de la flèche
+  const arrowStem = new THREE.BoxGeometry(0.14, 1.75, 0.36);
+  arrowStem.translate(-0.36, 0.22, 0);
+  addTechnicalMesh(1, arrowStem, PALETTE.white, cutterHeadPivot);
+
+  // Branche gauche et branche droite de la pointe de flèche (à 45° vers le bas)
+  const arrowWingLeft = new THREE.BoxGeometry(0.14, 1.12, 0.34);
+  arrowWingLeft.rotateX(Math.PI / 4);
+  arrowWingLeft.translate(-0.36, -0.32, -0.34);
+  addTechnicalMesh(1, arrowWingLeft, PALETTE.white, cutterHeadPivot);
+
+  const arrowWingRight = new THREE.BoxGeometry(0.14, 1.12, 0.34);
+  arrowWingRight.rotateX(-Math.PI / 4);
+  arrowWingRight.translate(-0.36, -0.32, 0.34);
+  addTechnicalMesh(1, arrowWingRight, cutterHeadPivot ? PALETTE.white : PALETTE.white, cutterHeadPivot);
+
+  // Rangées de molettes doubles en carbure de tungstène (Disc Cutters) + ouvertures radiales
+  for (let a = 0; a < 8; a++) {
+    const ang = (a * Math.PI * 2) / 8 + Math.PI / 8;
+    for (let rad of [0.58, 0.96, 1.32, 1.72]) {
+      const cutterRoller = new THREE.CylinderGeometry(0.11, 0.11, 0.18, 12);
+      cutterRoller.rotateZ(ang);
+      cutterRoller.translate(-0.42, Math.sin(ang) * rad, Math.cos(ang) * rad);
+      addTechnicalMesh(1, cutterRoller, PALETTE.charcoal, cutterHeadPivot);
+    }
+
+    // Fentes / Ouvertures d'admission de la terre broyée ("Ouverture" sur l'Image 2)
+    const slotBox = new THREE.BoxGeometry(0.12, 0.18, 0.52);
+    slotBox.rotateX(ang);
+    slotBox.translate(-0.35, Math.sin(ang + 0.22) * 1.12, Math.cos(ang + 0.22) * 1.12);
+    addTechnicalMesh(1, slotBox, PALETTE.charcoal, cutterHeadPivot);
+  }
+})();
+
+// --- PIÈCE 2 : BOUCLIER EN ACIER ET CLOISON ÉTANCHE (Images 1, 2, 3) ---
+(function buildSteelShieldAndBulkhead() {
+  const g2 = partGroups[2];
+
+  // Demi-cylindre arrière du bouclier en acier (Z < 0, toujours opaque)
+  const shieldBack = new THREE.CylinderGeometry(1.95, 1.95, 3.60, 28, 1, false, Math.PI * 0.5, Math.PI);
+  shieldBack.rotateZ(Math.PI / 2);
+  shieldBack.translate(-3.35, 0, 0);
+  addTechnicalMesh(2, shieldBack, PALETTE.light, g2, { isCasing: true });
+
+  // Demi-cylindre avant du bouclier en acier (Z > 0, transparent à 85% en mode "2. Vue en coupe")
+  const shieldFrontCut = new THREE.CylinderGeometry(1.95, 1.95, 3.60, 28, 1, false, -Math.PI * 0.5, Math.PI);
+  shieldFrontCut.rotateZ(Math.PI / 2);
+  shieldFrontCut.translate(-3.35, 0, 0);
+  addTechnicalMesh(2, shieldFrontCut, PALETTE.light, g2, { isCasing: true, isCutawayHalf: true });
+
+  // Cloison étanche ("2. Cloison étanche" sur l'Image 3) séparant la chambre d'extraction du reste du tunnelier
+  const bulkheadWall = new THREE.CylinderGeometry(1.90, 1.90, 0.24, 28);
+  bulkheadWall.rotateZ(Math.PI / 2);
+  bulkheadWall.translate(-3.82, 0, 0);
+  addTechnicalMesh(2, bulkheadWall, PALETTE.medium, g2);
+
+  // Anneaux de renfort internes de la cage des vérins (Image 1 & 2)
+  [-3.15, -2.35].forEach(rx => {
+    const ribRing = new THREE.TorusGeometry(1.82, 0.10, 8, 28);
+    ribRing.rotateY(Math.PI / 2);
+    ribRing.translate(rx, 0, 0);
+    addTechnicalMesh(2, ribRing, PALETTE.medium, g2);
+  });
+})();
+
+// --- PIÈCE 3 : CHAMBRE D'EXTRACTION (FRONT DE TAILLE SOUS PRESSION — Image 2 & 3) ---
+(function buildExtractionChamber() {
+  const g3 = partGroups[3];
+
+  // Volume annulaire de terre et de roc concassé en brassage derrière la roue de coupe (entre X = -5.05 et X = -3.95)
+  const chamberCore = new THREE.CylinderGeometry(1.78, 1.82, 0.92, 24, 1, false, Math.PI * 0.35, Math.PI * 1.3);
+  chamberCore.rotateZ(Math.PI / 2);
+  chamberCore.translate(-4.48, 0, 0);
+  addTechnicalMesh(3, chamberCore, PALETTE.dark, g3);
+
+  // Bras malaxeurs internes dans la chambre d'extraction
+  for (let k = 0; k < 4; k++) {
+    const mixer = new THREE.BoxGeometry(0.75, 0.18, 0.18);
+    mixer.translate(-4.48, Math.cos(k * 1.57) * 0.95, Math.sin(k * 1.57) * 0.95);
+    addTechnicalMesh(3, mixer, PALETTE.darker, g3);
+  }
+})();
+
+// --- PIÈCE 4 : CABINE DE PILOTAGE ET PUPITRE DE COMMANDE (Images 2 & 3) ---
+const cabinSwitchPivot = new THREE.Group();
+cabinSwitchPivot.position.set(1.55, 0.08, 0.55);
+partGroups[4].add(cabinSwitchPivot);
+
+(function buildPilotCabinAndBridge() {
+  const g4 = partGroups[4];
+
+  // Module de la cabine de pilotage sur la remorque-usine ("9. Cabine de pilotage" Image 3)
+  const cabinBox = new THREE.BoxGeometry(1.65, 0.92, 1.15);
+  cabinBox.translate(1.85, -0.05, 0.15);
+  addTechnicalMesh(4, cabinBox, PALETTE.light, g4);
+
+  // Deux fenêtres panoramiques d'observation + silhouettes des opérateurs
+  for (let wx of [1.45, 2.20]) {
+    const winFrame = new THREE.BoxGeometry(0.52, 0.38, 0.06);
+    winFrame.translate(wx, 0.08, 0.73);
+    addTechnicalMesh(4, winFrame, PALETTE.white, g4);
+  }
+
+  // Levier d'interrupteur principal cliquable sur le pupitre de la cabine
+  const switchHandle = new THREE.BoxGeometry(0.14, 0.28, 0.14);
+  switchHandle.translate(0, 0.12, 0.22);
+  addTechnicalMesh(4, switchHandle, PALETTE.charcoal, cabinSwitchPivot);
+
+  // Structure à 2 étages du train-usine arrière (passerelles blanches et conduites d'aération de l'Image 1)
+  const deckFloorMid = new THREE.BoxGeometry(6.8, 0.10, 2.6);
+  deckFloorMid.translate(3.1, -0.55, 0);
+  addTechnicalMesh(4, deckFloorMid, PALETTE.veryLight, g4);
+
+  const deckFloorTop = new THREE.BoxGeometry(6.8, 0.10, 2.6);
+  deckFloorTop.translate(3.1, 0.45, 0);
+  addTechnicalMesh(4, deckFloorTop, PALETTE.veryLight, g4);
+
+  // Colonnes verticales de la remorque-usine (Image 1)
+  for (let px = 0.0; px <= 6.0; px += 1.2) {
+    const post = new THREE.BoxGeometry(0.10, 1.95, 0.10);
+    post.translate(px, -0.45, 1.15);
+    addTechnicalMesh(4, post, PALETTE.white, g4);
+  }
+
+  // Grande conduite cylindrique de ventilation secondaire au sommet de l'usine (Image 1)
+  const ventDuct = new THREE.CylinderGeometry(0.28, 0.28, 6.8, 16);
+  ventDuct.rotateZ(Math.PI / 2);
+  ventDuct.translate(3.1, 1.28, -0.55);
+  addTechnicalMesh(4, ventDuct, PALETTE.light, g4);
+})();
+
+// --- PIÈCE 5 : POSTE D'ALIMENTATION ÉLECTRIQUE ET FUSIBLE ---
+(function buildPowerCabinetsAndFuse() {
+  const g5 = partGroups[5];
+  // 4 Cellules électriques moyenne tension alignées sur l'étage de la remorque (modules bleus/gris de l'Image 1)
+  for (let i = 0; i < 4; i++) {
+    const cellBox = new THREE.BoxGeometry(0.68, 0.78, 0.95);
+    cellBox.translate(3.45 + i * 0.82, -0.10, -0.25);
+    addTechnicalMesh(5, cellBox, PALETTE.dark, g5);
+  }
+
+  // Cartouche fusible haute tension en tête d'armoire
+  const fuseCyl = new THREE.CylinderGeometry(0.14, 0.14, 0.55, 14);
+  fuseCyl.rotateZ(Math.PI / 2);
+  fuseCyl.translate(3.10, 0.15, 0.35);
+  addTechnicalMesh(5, fuseCyl, PALETTE.charcoal, g5);
+})();
+
+// --- PIÈCE 6 : CÂBLES CONDUCTEURS BLINDÉS (CONDUCTION) ---
+(function buildPowerCables() {
+  const g6 = partGroups[6];
+  const cablePath = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(3.45,  0.15,  0.25),
+    new THREE.Vector3(1.85,  0.15,  0.45),
+    new THREE.Vector3(0.10,  0.85, -0.45),
+    new THREE.Vector3(-3.65, 1.35, -0.25)
+  ]);
+  addTechnicalMesh(6, new THREE.TubeGeometry(cablePath, 24, 0.055, 8, false), PALETTE.darker, g6);
+})();
+
+// --- PIÈCE 7 : MOTEURS ÉLECTRIQUES ET ENGRENAGES DROITS (Z₁=12 → Z₂=48) ---
+(function buildDriveMotorsAndGears() {
+  const g7 = partGroups[7];
+
+  // Carcasse du moteur électrique principal fixé derrière la cloison étanche
+  const motorStator = new THREE.CylinderGeometry(0.32, 0.32, 0.78, 18);
+  motorStator.rotateZ(Math.PI / 2);
+  motorStator.translate(-3.35, MOTOR_Y, 0);
+  addTechnicalMesh(7, motorStator, PALETTE.medium, g7);
+
+  // Pignon moteur (Z₁ = 12 dents)
+  g7.add(motorPinionPivot);
+  const pinionGeo = createSpurGearGeometry(GEAR_MOD, Z_PINION, 0.28, 0.08);
+  addTechnicalMesh(7, pinionGeo, PALETTE.charcoal, motorPinionPivot, { edgeAngle: 15 });
+
+  // Grande couronne dentée d'entraînement de la roue de coupe (Z₂ = 48 dents, rapport 1/4)
+  g7.add(mainRingGearPivot);
+  const ringGearGeo = createSpurGearGeometry(GEAR_MOD, Z_RING_GEAR, 0.28, 0.72);
+  addTechnicalMesh(7, ringGearGeo, PALETTE.dark, mainRingGearPivot, { edgeAngle: 15 });
+
+  motorPinionPivot.rotation.x = Math.PI / Z_PINION;
+})();
+
+// --- PIÈCE 8 : COURONNE DE VÉRINS DE POUSSÉE HYDRAULIQUES (×16 — Images 1, 2, 3) ---
+(function buildPeripheralThrustJacks() {
+  const g8 = partGroups[8];
+  g8.add(thrustJacksMovingGroup);
+
+  // 14 Vérins hydrauliques disposés en couronne périphérique (comme la cage de vérins de l'Image 1)
+  for (let i = 0; i < 14; i++) {
+    const a = (i * Math.PI * 2) / 14;
+    const r = 1.66;
+    const vy = Math.sin(a) * r;
+    const vz = Math.cos(a) * r;
+
+    // Corps de cylindre fixe (solidaire du bouclier)
+    const barrel = new THREE.CylinderGeometry(0.11, 0.11, 1.35, 12);
+    barrel.rotateZ(Math.PI / 2);
+    barrel.translate(-3.05, vy, vz);
+    addTechnicalMesh(8, barrel, PALETTE.medium, g8);
+
+    // Tige de piston mobile + patin d'appui contre le premier anneau de voussoirs en béton (11)
+    const rod = new THREE.CylinderGeometry(0.075, 0.075, 1.15, 10);
+    rod.rotateZ(Math.PI / 2);
+    rod.translate(-2.15, vy, vz);
+    addTechnicalMesh(8, rod, PALETTE.darker, thrustJacksMovingGroup);
+
+    const pad = new THREE.BoxGeometry(0.12, 0.24, 0.24);
+    pad.rotateX(a);
+    pad.translate(-1.58, vy, vz);
+    addTechnicalMesh(8, pad, PALETTE.charcoal, thrustJacksMovingGroup);
+  }
+})();
+
+// --- PIÈCE 9 : VIS D'EXTRACTION INCLINÉE (VIS D'ARCHIMÈDE — Images 2 & 3) ---
+(function buildInclinedExtractionScrew() {
+  const g9 = partGroups[9];
+  g9.add(screwAssemblyHolder);
+
+  // Demi-tube carter arrière de la vis d'extraction (ouvert sur le devant Z > 0 pour voir tourner la vis hélicoïdale !)
+  const casingShell = new THREE.CylinderGeometry(0.36, 0.36, 3.85, 20, 1, true, Math.PI, Math.PI);
+  casingShell.rotateZ(Math.PI / 2);
+  addTechnicalMesh(9, casingShell, PALETTE.medium, screwAssemblyHolder, { isCasing: true });
+
+  // Arbre central + filet hélicoïdal de la vis d'Archimède (vis sans fin)
+  const coreShaft = new THREE.CylinderGeometry(0.11, 0.11, 3.95, 14);
+  coreShaft.rotateZ(Math.PI / 2);
+  addTechnicalMesh(9, coreShaft, PALETTE.darker, screwHelixPivot);
+
+  const helixGeo = createArchimedesScrewGeometry(0.31, 3.75, 9, 0.052);
+  addTechnicalMesh(9, helixGeo, PALETTE.dark, screwHelixPivot, { edgeAngle: 24 });
+
+  // Goulotte de déversement supérieure sur le convoyeur (13)
+  const chute = new THREE.BoxGeometry(0.45, 0.48, 0.45);
+  chute.translate(-0.55, 0.32, 0);
+  addTechnicalMesh(9, chute, PALETTE.medium, g9);
+})();
+
+// --- PIÈCE 10 : ÉRECTEUR ROTATIF DE VOUSSOIRS (BRAS ROBOTISÉ — Images 2 & 3) ---
+(function buildSegmentErector() {
+  const g10 = partGroups[10];
+  g10.add(erectorWheelPivot);
+
+  // Grande couronne circulaire de l'érecteur (avec ouverture centrale pour laisser passer la vis d'extraction 9)
+  const ringFrame = new THREE.TorusGeometry(1.18, 0.12, 10, 28);
+  ringFrame.rotateY(Math.PI / 2);
+  addTechnicalMesh(10, ringFrame, PALETTE.dark, erectorWheelPivot);
+
+  // Bras radial télescopique + préhenseur arqué posant un voussoir de béton contre la paroi
+  for (let s of [-0.38, 0.38]) {
+    const armStrut = new THREE.BoxGeometry(0.18, 1.35, 0.14);
+    armStrut.translate(0, 0.55, s);
+    addTechnicalMesh(10, armStrut, PALETTE.darker, erectorWheelPivot);
+  }
+
+  const gripperHead = new THREE.CylinderGeometry(1.78, 1.78, 0.52, 16, 1, false, -0.42, 0.84);
+  gripperHead.rotateZ(Math.PI / 2);
+  addTechnicalMesh(10, gripperHead, PALETTE.charcoal, erectorWheelPivot);
+})();
+
+// --- PIÈCE 11 : ANNEAUX DE VOUSSOIRS EN BÉTON PRÉFABRIQUÉ (PAROIS DU TUNNEL — Images 1, 2, 3) ---
+(function buildPrecastConcreteTunnelRings() {
+  const g11 = partGroups[11];
+
+  // 9 Anneaux successifs de voussoirs en béton de X = -1.45 à X = +6.15
+  for (let r = 0; r < 9; r++) {
+    const rx = -1.10 + r * 0.88;
+
+    // 4 Voussoirs arrière/haut/bas (toujours opaques pour former la coupe longitudinale du tunnel)
+    for (let s = 0; s < 4; s++) {
+      const aStart = Math.PI * 0.42 + s * (Math.PI * 1.16 / 4);
+      const segGeo = new THREE.CylinderGeometry(1.94, 1.94, 0.84, 14, 1, false, aStart, 0.86);
+      segGeo.rotateZ(Math.PI / 2);
+      segGeo.translate(rx, 0, 0);
+      addTechnicalMesh(11, segGeo, PALETTE.veryLight, g11, { isCasing: true });
+    }
+
+    // 2 Voussoirs côté avant (Z > 0) — deviennent transparents à 85% en mode "2. Vue en coupe"
+    for (let s = 0; s < 2; s++) {
+      const aStart = -Math.PI * 0.42 + s * 0.84;
+      const segCutGeo = new THREE.CylinderGeometry(1.94, 1.94, 0.84, 12, 1, false, aStart, 0.80);
+      segCutGeo.rotateZ(Math.PI / 2);
+      segCutGeo.translate(rx, 0, 0);
+      addTechnicalMesh(11, segCutGeo, PALETTE.veryLight, g11, { isCasing: true, isCutawayHalf: true });
+    }
+  }
+})();
+
+// --- PIÈCE 12 : CHARIOTS SUR RAILS (AMÈNENT LES VOUSSOIRS — Image 3 n° 4) ---
+(function buildSegmentSupplyCarts() {
+  const g12 = partGroups[12];
+
+  // 2 Rails longitudinaux au plancher inférieur du tunnel
+  for (let rz of [-0.42, 0.42]) {
+    const rail = new THREE.BoxGeometry(7.8, 0.08, 0.08);
+    rail.translate(2.55, -1.52, rz);
+    addTechnicalMesh(12, rail, PALETTE.charcoal, g12);
+  }
+
+  g12.add(segmentCartsGroup);
+
+  // 4 Chariots porte-voussoirs alignés au niveau inférieur (exactement comme sur le schéma PLB Image 3 !)
+  [0.25, 1.75, 3.25, 4.75].forEach((cx) => {
+    const cartFrame = new THREE.BoxGeometry(1.05, 0.14, 0.92);
+    cartFrame.translate(cx, -1.32, 0);
+    addTechnicalMesh(12, cartFrame, PALETTE.darker, segmentCartsGroup);
+
+    // 4 Roues en liaison pivot sous chaque chariot
+    for (let wx of [-0.36, 0.36]) {
+      for (let wz of [-0.42, 0.42]) {
+        const wheel = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 12);
+        wheel.translate(cx + wx, -1.40, wz);
+        addTechnicalMesh(12, wheel, PALETTE.charcoal, segmentCartsGroup);
+      }
+    }
+
+    // Voussoir arqué en béton préfabriqué posé sur le berceau du chariot (Image 3 !)
+    const curvedSeg = new THREE.CylinderGeometry(0.95, 0.95, 0.72, 14, 1, false, Math.PI * 0.72, Math.PI * 0.56);
+    curvedSeg.rotateZ(Math.PI / 2);
+    curvedSeg.translate(cx, -0.25, 0);
+    addTechnicalMesh(12, curvedSeg, PALETTE.light, segmentCartsGroup);
+  });
+})();
+
+// --- PIÈCE 13 : CONVOYEUR À BANDE SUPÉRIEUR (ÉVACUATION DES DÉBLAIS — Images 2 & 3 n° 5) ---
+(function buildMainBeltConveyor() {
+  const g13 = partGroups[13];
+
+  // Rampe inclinée de réception sous la vis d'extraction (de X = -0.65 à X = +0.85) puis tapis horizontal jusqu'à X = +6.45
+  const beltCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.65, 0.12, -0.15),
+    new THREE.Vector3( 0.85, 0.62, -0.15),
+    new THREE.Vector3( 6.45, 0.62, -0.15)
+  ]);
+  const beltGeo = new THREE.TubeGeometry(beltCurve, 28, 0.14, 8, false);
+  addTechnicalMesh(13, beltGeo, PALETTE.charcoal, g13);
+
+  // Blocs de roche calcaire excavée circulant sur le convoyeur (animés lorsque le tunnelier creuse)
+  for (let i = 0; i < 10; i++) {
+    const rockChunkGeo = new THREE.DodecahedronGeometry(0.14, 0);
+    const chunkMesh = addTechnicalMesh(13, rockChunkGeo, PALETTE.medium, g13);
+    chunkMesh.userData.progress = i / 10;
+    conveyorRocksArray.push(chunkMesh);
+  }
+})();
+
+/* ============================================================================
+   6. POINTS D'ANCRAGE 3D DES 13 REPÈRES & VECTEURS DE VUE ÉCLATÉE
+   ============================================================================ */
+const ANCHOR_COORDS = {
+  1:  new THREE.Vector3(-5.55,  0.45,  0.65), // 1. Roue de coupe (9,7 m + flèche STM)
+  2:  new THREE.Vector3(-3.35,  1.95,  0.00), // 2. Bouclier en acier et cloison étanche
+  3:  new THREE.Vector3(-4.48, -1.25,  0.55), // 3. Chambre d'extraction
+  4:  new THREE.Vector3( 1.85,  0.15,  0.75), // 4. Cabine de pilotage (commande)
+  5:  new THREE.Vector3( 4.65, -0.10, -0.25), // 5. Poste d'alimentation et fusible
+  6:  new THREE.Vector3( 0.10,  0.85, -0.45), // 6. Câbles conducteurs (conduction)
+  7:  new THREE.Vector3(-3.95,  1.44,  0.00), // 7. Moteurs et engrenages droits
+  8:  new THREE.Vector3(-2.45, -1.66,  0.45), // 8. Vérins de poussée
+  9:  new THREE.Vector3(-2.15, -0.35,  0.35), // 9. Vis d'extraction inclinée
+  10: new THREE.Vector3(-1.15,  1.35,  0.00), // 10. Érecteur de voussoirs
+  11: new THREE.Vector3( 2.45,  1.94,  0.00), // 11. Anneaux de voussoirs en béton
+  12: new THREE.Vector3( 1.75, -1.32,  0.45), // 12. Chariots amène-voussoirs
+  13: new THREE.Vector3( 3.25,  0.68, -0.15)  // 13. Convoyeur d'évacuation des déblais
+};
+
+const EXPLODE_OFFSETS = {
+  1:  new THREE.Vector3(-3.60,  0.00,  0.00),
+  2:  new THREE.Vector3(-1.50,  1.65,  0.00),
+  3:  new THREE.Vector3(-2.55, -1.55,  0.00),
+  4:  new THREE.Vector3( 1.40,  0.85,  1.80),
+  5:  new THREE.Vector3( 2.80,  0.55, -1.60),
+  6:  new THREE.Vector3( 0.00,  2.15, -1.20),
+  7:  new THREE.Vector3(-1.60,  2.65,  0.00),
+  8:  new THREE.Vector3(-0.80, -2.15,  0.00),
+  9:  new THREE.Vector3(-0.60, -0.85,  2.20),
+  10: new THREE.Vector3( 0.00,  2.35,  1.40),
+  11: new THREE.Vector3( 2.60,  1.85,  0.00),
+  12: new THREE.Vector3( 2.20, -2.15,  0.00),
+  13: new THREE.Vector3( 2.40,  1.25,  0.00)
+};
+
+for (let i = 1; i <= 13; i++) {
+  const anchorObj = new THREE.Object3D();
+  anchorObj.position.copy(ANCHOR_COORDS[i]);
+  partGroups[i].add(anchorObj);
+  partAnchors[i] = anchorObj;
+  partBasePositions[i] = partGroups[i].position.clone();
+  partExplodeVectors[i] = EXPLODE_OFFSETS[i];
+}
+
+const explodeGuideGroup = new THREE.Group();
+explodeGuideGroup.visible = false;
+tbmRoot.add(explodeGuideGroup);
+
+(function buildExplodeGuides() {
+  const gPts = [
+    [new THREE.Vector3(-9.5, 0, 0), new THREE.Vector3(9.5, 0, 0)],
+    [new THREE.Vector3(-3.35, -3.5, 0), new THREE.Vector3(-3.35, 4.2, 0)],
+    [new THREE.Vector3(2.45, -3.5, 0), new THREE.Vector3(2.45, 3.8, 0)]
+  ];
+  gPts.forEach(pair => {
+    const geo = new THREE.BufferGeometry().setFromPoints(pair);
+    const l = new THREE.Line(geo, dashedGuideMaterial);
+    l.computeLineDistances();
+    explodeGuideGroup.add(l);
+  });
+})();
+
+/* ============================================================================
+   7. CRÉATION DES PASTILLES NUMÉROTÉES HTML/SVG & DE LA NOMENCLATURE
+   ============================================================================ */
+const calloutBadges = {};
+const calloutLines = {};
+const partChips = {};
+const partsGridEl = document.getElementById('parts-grid');
+
+PARTS_DATA.forEach((p) => {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('stroke', '#111111');
+  line.setAttribute('stroke-width', '1.4');
+  calloutSvg.appendChild(line);
+  calloutLines[p.id] = line;
+
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('r', '2.8');
+  dot.setAttribute('fill', '#111111');
+  calloutSvg.appendChild(dot);
+  line.anchorDot = dot;
+
+  const badge = document.createElement('div');
+  badge.className = 'callout-badge';
+  badge.innerHTML = `<span class="part-num">${p.id}</span><span class="part-label">${p.name.split('(')[0].trim()}</span>`;
+  badge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectPart(p.id);
+    if (p.id === 4 || p.id === 1 || p.id === 9) togglePower();
+  });
+  calloutLayer.appendChild(badge);
+  calloutBadges[p.id] = badge;
+
+  const chip = document.createElement('button');
+  chip.className = 'part-chip';
+  chip.innerHTML = `<b>${p.id}.</b> <span class="chip-text">Pièce ${p.id}</span>`;
+  chip.addEventListener('click', () => selectPart(p.id));
+  partsGridEl.appendChild(chip);
+  partChips[p.id] = chip;
+});
+
+const energyTag = document.createElement('div');
+energyTag.className = 'floating-tag energy-tag';
+energyTag.style.display = 'none';
+energyTag.textContent = '⚡ Électrique (5) → ⚙️ Engrenages (7) & Roue de coupe Ø 9,7 m (1)';
+calloutLayer.appendChild(energyTag);
+
+const screwFlowTag = document.createElement('div');
+screwFlowTag.className = 'floating-tag';
+screwFlowTag.style.display = 'none';
+screwFlowTag.textContent = '↗ Vis d’extraction (9) → Convoyeur (13) : Évacuation de la terre broyée';
+calloutLayer.appendChild(screwFlowTag);
+
+/* ============================================================================
+   8. GESTION DES MODES (EXAMEN / CORRECTION), VUES (1, 2, 3) ET CONTEXTE
+   ============================================================================ */
+let currentMode = 'examen';
+let currentView = 'cut'; // Démarre en Vue en coupe longitudinale comme les images PLB !
+let selectedPartId = 1;
+let isRunning = false;
+let explodeProgress = 0;
+let targetExplodeProgress = 0;
+
+function selectPart(partId) {
+  selectedPartId = partId;
+  const data = PARTS_DATA.find(d => d.id === partId);
+
+  for (let i = 1; i <= 13; i++) {
+    const isSel = (i === partId);
+    partMeshes[i].forEach(mesh => {
+      mesh.material.color.setHex(isSel ? PALETTE.accent : mesh.material.userData.baseColor);
+    });
+    calloutBadges[i].classList.toggle('selected', isSel);
+    calloutLines[i].setAttribute('stroke', isSel ? '#0055cc' : '#111111');
+    calloutLines[i].setAttribute('stroke-width', isSel ? '2.2' : '1.3');
+    calloutLines[i].anchorDot.setAttribute('fill', isSel ? '#0055cc' : '#111111');
+    partChips[i].classList.toggle('selected', isSel);
+  }
+
+  updateDetailCard(data);
+}
+
+function updateDetailCard(data) {
+  document.getElementById('detail-num').textContent = data.id;
+  const nameEl = document.getElementById('detail-name');
+  const subEl = document.getElementById('detail-sub');
+  const funcEl = document.getElementById('detail-func');
+  const linkEl = document.getElementById('detail-link');
+
+  if (currentMode === 'examen') {
+    nameEl.textContent = `Pièce n° ${data.id} (À identifier)`;
+    subEl.textContent = `Mode Examen : identifiez le nom, la fonction et le mécanisme de cette pièce.`;
+    funcEl.textContent = `Masqué en mode examen`;
+    funcEl.classList.add('exam-masked');
+    linkEl.textContent = `Masqué en mode examen`;
+    linkEl.classList.add('exam-masked');
+  } else {
+    nameEl.textContent = data.name;
+    subEl.textContent = `Nomenclature officielle Projet ligne bleue / ST-ATS 4e sec.`;
+    funcEl.textContent = data.func;
+    funcEl.classList.remove('exam-masked');
+    linkEl.textContent = data.link;
+    linkEl.classList.remove('exam-masked');
+  }
+}
+
+function setPedagogicalMode(mode) {
+  currentMode = mode;
+  document.body.className = (mode === 'correction') ? 'mode-correction' : 'mode-examen';
+  document.getElementById('btn-mode-examen').classList.toggle('active', mode === 'examen');
+  document.getElementById('btn-mode-correction').classList.toggle('active', mode === 'correction');
+  document.getElementById('mode-indicator-label').textContent = mode === 'correction' ? 'MODE CORRECTION' : 'MODE EXAMEN';
+
+  PARTS_DATA.forEach(p => {
+    const span = partChips[p.id].querySelector('.chip-text');
+    span.textContent = (mode === 'correction') ? p.name.split('(')[0].trim() : `Pièce ${p.id}`;
+  });
+
+  energyTag.style.display = (mode === 'correction') ? 'block' : 'none';
+  screwFlowTag.style.display = (mode === 'correction') ? 'block' : 'none';
+
+  updateDetailCard(PARTS_DATA.find(d => d.id === selectedPartId));
+}
+
+function setViewMode(view) {
+  currentView = view;
+  document.getElementById('btn-view-ext').classList.toggle('active', view === 'ext');
+  document.getElementById('btn-view-cut').classList.toggle('active', view === 'cut');
+  document.getElementById('btn-view-exp').classList.toggle('active', view === 'exp');
+
+  targetExplodeProgress = (view === 'exp') ? 1 : 0;
+  explodeGuideGroup.visible = (view === 'exp');
+
+  // En Vue en coupe, la moitié avant du bouclier (2) et des voussoirs (11) devient transparente à 86%
+  [2, 11].forEach(id => {
+    partMeshes[id].forEach(mesh => {
+      if (mesh.material.userData.isCutawayHalf) {
+        if (view === 'cut') {
+          mesh.material.transparent = true;
+          mesh.material.opacity = 0.14;
+          mesh.material.depthWrite = false;
+        } else {
+          mesh.material.transparent = false;
+          mesh.material.opacity = 1.0;
+          mesh.material.depthWrite = true;
+        }
+        mesh.material.needsUpdate = true;
+      }
+    });
+  });
+
+  setTimeout(() => frameModelAutomatically(view === 'exp' ? 1 : 0), 30);
+}
+
+/* ============================================================================
+   9. CONTRÔLES CAMÉRA PAR POINTER EVENTS & VUES PROFIL / FACE (FLÈCHE STM)
+   ============================================================================ */
+let camSpherical = {
+  radius: 19.5,
+  theta: -0.28, // Vue longitudinale 3/4 gauche montrant à la fois le profil en coupe ET la roue de coupe à flèche STM !
+  phi: 1.38
+};
+const camTarget = new THREE.Vector3(-0.35, 0.15, 0);
+
+function updateCameraFromSpherical() {
+  camSpherical.phi = Math.max(0.18, Math.min(Math.PI * 0.49, camSpherical.phi));
+  camSpherical.radius = Math.max(6, Math.min(75, camSpherical.radius));
+
+  const sinPhi = Math.sin(camSpherical.phi);
+  camera.position.x = camTarget.x + camSpherical.radius * sinPhi * Math.sin(camSpherical.theta);
+  camera.position.y = camTarget.y + camSpherical.radius * Math.cos(camSpherical.phi);
+  camera.position.z = camTarget.z + camSpherical.radius * sinPhi * Math.cos(camSpherical.theta);
+  camera.lookAt(camTarget);
+}
+
+function frameModelAutomatically(simExplodeFactor = targetExplodeProgress) {
+  for (let i = 1; i <= 13; i++) {
+    partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], simExplodeFactor);
+  }
+  tbmRoot.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(tbmRoot);
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  box.getCenter(center);
+  box.getSize(size);
+
+  if (size.lengthSq() > 0.01) {
+    camTarget.copy(center);
+    const maxDim = Math.max(size.x, size.y, size.z) * globalScaleRoot.scale.x;
+    const fovRad = THREE.MathUtils.degToRad(camera.fov);
+    const aspect = Math.max(0.55, camera.aspect || 1.3);
+    const fitHeightDistance = (maxDim / 2) / Math.tan(fovRad / 2);
+    const fitWidthDistance = (maxDim / 2) / (Math.tan(fovRad / 2) * aspect);
+    camSpherical.radius = Math.max(fitHeightDistance, fitWidthDistance) * 1.12;
+  }
+
+  updateCameraFromSpherical();
+}
+
+const activePointers = new Map();
+let prevPinchDist = null;
+let pointerDownPos = { x: 0, y: 0 };
+let pointerMoved = false;
+
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (activePointers.size === 1) {
+    pointerDownPos = { x: e.clientX, y: e.clientY };
+    pointerMoved = false;
+  }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!activePointers.has(e.pointerId)) return;
+  const prev = activePointers.get(e.pointerId);
+  const curr = { x: e.clientX, y: e.clientY };
+  activePointers.set(e.pointerId, curr);
+
+  if (activePointers.size === 1) {
+    const dx = curr.x - prev.x;
+    const dy = curr.y - prev.y;
+    if (Math.hypot(curr.x - pointerDownPos.x, curr.y - pointerDownPos.y) > 5) {
+      pointerMoved = true;
+    }
+    camSpherical.theta -= dx * 0.0085;
+    camSpherical.phi -= dy * 0.0085;
+    updateCameraFromSpherical();
+  } else if (activePointers.size === 2) {
+    pointerMoved = true;
+    const pts = Array.from(activePointers.values());
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (prevPinchDist !== null) {
+      const delta = prevPinchDist - dist;
+      camSpherical.radius += delta * 0.045;
+      updateCameraFromSpherical();
+    }
+    prevPinchDist = dist;
+  }
+});
+
+function onPointerUpOrCancel(e) {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) prevPinchDist = null;
+  if (!pointerMoved && e.type === 'pointerup') {
+    handleCanvasTap(e.clientX, e.clientY);
+  }
+}
+
+canvas.addEventListener('pointerup', onPointerUpOrCancel);
+canvas.addEventListener('pointercancel', onPointerUpOrCancel);
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  camSpherical.radius += e.deltaY * 0.015;
+  updateCameraFromSpherical();
+}, { passive: false });
+
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+
+function handleCanvasTap(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointerNDC, camera);
+  const hits = raycaster.intersectObjects(clickableMeshes, false);
+
+  if (hits.length > 0) {
+    let chosenHit = hits[0];
+    if (currentView === 'cut') {
+      const nonTransparentHit = hits.find(h => !h.object.material.userData.isCutawayHalf);
+      if (nonTransparentHit) chosenHit = nonTransparentHit;
+    }
+    const pId = chosenHit.object.userData.partId;
+    if (pId) {
+      selectPart(pId);
+      if (pId === 4 || pId === 1 || pId === 9) togglePower();
+    }
+  }
+}
+
+/* ============================================================================
+   10. PROJECTION 3D -> 2D DES NUMÉROS AVEC ANTI-CHEVAUCHEMENT DYNAMIQUE
+   ============================================================================ */
+const tempProj = new THREE.Vector3();
+
+function updateCallouts2D() {
+  const width = lastCssWidth || viewport.clientWidth || 640;
+  const height = lastCssHeight || viewport.clientHeight || 460;
+
+  tempProj.copy(camTarget).project(camera);
+  const centerX = (tempProj.x * 0.5 + 0.5) * width;
+
+  const leftItems = [];
+  const rightItems = [];
+
+  for (let i = 1; i <= 13; i++) {
+    partAnchors[i].getWorldPosition(tempProj);
+    tempProj.project(camera);
+
+    const ax = (tempProj.x * 0.5 + 0.5) * width;
+    const ay = (-tempProj.y * 0.5 + 0.5) * height;
+
+    const item = { id: i, ax, ay, bx: 0, by: ay };
+    if (ax >= centerX) rightItems.push(item);
+    else leftItems.push(item);
+  }
+
+  const minVerticalGap = 27;
+  const marginX = currentMode === 'correction' ? 92 : 30;
+
+  function distributeColumn(list, isRight) {
+    list.sort((a, b) => a.ay - b.ay);
+    const targetX = isRight
+      ? Math.min(width - marginX, centerX + Math.min(width * 0.38, 240))
+      : Math.max(marginX, centerX - Math.min(width * 0.38, 240));
+
+    for (let k = 0; k < list.length; k++) {
+      list[k].bx = targetX;
+      if (k === 0) list[k].by = Math.max(22, list[k].ay);
+      else list[k].by = Math.max(list[k].ay, list[k - 1].by + minVerticalGap);
+    }
+    for (let k = list.length - 1; k >= 0; k--) {
+      if (k === list.length - 1) list[k].by = Math.min(height - 24, list[k].by);
+      else list[k].by = Math.min(list[k].by, list[k + 1].by - minVerticalGap);
+      list[k].by = Math.max(20, list[k].by);
+    }
+  }
+
+  distributeColumn(leftItems, false);
+  distributeColumn(rightItems, true);
+
+  [...leftItems, ...rightItems].forEach(item => {
+    const badge = calloutBadges[item.id];
+    const line = calloutLines[item.id];
+
+    badge.style.left = `${item.bx}px`;
+    badge.style.top = `${item.by}px`;
+
+    line.setAttribute('x1', item.ax.toFixed(1));
+    line.setAttribute('y1', item.ay.toFixed(1));
+    line.setAttribute('x2', item.bx.toFixed(1));
+    line.setAttribute('y2', item.by.toFixed(1));
+
+    line.anchorDot.setAttribute('cx', item.ax.toFixed(1));
+    line.anchorDot.setAttribute('cy', item.ay.toFixed(1));
+  });
+
+  if (currentMode === 'correction') {
+    partAnchors[7].getWorldPosition(tempProj);
+    tempProj.y += 0.85;
+    tempProj.project(camera);
+    energyTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    energyTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+
+    partAnchors[9].getWorldPosition(tempProj);
+    tempProj.y -= 0.85;
+    tempProj.project(camera);
+    screwFlowTag.style.left = `${(tempProj.x * 0.5 + 0.5) * width}px`;
+    screwFlowTag.style.top = `${(-tempProj.y * 0.5 + 0.5) * height}px`;
+  }
+}
+
+/* ============================================================================
+   11. INTERACTION CREUSEMENT, CAMÉRAS FACE/PROFIL & GESTION DU CONTEXTE
+   ============================================================================ */
+const btnPower = document.getElementById('btn-power');
+const svgSwMain = document.getElementById('svg-sw-main');
+const svgLedTbm = document.getElementById('svg-led-tbm');
+const animLoopMain = document.getElementById('anim-loop-main');
+const circuitStateBadge = document.getElementById('circuit-state-badge');
+
+function togglePower() {
+  isRunning = !isRunning;
+  btnPower.classList.toggle('running', isRunning);
+  btnPower.textContent = isRunning ? '4. Creusement : EN MARCHE' : '4. Creusement : ARRÊT';
+
+  if (isRunning) {
+    svgSwMain.setAttribute('x2', '176');
+    svgSwMain.setAttribute('y2', '32');
+    svgSwMain.setAttribute('stroke', '#0055cc');
+    animLoopMain.setAttribute('opacity', '1');
+    svgLedTbm.setAttribute('fill', '#0055cc');
+    circuitStateBadge.textContent = 'CIRCUIT FERMÉ (I > 0)';
+    circuitStateBadge.style.color = '#0055cc';
+  } else {
+    svgSwMain.setAttribute('x2', '173');
+    svgSwMain.setAttribute('y2', '15');
+    svgSwMain.setAttribute('stroke', '#111111');
+    animLoopMain.setAttribute('opacity', '0');
+    svgLedTbm.setAttribute('fill', '#ffffff');
+    circuitStateBadge.textContent = 'CIRCUIT OUVERT (I = 0)';
+    circuitStateBadge.style.color = '#111111';
+  }
+}
+
+// Bouton pour développer, réduire ou FAIRE LE VIDE autour de Lisette :
+// 1. MONTRÉAL (Roc + Rue Jean-Talon + Stade olympique) -> 2. ROC SEUL -> 3. VIDE (Machine seule)
+let envMode = 'montreal';
+document.getElementById('btn-env').addEventListener('click', (e) => {
+  if (envMode === 'montreal') {
+    envMode = 'roc';
+    contextRoot.visible = true;
+    rockStratumGroup.visible = true;
+    urbanSurfaceGroup.visible = false;
+    e.target.textContent = 'Contexte : ROC SEUL';
+    e.target.classList.add('active');
+  } else if (envMode === 'roc') {
+    envMode = 'vide';
+    contextRoot.visible = false;
+    e.target.textContent = 'Contexte : VIDE';
+    e.target.classList.remove('active');
+  } else {
+    envMode = 'montreal';
+    contextRoot.visible = true;
+    rockStratumGroup.visible = true;
+    urbanSurfaceGroup.visible = true;
+    e.target.textContent = 'Contexte : MONTRÉAL';
+    e.target.classList.add('active');
+  }
+});
+
+// Bouton d'échelle (100% -> 75% -> 55% -> 120%)
+const scaleSteps = [1.0, 0.75, 0.55, 1.20];
+let scaleIdx = 0;
+document.getElementById('btn-scale').addEventListener('click', (e) => {
+  scaleIdx = (scaleIdx + 1) % scaleSteps.length;
+  const s = scaleSteps[scaleIdx];
+  globalScaleRoot.scale.set(s, s, s);
+  e.target.textContent = `Taille : ${Math.round(s * 100)}%`;
+});
+
+// Boutons d'angles de caméra rapides : Vue de côté (Profil PLB) vs Vue de face (Flèche STM Image 4)
+document.getElementById('btn-cam-side').addEventListener('click', () => {
+  camSpherical.theta = -0.18;
+  camSpherical.phi = 1.42;
+  frameModelAutomatically();
+});
+
+document.getElementById('btn-cam-front').addEventListener('click', () => {
+  // Place la caméra face à la roue de coupe de 9,7 m (à gauche -X) et masque temporairement le bloc de roc frontal pour admirer la flèche STM !
+  rockStratumGroup.children[1].visible = false;
+  camTarget.set(-5.30, 0, 0);
+  camSpherical.theta = -1.42;
+  camSpherical.phi = 1.48;
+  camSpherical.radius = 8.5 * globalScaleRoot.scale.x;
+  updateCameraFromSpherical();
+  selectPart(1);
+});
+
+document.getElementById('btn-mode-examen').addEventListener('click', () => setPedagogicalMode('examen'));
+document.getElementById('btn-mode-correction').addEventListener('click', () => setPedagogicalMode('correction'));
+document.getElementById('btn-view-ext').addEventListener('click', () => setViewMode('ext'));
+document.getElementById('btn-view-cut').addEventListener('click', () => setViewMode('cut'));
+document.getElementById('btn-view-exp').addEventListener('click', () => setViewMode('exp'));
+document.getElementById('btn-power').addEventListener('click', togglePower);
+
+svgSwMain.addEventListener('click', () => {
+  selectPart(4);
+  togglePower();
+});
+
+/* ============================================================================
+   12. BOUCLE D'ANIMATION (ROUE DE COUPE, VIS INCLINÉE, VÉRINS, ÉRECTEUR, CHARIOTS)
+   ============================================================================ */
+let lastTime = performance.now();
+let svgDashOffset = 0;
+let lastCssWidth = 0;
+let lastCssHeight = 0;
+
+let currentCutterRPM = 0;
+let jackCycle = 0;
+let cartCycle = 0;
+
+const elRpm = document.getElementById('kin-rpm');
+const elJack = document.getElementById('kin-jack');
+
+function syncViewportSize(reframe = false) {
+  const rect = viewport.getBoundingClientRect();
+  const w = Math.max(300, Math.round(rect.width || viewport.clientWidth || (window.innerWidth - 395)));
+  const h = Math.max(360, Math.round(rect.height || viewport.clientHeight || (window.innerHeight - 60)));
+
+  if (Math.abs(w - lastCssWidth) > 1 || Math.abs(h - lastCssHeight) > 1) {
+    lastCssWidth = w;
+    lastCssHeight = h;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+    if (reframe) {
+      frameModelAutomatically();
+    } else {
+      updateCameraFromSpherical();
+    }
+  }
+}
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  syncViewportSize(false);
+
+  // Bascule de l'interrupteur de la cabine de pilotage (4)
+  const targetSw = isRunning ? 0.35 : -0.35;
+  cabinSwitchPivot.rotation.z += (targetSw - cabinSwitchPivot.rotation.z) * Math.min(1, dt * 10);
+
+  // 1. Inertie de la roue de coupe de 9,7 m (1) et du réducteur à engrenages droits (7) (Z1=12, Z2=48, rapport 1/4)
+  const targetRPM = isRunning ? 6.0 : 0.0;
+  currentCutterRPM += (targetRPM - currentCutterRPM) * Math.min(1, dt * 3.0);
+  if (currentCutterRPM < 0.05 && !isRunning) currentCutterRPM = 0;
+
+  const omegaCutterRad = (currentCutterRPM * 2 * Math.PI) / 60 * 1.6;
+  const omegaMotorRad = -omegaCutterRad * (Z_RING_GEAR / Z_PINION); // ×4 en sens inverse
+
+  cutterHeadPivot.rotation.x += omegaCutterRad * dt;
+  mainRingGearPivot.rotation.x += omegaCutterRad * dt;
+  motorPinionPivot.rotation.x += omegaMotorRad * dt;
+
+  // 2. Rotation de la vis d'extraction inclinée (9) et circulation des déblais rocheux sur le convoyeur (13)
+  screwHelixPivot.rotation.x -= omegaCutterRad * 4.5 * dt;
+
+  conveyorRocksArray.forEach((chunk) => {
+    if (currentCutterRPM > 0.2) {
+      chunk.userData.progress = (chunk.userData.progress + dt * 0.18 * (currentCutterRPM / 6.0)) % 1.0;
+    }
+    const p = chunk.userData.progress;
+    const cx = -0.55 + p * 6.90;
+    const cy = (p < 0.22) ? (0.22 + (p / 0.22) * 0.52) : 0.74;
+    chunk.position.set(cx, cy, -0.15);
+  });
+
+  // 3. Poussée des 16 vérins hydrauliques (8), oscillation de l'érecteur (10) et va-et-vient des chariots à voussoirs (12)
+  if (currentCutterRPM > 0.2) {
+    jackCycle = (jackCycle + dt * 0.35) % 1.0;
+    cartCycle += dt * 1.4;
+    erectorWheelPivot.rotation.x = Math.sin(cartCycle * 0.7) * 0.65;
+    segmentCartsGroup.position.x = Math.sin(cartCycle * 0.5) * 0.45;
+  } else {
+    jackCycle *= Math.max(0, 1 - dt * 3);
+  }
+  thrustJacksMovingGroup.position.x = jackCycle * 0.38;
+
+  // 4. Interpolation de la Vue éclatée
+  if (Math.abs(targetExplodeProgress - explodeProgress) > 0.001) {
+    explodeProgress += (targetExplodeProgress - explodeProgress) * Math.min(1, dt * 8);
+    for (let i = 1; i <= 13; i++) {
+      partGroups[i].position.copy(partBasePositions[i]).addScaledVector(partExplodeVectors[i], explodeProgress);
+    }
+  }
+
+  // 5. Mise à jour des indicateurs numériques en direct et du schéma électrique
+  elRpm.textContent = currentCutterRPM.toFixed(1);
+  elJack.textContent = Math.round(jackCycle * 1500);
+
+  if (currentCutterRPM > 0.2 || isRunning) {
+    svgDashOffset -= dt * 55;
+    animLoopMain.setAttribute('stroke-dashoffset', svgDashOffset.toFixed(1));
+  }
+
+  renderer.render(scene, camera);
+  updateCallouts2D();
+}
+
+window.addEventListener('resize', () => syncViewportSize(true));
+
+// Initialisation en Vue en coupe longitudinale pour montrer immédiatement toute la richesse interne de Lisette
+syncViewportSize(true);
+frameModelAutomatically();
+selectPart(1);
+setPedagogicalMode('examen');
+setViewMode('cut');
+setTimeout(() => syncViewportSize(true), 120);
+setTimeout(() => syncViewportSize(true), 450);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
